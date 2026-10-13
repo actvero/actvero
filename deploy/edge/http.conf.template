@@ -1,0 +1,8 @@
+server {
+    listen 8080;
+    server_name _;
+    access_log off;
+    server_tokens off;
+    if ($http_host != $public_authority) { return 421; }
+    include /etc/nginx/edge/locations.conf;
+}

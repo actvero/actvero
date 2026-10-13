@@ -1,0 +1,86 @@
+{
+  "repository": "https://github.com/satnaing/shadcn-admin",
+  "revision": "e16c87f213a5ba5e45964e9b67c792105ec74d26",
+  "upstreamVersion": "2.2.1",
+  "importedAt": "2026-09-23",
+  "location": "frontend",
+  "license": "frontend/LICENSE",
+  "sourceAndStyles": "Based on the pinned upstream source; shared components, layout and identity theme adapted for Actvero.",
+  "businessBackendIntegrated": true,
+  "localChanges": [
+    {
+      "path": "frontend/src/components/ui/input-group.tsx",
+      "change": "Added shadcn new-york-v4 InputGroup on 2026-09-26 via registry view; adapted imports to local cn and existing Button/Input/Textarea, no dependency changes.",
+      "source": "https://ui.shadcn.com/r/new-york-v4/input-group.json"
+    },
+    {
+      "path": "frontend/src/components/ui/progress.tsx",
+      "change": "Added shadcn new-york-v4 Progress on 2026-09-25 after registry dry-run/view. Adapted cn import and standalone @radix-ui/react-progress 1.1.16 to existing Radix setup; forwards value to Root for accessible progress semantics.",
+      "source": "https://ui.shadcn.com/r/new-york-v4/progress.json"
+    },
+    {
+      "path": "frontend/src/context/layout-provider.tsx",
+      "change": "Default floating sidebar with expanded layout; original theme mechanisms retained."
+    },
+    {
+      "path": "frontend/src/components/",
+      "change": "Reuse and compose shared controls for organization navigation, member tables/dialogs, account cards, avatar sizes and password fields."
+    },
+    {
+      "path": "frontend/src/features/",
+      "change": "Replace sample business routes with real setup, OIDC login, member invitations/direct creation, audit and personal settings."
+    },
+    {
+      "path": "frontend/src/routes/",
+      "change": "Authenticated organization guards and actual business routes; remove mock sign-in and Clerk routes."
+    },
+    {
+      "path": "frontend/src/lib/",
+      "change": "Typed FastAPI contract and CSRF-protected requests."
+    },
+    {
+      "path": "backend/",
+      "change": "FastAPI identity milestone with PostgreSQL migrations, Keycloak integration and permission/isolation tests."
+    },
+    {
+      "path": "identity/",
+      "change": "Independent Keycloak configuration; theme generated from shared frontend controls and compiled styles."
+    },
+    {
+      "path": "frontend/src/assets/logo.tsx",
+      "change": "Replaced the template mark and web/identity favicons with the existing Actvero linked-forms brand on 2026-09-29. Local geometry snapshot drives React, Keycloak and SVG favicon; existing theme retained. Provenance and asset hashes: docs/BRANDING.md.",
+      "source": "actvero/design-system brand v0.2, revision 60750a4b7f714b4218b76344ba0c2899407e3a28"
+    }
+  ],
+  "thirdPartyAssets": [
+    {
+      "name": "Lobe Icons provider avatars",
+      "package": "@lobehub/icons-static-avatar",
+      "version": "1.15.0",
+      "repository": "https://github.com/lobehub/lobe-icons",
+      "revision": "4f54580b82c32a956c21a9a2f833d256e8c73bac",
+      "importedAt": "2026-09-24",
+      "location": "frontend/src/assets/provider-avatars",
+      "license": "frontend/src/assets/provider-avatars/LICENSE",
+      "files": "18 unmodified WebP files; catalog and verified archive integrity recorded in the asset README."
+    },
+    {
+      "name": "Magic UI Magic Card",
+      "source": "https://magicui.design/docs/components/magic-card",
+      "registry": "@magicui/magic-card",
+      "retrievedAt": "2026-09-29",
+      "registrySnapshotSha256": "ba9b9de22800317015523e046ddf1600c85dc5fa3dc631fe9bbd0d9fe0f6ff2a",
+      "location": "frontend/src/features/portal/effects.tsx",
+      "license": "frontend/public/notices/magic-ui.txt",
+      "changes": "Cursor gradient adapted to existing theme and reduced motion, without next-themes."
+    },
+    {
+      "name": "Lucide / Feather-derived icons",
+      "package": "lucide-react",
+      "version": "1.8.0",
+      "location": "backend/app/modules/skills/assets/icons.json",
+      "license": "frontend/public/notices/lucide.txt",
+      "source": "https://lucide.dev/license"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+server {
+    listen 8443 ssl;
+    server_name _;
+    access_log off;
+    server_tokens off;
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/private.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_tickets off;
+    if ($http_host != $public_authority) { return 421; }
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    include /etc/nginx/edge/locations.conf;
+}

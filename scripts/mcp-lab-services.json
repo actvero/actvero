@@ -1,0 +1,69 @@
+{
+  "services": [
+    {
+      "name": "ds-lab-http",
+      "display_name": "本地资料助手",
+      "description": "使用入职、差旅、交付记录等示例资料，验证文档搜索、提示词、资源读取和结构化结果。HTTP 验收服务。",
+      "transport": "http",
+      "url": "http://127.0.0.1:5291/mcp",
+      "examples": [
+        "搜索入职相关示例文档，并告诉我首周安排。",
+        "读取 lab://catalog，再读取 lab://documents/travel 并总结报销说明。",
+        "获取 summarize_document 提示词，document_id 填 onboarding，然后按提示词生成摘要。"
+      ]
+    },
+    {
+      "name": "ds-lab-sse",
+      "display_name": "本地流程验收",
+      "description": "用于验证 SSE 连接、周报提示词、动态资源模板、异步工具和预期错误。全部为只读示例数据。",
+      "transport": "sse",
+      "url": "http://127.0.0.1:5292/sse",
+      "examples": [
+        "获取 weekly_report 提示词，team 填测试组，week 填本周，然后整理周报。",
+        "读取 lab://reports/demo/2026-W39，告诉我完成和待处理数量。",
+        "计算 1、2、3.5 的合计，然后调用 simulate_error 检查预期错误，不要重试。"
+      ]
+    },
+    {
+      "name": "ds-lab-personal",
+      "display_name": "本地身份验收·个人",
+      "description": "验证个人凭据隔离。仅限本机示例：ds-lab-alice 和 ds-lab-bob 分别返回 Alice、Bob；错误凭据会被拒绝。",
+      "transport": "http",
+      "url": "http://127.0.0.1:5293/mcp",
+      "auth_mode": "personal",
+      "credential_fields": [
+        {
+          "key": "token",
+          "label": "示例凭据",
+          "header": "Authorization",
+          "bearer": true
+        }
+      ],
+      "examples": [
+        "调用 who_am_i，告诉我当前连接的示例身份。"
+      ]
+    },
+    {
+      "name": "ds-lab-organization",
+      "display_name": "本地身份验收·组织",
+      "description": "使用明确配置的组织示例凭据，返回 Bob。用于对比个人连接；桌面用户不能覆盖组织凭据。",
+      "transport": "http",
+      "url": "http://127.0.0.1:5293/mcp",
+      "auth_mode": "organization",
+      "credential_fields": [
+        {
+          "key": "token",
+          "label": "示例凭据",
+          "header": "Authorization",
+          "bearer": true
+        }
+      ],
+      "credential_values": {
+        "token": "ds-lab-bob"
+      },
+      "examples": [
+        "调用 who_am_i，核验组织连接返回的示例身份。"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+[project]
+name = "actvero-platform-api"
+version = "0.1.0"
+description = "Actvero platform API"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic-settings>=2.7,<3",
+  "sqlalchemy[asyncio]>=2.0,<2.1",
+  "asyncpg>=0.30,<1",
+  "alembic>=1.14,<2",
+  "authlib>=1.8,<2",
+  "joserfc>=1.6,<2",
+  "httpx>=0.28,<1",
+  "cryptography>=45",
+  "email-validator>=2,<3",
+  "pillow>=12.1,<13",
+  "fastmcp==4.0.5",
+  "jsonschema>=4,<5",
+  "litellm==1.102.1",
+  "pyyaml>=6.0.3,<7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+    "pytest-asyncio>=1,<2",
+    "ruff>=0.11,<1",
+    "mypy>=1.15,<2",
+    "types-jsonschema>=4.26.0.20260518",
+    "types-pyyaml>=6.0.12.20260906",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["authlib.*"]
+ignore_missing_imports = true

@@ -1,0 +1,38 @@
+{
+  "version": "0.2",
+  "name": "Actvero linked forms",
+  "viewBox": [
+    0,
+    0,
+    256,
+    256
+  ],
+  "center": [
+    128,
+    128
+  ],
+  "inkBounds": [
+    28,
+    28,
+    228,
+    228
+  ],
+  "radii": {
+    "terminal": 12,
+    "inner": 20,
+    "upperReturn": 24,
+    "outer": 48
+  },
+  "path": "M 76 28 H 144 A 12 12 0 0 1 156 40 V 48 A 24 24 0 0 1 132 72 H 108 A 20 20 0 0 0 88 92 V 120 A 20 20 0 0 0 108 140 H 112 A 12 12 0 0 1 124 152 V 168 A 12 12 0 0 1 112 180 H 76 A 48 48 0 0 1 28 132 V 76 A 48 48 0 0 1 76 28 Z",
+  "secondPartTransform": "rotate(180 128 128)",
+  "colors": {
+    "brand": "#FF6A21",
+    "ink": "#171715",
+    "white": "#FFFFFF",
+    "dark": "#171715",
+    "surface": "#FFFEFB",
+    "line": "#D7D7D2",
+    "muted": "#747470"
+  },
+  "notes": "Original linked-form geometry preserved. Actvero only; orange, ink and white identity aligned to the paper-and-light design system."
+}

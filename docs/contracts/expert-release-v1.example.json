@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "schemaVersion": 1,
+    "id": "11111111-1111-4111-8111-111111111111",
+    "version": "1.0.0",
+    "name": "周报专家",
+    "description": "整理工作记录",
+    "avatar": "",
+    "category": "general",
+    "tags": [
+      "办公"
+    ],
+    "instructions": "先核实事实，再整理周报。",
+    "conversationStarters": [
+      "帮我整理本周工作"
+    ],
+    "skills": [],
+    "connectors": []
+  },
+  "dependency_refs": {
+    "skills": [],
+    "connectors": []
+  },
+  "sha256": "dd272e6cd5ba0462f2da3d1cb765ded902cd017f345390090f23a2c93a8542ef"
+}

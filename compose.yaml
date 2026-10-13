@@ -1,0 +1,102 @@
+name: actvero-community
+
+x-app: &app
+  image: ${COMPOSE_PROJECT_NAME:-actvero-community}-app:local
+  pull_policy: never
+  environment:
+    ACTVERO_PLATFORM_EDITION: ${ACTVERO_PLATFORM_EDITION:-community}
+    ACTVERO_DATABASE_URL: postgresql+asyncpg://actvero:${ACTVERO_DB_PASSWORD:?Run scripts/docker-env.sh}@postgres:5432/actvero
+    ACTVERO_APP_URL: ${ACTVERO_APP_URL:?Run scripts/docker-env.sh}
+    ACTVERO_OIDC_ISSUER: ${ACTVERO_OIDC_ISSUER:?Run scripts/docker-env.sh}
+    ACTVERO_OIDC_INTERNAL_URL: http://keycloak:8080/realms/actvero
+    ACTVERO_WEB_CLIENT_SECRET: ${ACTVERO_WEB_CLIENT_SECRET:?Run scripts/docker-env.sh}
+    ACTVERO_PROVISIONER_CLIENT_SECRET: ${ACTVERO_PROVISIONER_CLIENT_SECRET:?Run scripts/docker-env.sh}
+    ACTVERO_DESKTOP_SESSION_POLICY: ${ACTVERO_DESKTOP_SESSION_POLICY:-strict}
+    ACTVERO_DESKTOP_RECOVERY_DAYS: ${ACTVERO_DESKTOP_RECOVERY_DAYS:-30}
+    ACTVERO_DESKTOP_REAUTHENTICATION_DAYS: ${ACTVERO_DESKTOP_REAUTHENTICATION_DAYS:-}
+    ACTVERO_DESKTOP_UNCONFIRMED_DAYS: ${ACTVERO_DESKTOP_UNCONFIRMED_DAYS:-7}
+    ACTVERO_MANAGEMENT_ENABLED: ${ACTVERO_MANAGEMENT_ENABLED:-false}
+    ACTVERO_MANAGEMENT_CLIENT_ID: ${ACTVERO_MANAGEMENT_CLIENT_ID:-actvero-cli}
+    ACTVERO_MANAGEMENT_ACCESS_SECONDS: ${ACTVERO_MANAGEMENT_ACCESS_SECONDS:-300}
+    ACTVERO_MANAGEMENT_RECOVERY_DAYS: ${ACTVERO_MANAGEMENT_RECOVERY_DAYS:-30}
+    ACTVERO_MANAGEMENT_REAUTHENTICATION_DAYS: ${ACTVERO_MANAGEMENT_REAUTHENTICATION_DAYS:-90}
+    ACTVERO_WEB_SESSION_POLICY: ${ACTVERO_WEB_SESSION_POLICY:-strict}
+    ACTVERO_WEB_RECOVERY_DAYS: ${ACTVERO_WEB_RECOVERY_DAYS:-30}
+    ACTVERO_WEB_REAUTHENTICATION_DAYS: ${ACTVERO_WEB_REAUTHENTICATION_DAYS:-90}
+    ACTVERO_SESSION_ENCRYPTION_KEY: ${ACTVERO_SESSION_ENCRYPTION_KEY:?Run scripts/docker-env.sh}
+    ACTVERO_SMTP_HOST: ${ACTVERO_CONTAINER_SMTP_HOST:-mailpit}
+    ACTVERO_SMTP_PORT: ${ACTVERO_CONTAINER_SMTP_PORT:-1025}
+    ACTVERO_SMTP_USERNAME: ${ACTVERO_SMTP_USERNAME:-}
+    ACTVERO_SMTP_PASSWORD: ${ACTVERO_SMTP_PASSWORD:-}
+    ACTVERO_SMTP_FROM: ${ACTVERO_SMTP_FROM:-noreply@actvero.test}
+    ACTVERO_SMTP_STARTTLS: ${ACTVERO_SMTP_STARTTLS:-false}
+    ACTVERO_INVITATION_HOURS: ${ACTVERO_INVITATION_HOURS:-24}
+    ACTVERO_MCP_ALLOWED_PRIVATE_ORIGINS: ${ACTVERO_MCP_ALLOWED_PRIVATE_ORIGINS:-[]}
+    ACTVERO_MCP_PUBLIC_DNS: ${ACTVERO_MCP_PUBLIC_DNS:-system}
+    ACTVERO_LLM_ALLOWED_PRIVATE_ORIGINS: ${ACTVERO_LLM_ALLOWED_PRIVATE_ORIGINS:-[]}
+    ACTVERO_LLM_PUBLIC_DNS: ${ACTVERO_LLM_PUBLIC_DNS:-system}
+    ACTVERO_LLM_OUTBOX_DIR: /app/data/llm-outbox
+    ACTVERO_LLM_ROUTER_REDIS_URL: ${ACTVERO_LLM_ROUTER_REDIS_URL:-}
+  init: true
+
+services:
+  postgres:
+    extends:
+      file: deploy/compose.yaml
+      service: postgres
+    restart: unless-stopped
+
+  keycloak:
+    extends:
+      file: deploy/compose.yaml
+      service: keycloak
+    image: ${COMPOSE_PROJECT_NAME:-actvero-community}-identity:local
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: identity
+    # Compiled theme and the initial realm are already in the image.
+    volumes: !reset []
+    environment:
+      KC_HOSTNAME: ${ACTVERO_IDENTITY_URL:-http://127.0.0.1:5196}
+    restart: unless-stopped
+
+  mailpit:
+    extends:
+      file: deploy/compose.yaml
+      service: mailpit
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    <<: *app
+    volumes:
+      - llm-outbox:/app/data/llm-outbox
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: app
+    ports: ["127.0.0.1:${ACTVERO_APP_PORT:-5194}:8080"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/v1/ready', timeout=4).read()"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+
+volumes:
+  llm-outbox:
+  community-database:

@@ -1,0 +1,14 @@
+# Only operator-supplied app origin determines external URLs; never client headers.
+map "${ACTVERO_APP_URL}" $public_authority {
+    ~^https?://([^/]+)$ $1;
+    default invalid;
+}
+map "${ACTVERO_APP_URL}" $public_scheme {
+    ~^https:// https;
+    default http;
+}
+map "${ACTVERO_APP_URL}" $public_port {
+    ~:([0-9]+)$ $1;
+    ~^https:// 443;
+    default 80;
+}

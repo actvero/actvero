@@ -1,0 +1,53 @@
+# Opt-in single public origin. Existing split-port deployments remain valid.
+services:
+  app:
+    ports: !reset []
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "${ACTVERO_EDGE_PREFIX:-172.30.194}.10"]
+    environment:
+      ACTVERO_OIDC_ISSUER: ${ACTVERO_APP_URL}/identity/realms/actvero
+      ACTVERO_OIDC_INTERNAL_URL: http://keycloak:8080/identity/realms/actvero
+    networks:
+      default: {}
+      edge:
+        aliases: [app-edge]
+  migrate:
+    environment:
+      ACTVERO_OIDC_ISSUER: ${ACTVERO_APP_URL}/identity/realms/actvero
+      ACTVERO_OIDC_INTERNAL_URL: http://keycloak:8080/identity/realms/actvero
+  keycloak:
+    command: ["start", "--import-realm", "--http-enabled=true", "--hostname-strict=true"]
+    environment:
+      KC_HOSTNAME: ${ACTVERO_APP_URL}/identity
+      KC_HTTP_RELATIVE_PATH: /identity
+      KC_HTTP_MANAGEMENT_RELATIVE_PATH: /
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_TRUSTED_ADDRESSES: ${ACTVERO_EDGE_PREFIX:-172.30.194}.10
+    networks:
+      default: {}
+      edge:
+        aliases: [keycloak-edge]
+  edge:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    restart: unless-stopped
+    environment:
+      ACTVERO_APP_URL: ${ACTVERO_APP_URL:?Configure public app origin}
+      NGINX_ENVSUBST_FILTER: ^ACTVERO_APP_URL$
+    ports: ["127.0.0.1:${ACTVERO_APP_PORT:-5194}:8080"]
+    volumes:
+      - ./deploy/edge/http.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/edge/maps.conf.template:/etc/nginx/templates/maps.conf.template:ro
+      - ./deploy/edge/locations.conf:/etc/nginx/edge/locations.conf:ro
+    networks:
+      edge:
+        ipv4_address: ${ACTVERO_EDGE_PREFIX:-172.30.194}.10
+    depends_on:
+      app: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null --header=\"Host: $${ACTVERO_APP_URL#*://}\" http://127.0.0.1:8080/api/v1/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+networks:
+  edge:
+    ipam:
+      config: [{subnet: "${ACTVERO_EDGE_PREFIX:-172.30.194}.0/24"}]

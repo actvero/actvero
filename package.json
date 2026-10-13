@@ -1,0 +1,12 @@
+{
+  "name": "actvero",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "bootstrap": "pnpm --dir frontend install --frozen-lockfile --ignore-scripts",
+    "dev": "pnpm --dir frontend dev:reference",
+    "check": "pnpm --dir frontend lint",
+    "build": "pnpm --dir frontend build"
+  }
+}

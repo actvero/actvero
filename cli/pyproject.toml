@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "actvero-cli"
+version = "0.1.0"
+description = "Actvero multi-organization management CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx==0.28.1",
+    "keyring==25.7.0",
+    "filelock==3.32.7",
+]
+
+[project.scripts]
+actvero = "actvero_cli.commands:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "mypy>=1.15,<2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/actvero_cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

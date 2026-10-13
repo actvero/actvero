@@ -1,0 +1,11 @@
+# Combine after same-origin.compose.yaml. TLS only; loopback binding by default.
+services:
+  edge:
+    ports: !override ["${ACTVERO_EDGE_BIND:-127.0.0.1}:${ACTVERO_HTTPS_PORT:-8445}:8443"]
+    volumes:
+      - ./deploy/edge/tls.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ${ACTVERO_TLS_CERTIFICATE:?Provide certificate path}:/etc/nginx/tls/fullchain.pem:ro
+      - ${ACTVERO_TLS_PRIVATE_KEY:?Provide key path}:/etc/nginx/tls/private.key:ro
+    healthcheck:
+      # Readiness against application directly; HTTPS verification is an external check.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://app-edge:8080/api/v1/ready"]

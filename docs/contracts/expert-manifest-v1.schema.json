@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "ExpertRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "label"
+      ],
+      "title": "ExpertRequirement",
+      "type": "object"
+    },
+    "ManifestSkill": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "load": {
+          "enum": [
+            "always",
+            "on_demand"
+          ],
+          "title": "Load",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "load"
+      ],
+      "title": "ManifestSkill",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Portable wire schema matching desktop v1; categories live in the envelope.",
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "id": {
+      "maxLength": 80,
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 30,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "title": "Version",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "avatar": {
+      "maxLength": 500000,
+      "title": "Avatar",
+      "type": "string"
+    },
+    "category": {
+      "const": "general",
+      "default": "general",
+      "title": "Category",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "maxLength": 30,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Tags",
+      "type": "array"
+    },
+    "instructions": {
+      "maxLength": 64000,
+      "minLength": 1,
+      "title": "Instructions",
+      "type": "string"
+    },
+    "conversationStarters": {
+      "items": {
+        "maxLength": 1000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 6,
+      "title": "Conversationstarters",
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/ManifestSkill"
+      },
+      "maxItems": 32,
+      "title": "Skills",
+      "type": "array"
+    },
+    "connectors": {
+      "items": {
+        "$ref": "#/$defs/ExpertRequirement"
+      },
+      "maxItems": 32,
+      "title": "Connectors",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "name",
+    "description",
+    "avatar",
+    "tags",
+    "instructions",
+    "conversationStarters",
+    "skills",
+    "connectors"
+  ],
+  "title": "ExpertManifestV1",
+  "type": "object"
+}

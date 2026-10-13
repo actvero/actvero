@@ -1,0 +1,26 @@
+{
+  "clientId": "actvero-cli",
+  "name": "Actvero 管理 CLI",
+  "enabled": true,
+  "protocol": "openid-connect",
+  "publicClient": true,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "redirectUris": [
+    "http://127.0.0.1/actvero/cli/callback"
+  ],
+  "webOrigins": [],
+  "fullScopeAllowed": false,
+  "defaultClientScopes": [
+    "basic",
+    "profile",
+    "email"
+  ],
+  "optionalClientScopes": [],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": ""
+  }
+}

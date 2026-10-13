@@ -1,0 +1,29 @@
+# Use with compose.yaml and same-origin.compose.yaml, in that order.
+services:
+  postgres:
+    image: ${COMPOSE_PROJECT_NAME}-database:${ACTVERO_RELEASE_ID:-local}
+    ports: !reset []
+    volumes: !override
+      - ${ACTVERO_DATA_DIR:?Configure server data directory}/postgres:/var/lib/postgresql/data
+    mem_limit: 512m
+  app:
+    image: ${COMPOSE_PROJECT_NAME}-app:${ACTVERO_RELEASE_ID:-local}
+    environment:
+      ACTVERO_SESSION_COOKIE_NAME: ${ACTVERO_SESSION_COOKIE_NAME}
+    mem_limit: 1536m
+  migrate:
+    image: ${COMPOSE_PROJECT_NAME}-app:${ACTVERO_RELEASE_ID:-local}
+    environment:
+      ACTVERO_SESSION_COOKIE_NAME: ${ACTVERO_SESSION_COOKIE_NAME}
+    mem_limit: 1536m
+  keycloak:
+    image: ${COMPOSE_PROJECT_NAME}-identity:${ACTVERO_RELEASE_ID:-local}
+    ports: !reset []
+    environment:
+      JAVA_OPTS_KC_HEAP: -Xms128m -Xmx512m
+    mem_limit: 768m
+  mailpit:
+    ports: !reset []
+    mem_limit: 128m
+  edge:
+    mem_limit: 128m

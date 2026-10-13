@@ -1,0 +1,49 @@
+name: actvero-community
+services:
+  postgres:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.database
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run make env}
+      ACTVERO_DB_PASSWORD: ${ACTVERO_DB_PASSWORD}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    ports: ["127.0.0.1:${ACTVERO_POSTGRES_PORT:-5494}:5432"]
+    volumes: ["community-database:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.4
+    command: ["start-dev", "--import-realm", "--spi-theme-static-max-age=-1", "--spi-theme-cache-themes=false", "--spi-theme-cache-templates=false"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/actvero_identity
+      KC_DB_USERNAME: actvero_identity
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: http://127.0.0.1:${ACTVERO_KEYCLOAK_PORT:-5196}
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+      ACTVERO_APP_URL: ${ACTVERO_APP_URL}
+      ACTVERO_WEB_CLIENT_SECRET: ${ACTVERO_WEB_CLIENT_SECRET}
+      ACTVERO_PROVISIONER_CLIENT_SECRET: ${ACTVERO_PROVISIONER_CLIENT_SECRET}
+    ports: ["127.0.0.1:${ACTVERO_KEYCLOAK_PORT:-5196}:8080"]
+    volumes:
+      - ../identity/bootstrap/actvero-realm.json:/opt/keycloak/data/import/actvero-realm.json:ro
+      - ../identity/themes/actvero:/opt/keycloak/themes/actvero:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3; cat <&3 | grep -q '200 OK'"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 20
+  mailpit:
+    image: axllent/mailpit:v1.27.8
+    ports: ["127.0.0.1:${ACTVERO_SMTP_PORT:-5197}:1025", "127.0.0.1:${ACTVERO_MAILPIT_PORT:-5198}:8025"]
+volumes:
+  community-database:

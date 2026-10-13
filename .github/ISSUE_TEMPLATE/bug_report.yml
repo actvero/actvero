@@ -1,0 +1,16 @@
+name: Bug report
+description: Report a reproducible product issue without private data.
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include version and sanitized steps. Never include tokens or customer data.
+    validations:
+      required: true
