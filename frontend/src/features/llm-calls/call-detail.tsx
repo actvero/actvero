@@ -287,7 +287,7 @@ export function CallDetailSheet({
                         {settlement.points ?? '待确认'} 积分
                       </p>
                       {['reserved', 'review'].includes(settlement.status) && (
-                        <p>当前占用：{settlement.reserved_points} 积分</p>
+                        <p>受理周期内预留：{settlement.reserved_points} 积分</p>
                       )}
                       <p>
                         预占金额 {settlement.reserved_amount}{' '}

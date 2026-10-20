@@ -234,7 +234,7 @@ it('keeps the new provider card and long official root within a 390px editor', a
     .element(page.getByText('/compatible-mode/v1', { exact: true }))
     .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: '/private/tmp/actvero-r11-qwen-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-r11-qwen-390.png' })
 })
 
 it('loads Token Plan reference candidates without selecting or discovering them, then saves only chosen and manual models', async () => {
@@ -536,7 +536,7 @@ it('previews a null directory and saves manual stock without checking or testing
     })
   )
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: '/private/tmp/actvero-r11-manual-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-r11-manual-390.png' })
 })
 
 it('keeps saved no-directory channels readable and allows manual registration', async () => {

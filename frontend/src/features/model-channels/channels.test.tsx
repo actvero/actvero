@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page, userEvent } from 'vitest/browser'
@@ -99,9 +100,13 @@ const providers: ProviderModule[] = [
   test_operations: ['chat'],
 }))
 async function selectCompatible() {
+  const dialog = page.getByRole('dialog', { name: '添加渠道' })
+  await expect.element(dialog).toBeVisible()
+  await waitForAnimations()
   await page
     .getByRole('button', { name: '自定义 OpenAI 兼容', exact: true })
     .click()
+  await expect.element(page.getByLabelText('渠道名称')).toBeVisible()
 }
 const clients: QueryClient[] = []
 beforeEach(async () => {

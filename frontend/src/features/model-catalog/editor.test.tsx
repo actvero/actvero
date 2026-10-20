@@ -222,7 +222,7 @@ it('renders archived model as read-only at narrow width', async () => {
   await expect.element(page.getByLabelText('技术名称')).toBeDisabled()
   await new Promise((resolve) => setTimeout(resolve, 450))
   await page.screenshot({
-    path: '/private/tmp/actvero-g2-02-editor-narrow.png',
+    path: '__screenshots__/actvero-g2-02-editor-narrow.png',
   })
 })
 
@@ -297,7 +297,7 @@ it('shows single-hop mapping and preserves binding identity in the save payload'
     .toBeVisible()
   await new Promise((resolve) => setTimeout(resolve, 450))
   await page.screenshot({
-    path: '/private/tmp/actvero-g2-02-editor-desktop.png',
+    path: '__screenshots__/actvero-g2-02-editor-desktop.png',
   })
   await page.getByRole('button', { name: '保存配置' }).click()
   await expect.poll(() => writes.length).toBe(1)
@@ -372,7 +372,7 @@ it('previews exact channel candidates, requires confirmation, and keeps duplicat
   expect(writes).toHaveLength(0)
   await page.getByRole('button', { name: '确认关联 2 条到草稿' }).click()
   await expect.element(page.getByText('渠道与模型映射 · 2')).toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-me-mapping-desktop.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-me-mapping-desktop.png' })
   await page.getByRole('button', { name: '查找候选' }).click()
   await expect
     .element(

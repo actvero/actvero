@@ -459,6 +459,9 @@ it('switches real template types without showing a previous preview after a requ
     .element(page.getByText('Actvero · 组织开通邀请', { exact: true }))
     .toBeVisible()
   expect(document.querySelector('iframe')?.srcdoc).toBe('<p>开通邮件</p>')
+  const firstTab = page.getByRole('tab', { name: '组织开通邀请', exact: true })
+  firstTab.element().focus()
+  await expect.element(firstTab).toHaveFocus()
   await userEvent.keyboard('{ArrowRight}')
   await expect
     .element(page.getByRole('tab', { name: '组织成员邀请', exact: true }))

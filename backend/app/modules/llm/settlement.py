@@ -1,4 +1,4 @@
-"""Serialized monetary admission and exact settlement, with non-resetting quota windows."""
+"""Serialized monetary admission and exact settlement in admission-time quota windows."""
 
 import hmac
 import re
@@ -9,7 +9,7 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AcceptedRequestConflict
@@ -116,7 +116,7 @@ def reserve_amount(
 
 
 async def snapshot(
-    db: AsyncSession, actor: BusinessActor, *, activate: bool = False
+    db: AsyncSession, actor: BusinessActor, *, activate: bool = False, at: datetime | None = None
 ) -> dict[str, Any]:
     policies = await matching_policies(db, actor.tenant.id, actor.member.id)
     if not policies:
@@ -124,7 +124,7 @@ async def snapshot(
     policy = policies[0]
     clock = await db.get(QuotaClock, actor.member.id, populate_existing=True)
     saved = dict(clock.windows) if clock else {}
-    stamp = now()
+    stamp = at if at is not None else now()
     # Weekly windows span at most eight UTC days across timezone/DST changes.
     horizon = max([192, *[r["hours"] for r in policy.rules if r["kind"] == "fixed_hours"]])
     entries = list(
@@ -132,17 +132,10 @@ async def snapshot(
             select(UsageSettlement).where(
                 UsageSettlement.tenant_id == actor.tenant.id,
                 UsageSettlement.member_id == actor.member.id,
-                or_(
-                    UsageSettlement.status.in_(("reserved", "review")),
-                    (UsageSettlement.status == "settled")
-                    & (UsageSettlement.created_at >= stamp - timedelta(hours=horizon)),
-                ),
+                UsageSettlement.status.in_(("reserved", "review", "settled")),
+                UsageSettlement.created_at >= stamp - timedelta(hours=horizon),
             )
         )
-    )
-    held = exact_sum(
-        (points(e.reserved_amount, e.ratio) for e in entries if e.status in ("reserved", "review")),
-        Decimal(0),
     )
     windows = []
     for rule in policy.rules:
@@ -159,14 +152,18 @@ async def snapshot(
             old = saved.get(key)
             start = datetime.fromisoformat(old["start"]) if old else None
             end = start + timedelta(hours=hours) if start else None
+            previous_end = end
             if end is not None and end <= stamp:
                 start = end = None
-            elif old is None:
-                # A new policy duration includes existing usage, instead of granting a fresh quota.
+            if start is None:
+                # Switching away from a duration and back must still include
+                # calls admitted since its last window ended. Normal expiry
+                # cannot resurrect calls belonging to the finished window.
                 recent = [
                     e.created_at
                     for e in entries
-                    if e.created_at > stamp - timedelta(hours=hours) and e.status != "released"
+                    if stamp - timedelta(hours=hours) < e.created_at <= stamp
+                    and (previous_end is None or e.created_at >= previous_end)
                 ]
                 if recent:
                     start = min(recent)
@@ -175,17 +172,23 @@ async def snapshot(
                 start, end = stamp, stamp + timedelta(hours=hours)
             if start is not None and activate:
                 saved[key] = {"start": start.isoformat()}
+        in_window = [
+            e
+            for e in entries
+            if start is not None and end is not None and start <= e.created_at < end
+        ]
         used = exact_sum(
             (
                 points(e.amount, e.ratio)
-                for e in entries
-                if e.status == "settled"
-                and e.amount is not None
-                and start is not None
-                and end is not None
-                and start <= e.created_at < end
+                for e in in_window
+                if e.status == "settled" and e.amount is not None
             ),
             Decimal(0),
+        )
+        held = exact_sum(
+            points(e.reserved_amount, e.ratio)
+            for e in in_window
+            if e.status in ("reserved", "review")
         )
         cap = Decimal(rule["points"])
         windows.append(
@@ -193,7 +196,9 @@ async def snapshot(
                 "rule": rule,
                 "used": decimal_text(used),
                 "reserved": decimal_text(held),
-                "remaining": decimal_text(max(Decimal(0), exact_sum([-used, -held], cap))),
+                "remaining": decimal_text(
+                    max(Decimal(0), exact_sum([used.copy_negate(), held.copy_negate()], cap))
+                ),
                 "started_at": start.astimezone(UTC).isoformat() if start else None,
                 "resets_at": end.astimezone(UTC).isoformat() if end else None,
             }
@@ -267,13 +272,17 @@ async def reserve(
     if config.routing.mode == "auto" and config.routing.fallback and config.routing.retry_uncertain:
         # Opting into uncertain retries must also cover their possible additional consumption.
         amount = points(amount, Decimal(config.routing.max_attempts))
-    state = await snapshot(db, actor, activate=True)
+    admitted_at = now()
+    state = await snapshot(db, actor, activate=True, at=admitted_at)
     if state["status"] != "active":
         fail(409, "quota_policy_required", "管理员尚未配置额度策略")
     needed = points(amount, conversion.points_per_currency)
     for window in state["windows"]:
         if needed > Decimal(window["remaining"]):
             fail(429, "quota_exceeded", "积分额度不足，请降低输出上限或等待额度恢复")
+    # One instant defines the accepted request and its quota membership, even
+    # if a flush/commit crosses an hourly or weekly boundary.
+    log.created_at = admitted_at
     await db.flush()  # call FK exists before the reservation
     db.add(
         UsageSettlement(
@@ -291,6 +300,7 @@ async def reserve(
             usage={},
             status="reserved",
             reason="",
+            created_at=admitted_at,
         )
     )
 
@@ -304,9 +314,13 @@ async def complete(
     certainly_unused: bool = False,
     expected_version: int = 1,
     manual: bool = False,
+    recover_interrupted: bool = False,
 ) -> bool:
     row = await db.get(UsageSettlement, call_id, populate_existing=True, with_for_update=True)
-    allowed = ("reserved", "review") if manual else ("reserved",)
+    # Only the outbox's provisional interrupted-call recovery may replace its
+    # own first review. A manual reconciliation advances the version/status and
+    # remains authoritative; other review decisions are still sticky.
+    allowed = ("reserved", "review") if manual or recover_interrupted else ("reserved",)
     if row is None or row.status not in allowed or row.version != expected_version:
         return False
     price = TokenPrice.model_validate(row.price)

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
@@ -80,7 +81,13 @@ async function show(imageAvailable = false) {
       <ModelCreate close={close} saved={saved} />
     </QueryClientProvider>
   )
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  await waitForAnimations()
   await page.getByRole('button', { name: '从已有渠道快捷创建' }).click()
+  await expect
+    .element(page.getByRole('dialog', { name: '添加模型', exact: true }))
+    .toBeVisible()
+  await waitForAnimations()
   await page.getByRole('combobox', { name: '渠道', exact: true }).click()
   await page.getByRole('option', { name: channel.name }).click()
   return { saved, close }
@@ -142,11 +149,15 @@ it('registers metadata without source or operation, then saves a closed draft', 
   await page.getByLabelText('显示排序').fill('25')
   expect(window.innerWidth).toBe(1440)
   await expectDialogFits()
-  await page.screenshot({ path: '/private/tmp/actvero-me-profile-desktop.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-me-profile-desktop.png',
+  })
   await page.viewport(390, 844)
   expect(window.innerWidth).toBe(390)
   await expectDialogFits()
-  await page.screenshot({ path: '/private/tmp/actvero-me-profile-narrow.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-me-profile-narrow.png',
+  })
   await page.getByRole('tab', { name: '价格配置' }).click()
   await expect.element(page.getByText('已保存参考报价（0）')).toBeVisible()
   await page.getByRole('button', { name: '保存配置' }).click()

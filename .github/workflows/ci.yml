@@ -46,10 +46,10 @@ jobs:
           pnpm --dir frontend exec playwright install chromium --with-deps
       - name: Static checks and builds
         run: make check cli-check
+      - name: Browser tests
+        run: pnpm --dir frontend test
       - name: Application tests
-        run: |
-          make test cli-test
-          pnpm --dir frontend test
+        run: make test cli-test
       - name: Identity and deployment tests
         run: |
           python3 scripts/test-identity-theme-assets.py

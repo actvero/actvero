@@ -251,7 +251,7 @@ it('keeps result and settlement independent, hides internal reasons, and clears 
     .element(page.getByText('SECRET', { exact: false }))
     .not.toBeInTheDocument()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: '/private/tmp/actvero-g6-04-usage-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-04-usage-390.png' })
   revoked = true
   await page.getByRole('button', { name: '刷新', exact: true }).click()
   await expect.element(page.getByText('成员权限已失效')).toBeVisible()

@@ -454,7 +454,7 @@ it('fits a narrow viewport with the endpoint and evidence in the same flow', asy
   await page.getByRole('button', { name: '开始测试' }).click()
   await expect.element(page.getByText('上游终态：已观察')).toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-01-diagnostic-390.png',
+    path: '__screenshots__/actvero-g5-01-diagnostic-390.png',
   })
 })
 
@@ -524,7 +524,7 @@ it('streams Chat with split UTF-8 and CRLF, and requires the successful result e
   await expect.element(page.getByText(/对话测试成功/)).toBeVisible()
   await expect.element(page.getByLabelText('测试输出')).not.toBeInTheDocument()
   await page.viewport(390, 844)
-  await page.screenshot({ path: '/private/tmp/actvero-g5-stream-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g5-stream-390.png' })
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
 

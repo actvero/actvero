@@ -532,7 +532,7 @@ it('keeps selection and progress within a 390px sheet', async () => {
   expect(sheet.scrollWidth).toBeLessThanOrEqual(sheet.clientWidth + 1)
   await addChat('chat-a', '窄屏测试')
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-02-batch-selection-390.png',
+    path: '__screenshots__/actvero-g5-02-batch-selection-390.png',
   })
   await page.getByRole('button', { name: '确认 1 项' }).click()
   await page.getByRole('button', { name: '开始批量诊断' }).click()
@@ -541,6 +541,6 @@ it('keeps selection and progress within a 390px sheet', async () => {
     .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(391)
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-02-batch-progress-390.png',
+    path: '__screenshots__/actvero-g5-02-batch-progress-390.png',
   })
 })

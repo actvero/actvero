@@ -170,7 +170,7 @@ it('uses the historical token fields, invalidates preview on edit, and sends onl
   await expect
     .element(page.getByRole('button', { name: '确认结算' }))
     .toBeEnabled()
-  await page.screenshot({ path: '/private/tmp/actvero-g6-reconcile-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-reconcile-390.png' })
   const dialog = page.getByRole('dialog', { name: /核对用量/ }).element()
   const scrollingBody = dialog.querySelector(
     'form > .overflow-y-auto'
@@ -186,11 +186,11 @@ it('uses the historical token fields, invalidates preview on edit, and sends onl
     page.getByText('按历史快照预览').element().getBoundingClientRect().bottom
   ).toBeLessThanOrEqual(footerTop!)
   await page.screenshot({
-    path: '/private/tmp/actvero-g6-reconcile-preview-390.png',
+    path: '__screenshots__/actvero-g6-reconcile-preview-390.png',
   })
   await page.viewport(1280, 900)
   await page.screenshot({
-    path: '/private/tmp/actvero-g6-reconcile-desktop.png',
+    path: '__screenshots__/actvero-g6-reconcile-desktop.png',
   })
   await page.getByRole('button', { name: '确认结算' }).click()
   await expect

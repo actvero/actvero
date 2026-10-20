@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
@@ -131,15 +132,7 @@ async function show(component: ReactNode) {
   )
   // Finish the sheet's entrance before interacting with tabs; its focus scope
   // and a previous dialog's focus restoration otherwise race the next click.
-  await Promise.all(
-    document
-      .getAnimations()
-      .filter(
-        (animation) =>
-          animation.effect?.getComputedTiming().iterations !== Infinity
-      )
-      .map((animation) => animation.finished.catch(() => {}))
-  )
+  await waitForAnimations()
   return screen
 }
 beforeEach(async () => {
