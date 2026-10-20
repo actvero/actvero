@@ -182,7 +182,7 @@ it('uses official address resolution without sending the old provider base or a 
     .element(page.getByText('目录：GET https://api.openai.com/v1/models'))
     .toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g1-03-editor-desktop.png',
+    path: '__screenshots__/actvero-g1-03-editor-desktop.png',
   })
   expect(calls[0].body).toEqual(
     expect.objectContaining({
@@ -457,7 +457,7 @@ it('shows a dirty-exit confirmation and keeps advanced fields within a 390px she
   expect(dialog.getBoundingClientRect().right).toBeLessThanOrEqual(390)
   expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth + 1)
   await page.screenshot({
-    path: '/private/tmp/actvero-g1-03-editor-narrow.png',
+    path: '__screenshots__/actvero-g1-03-editor-narrow.png',
   })
   const body = dialog.querySelector('.overflow-y-auto') as HTMLElement
   body.scrollTop = body.scrollHeight
@@ -465,7 +465,7 @@ it('shows a dirty-exit confirmation and keeps advanced fields within a 390px she
     .element(page.getByRole('textbox', { name: '接口前缀', exact: true }))
     .toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g1-03-editor-narrow-bottom.png',
+    path: '__screenshots__/actvero-g1-03-editor-narrow-bottom.png',
   })
   await page.getByRole('button', { name: '取消', exact: true }).click()
   await expect.element(page.getByText('放弃未保存的修改？')).toBeVisible()

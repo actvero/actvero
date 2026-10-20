@@ -152,7 +152,7 @@ it('多个 Mac 架构须选择，切换同步下载目标、文件名和校验�
     )
   await expect.element(page.getByText('x64.dmg', { exact: true })).toBeVisible()
   expect(page.getByText('arm64.dmg', { exact: true }).query()).toBeNull()
-  await page.screenshot({ path: '/private/tmp/actvero-downloads-desktop.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-downloads-desktop.png' })
 })
 it('未推荐时不自行选择旧版本，历史版本仍可查看；下架刷新清除旧链接', async () => {
   let body = { ...catalog(), recommendations: [] }
@@ -186,7 +186,7 @@ it('390px 保持下载、架构选择、更新说明与校验可读，无横向�
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
     window.innerWidth
   )
-  await page.screenshot({ path: '/private/tmp/actvero-downloads-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-downloads-390.png' })
 })
 
 it.each([true, false])(

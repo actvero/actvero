@@ -182,7 +182,7 @@ it('shows unavailable reasons and read-only paths without overflow at 390px', as
   expect(document.querySelector<HTMLInputElement>('input')?.readOnly).toBe(true)
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
   expect(document.body.textContent).not.toContain('对话请求示例')
-  await page.screenshot({ path: '/private/tmp/actvero-g2-endpoints-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g2-endpoints-390.png' })
 })
 
 it('shows only saved configured interfaces in the editor detail', async () => {

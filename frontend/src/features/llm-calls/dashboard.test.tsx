@@ -282,7 +282,7 @@ it('renders real charts, exact quantities and separate unknown coverage', async 
   await expect
     .poll(() => document.querySelectorAll('.recharts-surface').length)
     .toBeGreaterThan(1)
-  await page.screenshot({ path: '/private/tmp/actvero-dashboard-models.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-dashboard-models.png' })
   await page.getByRole('combobox', { name: '统计指标' }).click()
   await page.getByRole('option', { name: '输入 Token', exact: true }).click()
   await page.getByRole('combobox', { name: '图表形式' }).click()
@@ -303,7 +303,7 @@ it('flow conservation and precise known/unknown channel drill preserve range', a
   await expect
     .poll(() => document.querySelectorAll('.recharts-sankey-links').length)
     .toBeGreaterThan(0)
-  await page.screenshot({ path: '/private/tmp/actvero-dashboard-flow.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-dashboard-flow.png' })
   const row = page.getByRole('row').filter({
     has: page.getByRole('cell', { name: '最终渠道甲', exact: true }),
   })
@@ -358,7 +358,7 @@ it('member comparison uses stable IDs and survives URL navigation', async () => 
   await expect
     .element(page.getByText('所选成员趋势', { exact: true }))
     .toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-dashboard-members.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-dashboard-members.png' })
   await page.getByRole('button', { name: '清除比较' }).click()
   await expect
     .element(page.getByText('所选成员趋势', { exact: true }))
@@ -431,7 +431,7 @@ it('390px flow switches to accessible paths without page overflow', async () => 
     .element(page.getByRole('cell', { name: '未确定渠道', exact: true }))
     .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: '/private/tmp/actvero-dashboard-flow-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-dashboard-flow-390.png' })
 })
 it('administrator overview exposes scoped resources and recent24h trend', async () => {
   await show('/overview')
@@ -442,7 +442,7 @@ it('administrator overview exposes scoped resources and recent24h trend', async 
   await expect
     .element(page.getByText('技能分发记录代表下载交付，不代表已安装。'))
     .toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-overview-admin.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-overview-admin.png' })
 })
 it('member overview requests only personal APIs and handles missing quota', async () => {
   role = 'member'
@@ -459,7 +459,7 @@ it('member overview requests only personal APIs and handles missing quota', asyn
   await page.viewport(390, 844)
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
   await page.screenshot({
-    path: '/private/tmp/actvero-overview-member-390.png',
+    path: '__screenshots__/actvero-overview-member-390.png',
   })
 })
 it('overview hides all panels when one organization endpoint loses access', async () => {
@@ -504,7 +504,7 @@ it('800px指标保持单行且只在卡片区域内滚动，最后一项仍可�
   strip.scrollLeft = strip.scrollWidth
   await expect.element(page.getByText('当前筛选内的调用')).toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-dashboard-metrics-800.png',
+    path: '__screenshots__/actvero-dashboard-metrics-800.png',
   })
 })
 
@@ -526,7 +526,7 @@ it('中等宽度概览指标及资源都保持一行，390px恢复竖排且无�
     ).toBe(1)
   }
   await page.screenshot({
-    path: '/private/tmp/actvero-overview-metrics-900.png',
+    path: '__screenshots__/actvero-overview-metrics-900.png',
   })
   await page.viewport(390, 844)
   const strip = document.querySelector('[aria-label="概览指标"]') as HTMLElement

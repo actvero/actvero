@@ -342,6 +342,6 @@ it('390px 列表改为卡片，编辑器内容滚动、底部保存可达', asyn
     window.innerWidth
   )
   await page.screenshot({
-    path: '/private/tmp/actvero-download-editor-390.png',
+    path: '__screenshots__/actvero-download-editor-390.png',
   })
 })

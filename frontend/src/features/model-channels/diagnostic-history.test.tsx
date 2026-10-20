@@ -130,7 +130,7 @@ it('opens legacy metadata at narrow width without replaying expired media', asyn
   await Promise.all(
     document.getAnimations().map((animation) => animation.finished)
   )
-  await page.screenshot({ path: '/private/tmp/actvero-g5-history-mobile.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g5-history-mobile.png' })
 })
 
 it('hides cached history and blocks refresh after detail permission is revoked', async () => {
@@ -200,7 +200,7 @@ it('shows complete attempt metadata and certification without stored outputs', a
   await Promise.all(
     document.getAnimations().map((animation) => animation.finished)
   )
-  await page.screenshot({ path: '/private/tmp/actvero-g5-history-desktop.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g5-history-desktop.png' })
 })
 
 it('distinguishes a streaming receipt from a legacy record with unknown mode', async () => {

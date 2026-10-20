@@ -381,7 +381,7 @@ it('fits the four-tab detail on a narrow screen', async () => {
     .element(screen.getByText('test-model', { exact: true }).first())
     .toBeVisible()
   await new Promise((resolve) => setTimeout(resolve, 450))
-  await page.screenshot({ path: '/private/tmp/actvero-g104-detail-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g104-detail-390.png' })
 })
 
 it('stops the batch when leaving its tab and reopens without continuing queued calls', async () => {
@@ -436,7 +436,7 @@ it('stops the batch when leaving its tab and reopens without continuing queued c
   await expect.element(screen.getByText('批量执行中')).toBeVisible()
   expect(sent.every((signal) => signal.aborted)).toBe(false)
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-02-detail-desktop.png',
+    path: '__screenshots__/actvero-g5-02-detail-desktop.png',
   })
   await screen.getByRole('tab', { name: '历史记录', exact: true }).click()
   await expect.poll(() => sent.every((signal) => signal.aborted)).toBe(true)
@@ -564,11 +564,11 @@ it('cancels a Chat stream reader on tab exit and does not start another POST', a
     .element(screen.getByLabelText('流式输出'))
     .toHaveValue('部分片段')
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-stream-detail-desktop.png',
+    path: '__screenshots__/actvero-g5-stream-detail-desktop.png',
   })
   await screen.getByLabelText('流式输出').click()
   await page.screenshot({
-    path: '/private/tmp/actvero-g5-stream-detail-output.png',
+    path: '__screenshots__/actvero-g5-stream-detail-output.png',
   })
   await expect.element(screen.getByRole('tab', { name: '健康' })).toBeEnabled()
   await screen.getByRole('tab', { name: '健康' }).click()

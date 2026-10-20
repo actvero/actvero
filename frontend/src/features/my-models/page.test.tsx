@@ -253,7 +253,7 @@ it('lists authorized operations and server endpoints with points only, then show
     .element(page.getByText('积分价：输入 100', { exact: false }).first())
     .toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g6-04-models-desktop.png',
+    path: '__screenshots__/actvero-g6-04-models-desktop.png',
   })
   const trigger = page.getByRole('button', { name: '查看接入示例' }).first()
   await trigger.click()
@@ -371,14 +371,14 @@ it('shows no authorization and unconfigured price honestly, and keeps the 390px 
   await expect
     .element(page.getByText('尚未配置成员额度策略', { exact: false }))
     .toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-g6-04-models-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-04-models-390.png' })
   await page.getByRole('button', { name: '查看接入示例' }).click()
   const dialog = page.getByRole('dialog', { name: /接入示例/ })
   await expect.element(dialog).toBeVisible()
   await expect
     .poll(() => Number(getComputedStyle(dialog.element()).opacity))
     .toBe(1)
-  await page.screenshot({ path: '/private/tmp/actvero-g6-04-example-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-04-example-390.png' })
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
 })
 

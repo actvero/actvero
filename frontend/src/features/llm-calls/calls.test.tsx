@@ -321,7 +321,7 @@ it('uses separate result and settlement states and clears the detail after recon
   await expect.element(page.getByText('结果：未知')).toBeVisible()
   await expect.element(page.getByText('结算：待核对')).toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g6-03-calls-desktop.png',
+    path: '__screenshots__/actvero-g6-03-calls-desktop.png',
   })
   await page.getByRole('button', { name: '查看详情' }).click()
   await expect
@@ -382,7 +382,7 @@ it('keeps current held scope and exact summary instants in drill-down while unkn
     .toBeVisible()
   await expect.element(page.getByText('已确认小计 0')).not.toBeInTheDocument()
   await page.screenshot({
-    path: '/private/tmp/actvero-g6-03-usage-desktop.png',
+    path: '__screenshots__/actvero-g6-03-usage-desktop.png',
   })
   await page.getByRole('button', { name: '查看未结算记录' }).click()
   await expect.poll(() => router.state.location.pathname).toBe('/llm-calls')
@@ -455,12 +455,12 @@ it('blocks summary on timezone lookup failure and renders a narrow list and deta
     .element(page.getByText('UTC（组织未配置默认周策略时区', { exact: false }))
     .toBeVisible()
   await page.viewport(390, 844)
-  await page.screenshot({ path: '/private/tmp/actvero-g6-03-usage-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-03-usage-390.png' })
   await page.getByRole('link', { name: '调用记录' }).click()
   await expect
     .element(page.getByRole('button', { name: '查看详情' }))
     .toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-g6-03-calls-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-03-calls-390.png' })
   await page.getByRole('button', { name: '查看详情' }).click()
   await expect
     .element(page.getByText('历史预占 2 积分', { exact: false }))
@@ -474,7 +474,7 @@ it('blocks summary on timezone lookup failure and renders a narrow list and deta
           .getBoundingClientRect().left
     )
     .toBeLessThanOrEqual(1)
-  await page.screenshot({ path: '/private/tmp/actvero-g6-03-detail-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-03-detail-390.png' })
   const detailBody = page
     .getByRole('dialog', { name: '调用详情' })
     .element()
@@ -486,7 +486,7 @@ it('blocks summary on timezone lookup failure and renders a narrow list and deta
   await expect
     .element(page.getByText('输入 Token：17', { exact: false }))
     .toBeVisible()
-  await page.screenshot({ path: '/private/tmp/actvero-g6-03-attempt-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g6-03-attempt-390.png' })
   const width = document.documentElement.scrollWidth
   expect(width).toBeLessThanOrEqual(390)
 })

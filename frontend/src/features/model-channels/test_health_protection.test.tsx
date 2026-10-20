@@ -128,7 +128,7 @@ it('distinguishes credential, model and binding error scopes while manual state 
     )
     .toBeVisible()
   await page.screenshot({
-    path: '/private/tmp/actvero-g4-health-three-scopes-390.png',
+    path: '__screenshots__/actvero-g4-health-three-scopes-390.png',
   })
   await page.getByRole('button', { name: '诊断此绑定' }).first().click()
   expect(showTest).toHaveBeenCalledWith('upstream-凭据模型', 'chat')
@@ -165,7 +165,7 @@ it('keeps historical cooldown visible without blocking a new diagnostic', async 
     .element(page.getByRole('button', { name: '验证此绑定' }))
     .toBeEnabled()
   await page.screenshot({
-    path: '/private/tmp/actvero-g4-health-cooldown-390.png',
+    path: '__screenshots__/actvero-g4-health-cooldown-390.png',
   })
   await page.getByRole('button', { name: '诊断此绑定' }).click()
   expect(showTest).toHaveBeenCalledWith('upstream-等待模型', 'chat')
@@ -195,5 +195,5 @@ it('hides new diagnostic actions for an archived channel at 390px', async () => 
   await expect
     .element(page.getByRole('button', { name: '验证此绑定' }))
     .not.toBeInTheDocument()
-  await page.screenshot({ path: '/private/tmp/actvero-g4-health-390.png' })
+  await page.screenshot({ path: '__screenshots__/actvero-g4-health-390.png' })
 })
