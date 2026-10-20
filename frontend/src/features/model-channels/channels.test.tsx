@@ -99,9 +99,18 @@ const providers: ProviderModule[] = [
   test_operations: ['chat'],
 }))
 async function selectCompatible() {
+  const dialog = page.getByRole('dialog', { name: '添加渠道' })
+  await expect.element(dialog).toBeVisible()
+  await Promise.all(
+    dialog
+      .element()
+      .getAnimations()
+      .map((animation) => animation.finished)
+  )
   await page
     .getByRole('button', { name: '自定义 OpenAI 兼容', exact: true })
     .click()
+  await expect.element(page.getByLabelText('渠道名称')).toBeVisible()
 }
 const clients: QueryClient[] = []
 beforeEach(async () => {
