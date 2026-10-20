@@ -325,7 +325,11 @@ async def test_concurrent_admission_unknown_usage_reconcile_and_no_double_settle
             ).status_code == 409
             state["release"].set()
             assert (await pending).status_code == 200
-            row = (await entries(admin))[0]
+            # The response may precede durable replay when the foreground
+            # accounting attempt exceeds its independent 250 ms budget.
+            async with asyncio.timeout(5):
+                while (row := (await entries(admin))[0])["status"] == "reserved":
+                    await asyncio.sleep(0.02)
             assert row["status"] == "review" and row["points"] is None
             assert (
                 await api.post(GATEWAY, headers=bearer(token), json=payload(model))
@@ -349,6 +353,9 @@ async def test_concurrent_admission_unknown_usage_reconcile_and_no_double_settle
                 GATEWAY, headers=bearer(token), json=payload(model, max_tokens=50)
             )
             assert result.status_code == 200, result.text
+            async with asyncio.timeout(5):
+                while (await entries(admin))[0]["status"] == "reserved":
+                    await asyncio.sleep(0.02)
             quota = (await api.get("/api/v1/desktop/llm/quota", headers=bearer(root))).json()
             assert quota["windows"][0]["used"] == "0.0488"
 
