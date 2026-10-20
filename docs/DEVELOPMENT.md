@@ -32,6 +32,8 @@ node --test scripts/test-identity-account-switch.mjs
 
 浏览器测试的截图使用相对于测试文件的 `__screenshots__/` 路径，生成文件由 Git 忽略。不要依赖特定操作系统的绝对临时目录。
 
+抽屉打开或切换后，先确认目标界面可见，再通过共享测试工具 `waitForAnimations` 等待有限动画完成后交互，避免入场动画和焦点恢复与下一次点击竞争。持续加载动画不参与该等待。
+
 API 变更运行 `make generate-api` 并提交生成契约。新迁移保持既有 revision 不变。提交前执行 `make public-check`；本地钩子检查暂存区，CI 重复检查。
 
 ## 文档
