@@ -132,7 +132,7 @@ function FilterForm({
         )}
         {search.held && !summary && (
           <Badge variant='outline' className='self-start'>
-            只看当前占用 · 日期和结果筛选不适用
+            只看未结算记录 · 日期和结果筛选不适用
           </Badge>
         )}
         <div
@@ -433,7 +433,7 @@ export function CallFilters({
           {summary ? '筛选' : '筛选调用'}
           {count ? ` · ${count} 项` : ''}
         </Button>
-        {search.held && <Badge variant='outline'>当前占用</Badge>}
+        {search.held && <Badge variant='outline'>未结算</Badge>}
       </div>
       <div className={compact ? 'hidden' : 'hidden md:block'}>
         <FilterForm

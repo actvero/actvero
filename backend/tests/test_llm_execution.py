@@ -353,7 +353,7 @@ async def test_concurrent_admission_unknown_usage_reconcile_and_no_double_settle
             assert quota["windows"][0]["used"] == "0.0488"
 
 
-async def test_policy_change_keeps_consumption_and_pending_crosses_reset(env, monkeypatch):
+async def test_policy_change_keeps_consumption_and_pending_stays_in_its_window(env, monkeypatch):
     admin = await env.client()
     policy = await billing(admin, rules=[hours("100"), week("800")])
     app, state = upstream()
@@ -383,7 +383,9 @@ async def test_policy_change_keeps_consumption_and_pending_crosses_reset(env, mo
             ).status_code == 200
             stamp += timedelta(hours=6)
             quota = (await api.get("/api/v1/desktop/llm/quota", headers=bearer(root))).json()
-            assert quota["windows"][0]["used"] == "0" and quota["windows"][0]["reserved"] == "0.28"
+            assert quota["windows"][0]["used"] == "0" and quota["windows"][0]["reserved"] == "0"
+            assert quota["windows"][0]["remaining"] == "200"
+            assert quota["windows"][1]["reserved"] == "0.28"
             assert quota["windows"][0]["started_at"] is None
             review = next(e for e in await entries(admin) if e["status"] == "review")
             result = await admin.api.post(

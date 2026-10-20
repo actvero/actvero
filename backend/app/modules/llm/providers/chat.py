@@ -71,8 +71,21 @@ def usage(raw: Any) -> dict[str, Any]:
     write1 = count(raw.get("cache_creation_1h_input_tokens", 0))
     if cache is None or write5 is None or write1 is None or cache + write5 + write1 > total:
         return {"source": "unknown"}
-    # Unsplit cache creation cannot be assigned to a TTL or treated as free.
-    if raw.get("cache_creation_input_tokens", 0) and not write5 and not write1:
+    # Aliases and optional totals must agree. These checks affect monetary
+    # evidence only: LiteLLM still owns response delivery and protocol parsing.
+    if (
+        "prompt_cache_hit_tokens" in raw
+        and "cached_tokens" in details
+        and count(details["cached_tokens"]) != cache
+    ):
+        return {"source": "unknown"}
+    if "total_tokens" in raw and count(raw["total_tokens"]) != total + output:
+        return {"source": "unknown"}
+    # A partially split cache-write total is as ambiguous as an unsplit total.
+    if (
+        "cache_creation_input_tokens" in raw
+        and count(raw["cache_creation_input_tokens"]) != write5 + write1
+    ):
         return {"source": "unknown"}
     return {
         "source": "upstream",

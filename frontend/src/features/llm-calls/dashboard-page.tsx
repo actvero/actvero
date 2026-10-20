@@ -748,9 +748,9 @@ function DashboardPage({ search }: { search: DashboardSearch }) {
             )}
             <Card>
               <CardHeader>
-                <CardTitle>当前额度占用</CardTitle>
+                <CardTitle>未结算预估积分</CardTitle>
                 <CardDescription>
-                  截至当前时点，不受历史日期、结果状态和最终渠道筛选影响
+                  包含进行中和待核对的历史记录；额度占用以各自受理周期为准
                 </CardDescription>
               </CardHeader>
               <CardContent className='flex flex-wrap items-center justify-between gap-3'>
@@ -776,7 +776,7 @@ function DashboardPage({ search }: { search: DashboardSearch }) {
                       })
                     }
                   >
-                    看占用明细
+                    查看未结算记录
                   </Button>
                 )}
               </CardContent>

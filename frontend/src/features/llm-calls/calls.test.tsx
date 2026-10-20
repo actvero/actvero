@@ -384,7 +384,7 @@ it('keeps current held scope and exact summary instants in drill-down while unkn
   await page.screenshot({
     path: '/private/tmp/actvero-g6-03-usage-desktop.png',
   })
-  await page.getByRole('button', { name: '看占用明细' }).click()
+  await page.getByRole('button', { name: '查看未结算记录' }).click()
   await expect.poll(() => router.state.location.pathname).toBe('/llm-calls')
   const held = [...requests]
     .reverse()

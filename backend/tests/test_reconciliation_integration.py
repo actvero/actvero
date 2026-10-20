@@ -426,7 +426,7 @@ async def test_tagged_and_legacy_usage_reject_missing_cache_or_mixed_units(env):
 
 
 @pytest.mark.parametrize("action", ["settle", "release"])
-async def test_old_unknown_hold_survives_window_reset_until_explicit_reconcile(env, action):
+async def test_old_unknown_bill_survives_reset_without_consuming_new_quota(env, action):
     admin = await env.client()
     member = await env.client(role="member", tenant=admin.tenant)
     await billing(admin, rules=[{"kind": "fixed_hours", "hours": 1, "points": "100"}])
@@ -440,7 +440,12 @@ async def test_old_unknown_hold_survives_window_reset_until_explicit_reconcile(e
     quota_path = f"/api/v1/llm/members/{member.member.id}/quota"
     before = await admin.api.get(quota_path)
     assert before.status_code == 200
-    assert Decimal(before.json()["windows"][0]["reserved"]) == Decimal("18.5")
+    assert Decimal(before.json()["windows"][0]["reserved"]) == 0
+    assert before.json()["windows"][0]["remaining"] == "100"
+    async with env.sessions() as db:
+        historical = await db.get(UsageSettlement, call_id)
+        assert historical.status == "review"
+        assert historical.reserved_amount == Decimal("0.5") and historical.ratio == Decimal("37")
     payload = {
         "version": 1,
         "request_id": str(uuid4()),
@@ -454,6 +459,7 @@ async def test_old_unknown_hold_survives_window_reset_until_explicit_reconcile(e
     after = await admin.api.get(quota_path)
     assert after.status_code == 200
     assert Decimal(after.json()["windows"][0]["reserved"]) == 0
+    assert after.json()["windows"][0]["remaining"] == "100"
     async with env.sessions() as db:
         row = await db.get(UsageSettlement, call_id)
         assert row.status == ("settled" if action == "settle" else "released")

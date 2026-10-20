@@ -284,7 +284,7 @@ async def usage_dashboard(
             if rank == "points"
             else Decimal(group.metrics[rank][0])
         )
-        return -value, key
+        return value.copy_negate(), key
 
     ranked = sorted(members.items(), key=order)
     other = Group("其他成员")
