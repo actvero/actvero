@@ -622,6 +622,9 @@ export function ChannelAdvancedFields({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>请求超时（秒）</FormLabel>
+                <FormDescription>
+                  用于渠道目录检查与诊断。正式模型调用使用模型管理中的请求时限。
+                </FormDescription>
                 <FormControl>
                   <Input
                     {...field}

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CollapsibleSection } from '@/components/ui/collapsible'
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,7 +23,16 @@ import { Switch } from '@/components/ui/switch'
 import { routeStates, type ModelValues } from './model-form'
 import { RouteParameterFields } from './route-parameter-fields'
 
-export function RoutingFields({ names }: { names: Record<string, string> }) {
+export function RoutingFields(props: { names: Record<string, string> }) {
+  return (
+    <>
+      <TimeoutFields />
+      <RoutePolicyFields {...props} />
+    </>
+  )
+}
+
+function RoutePolicyFields({ names }: { names: Record<string, string> }) {
   const form = useFormContext<ModelValues>()
   const [kind, mode, fallback, bindings, fixedChannel, fixedUpstream] =
     useWatch({
@@ -127,7 +137,7 @@ export function RoutingFields({ names }: { names: Record<string, string> }) {
                 自动调度使用已启用的渠道关联。测试用于排障，不是开放调用的前置条件。
               </p>
             )}
-            <CollapsibleSection title='高级：失败回退、超时与冷却'>
+            <CollapsibleSection title='高级：失败回退与冷却'>
               <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                 <FormField
                   control={form.control}
@@ -147,7 +157,6 @@ export function RoutingFields({ names }: { names: Record<string, string> }) {
                 />
                 {(
                   [
-                    ['total_timeout_seconds', '总超时（秒）'],
                     ['failure_threshold', '允许失败次数'],
                     ['cooldown_seconds', '冷却时长（秒）'],
                     ...(fallback
@@ -197,6 +206,59 @@ export function RoutingFields({ names }: { names: Record<string, string> }) {
             </CollapsibleSection>
           </>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function TimeoutFields() {
+  const form = useFormContext<ModelValues>()
+  return (
+    <Card className='lg:col-span-2'>
+      <CardHeader>
+        <CardTitle>请求时限</CardTitle>
+      </CardHeader>
+      <CardContent className='grid gap-4 sm:grid-cols-2'>
+        {(
+          [
+            [
+              'connect_timeout_seconds',
+              '连接超时（秒）',
+              '建立供应商连接的最长等待时间，1～120 秒。',
+            ],
+            [
+              'first_response_timeout_seconds',
+              '首个响应等待（秒）',
+              '流式请求等待首个数据块；非流式请求等待完整结果。3～3600 秒。',
+            ],
+            [
+              'stream_idle_timeout_seconds',
+              '输出停滞超时（秒）',
+              '仅流式请求生效，每次收到新数据块后重新计时。3～3600 秒。',
+            ],
+            [
+              'total_timeout_seconds',
+              '总时长上限（秒）',
+              '包含等待、重试和输出的整个请求时长。默认 30 分钟，可设 3～86400 秒。',
+            ],
+          ] as const
+        ).map(([key, label, description]) => (
+          <FormField
+            key={key}
+            control={form.control}
+            name={`routing.${key}`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{label}</FormLabel>
+                <FormControl>
+                  <Input {...field} inputMode='numeric' />
+                </FormControl>
+                <FormDescription>{description}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ))}
       </CardContent>
     </Card>
   )

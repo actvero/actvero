@@ -270,7 +270,10 @@ class RoutingPolicy(Input):
     mode: Literal["fixed", "auto"] = "fixed"
     fallback: bool = False
     max_attempts: int = Field(default=3, ge=1, le=10)
-    total_timeout_seconds: int = Field(default=60, ge=3, le=180)
+    connect_timeout_seconds: int = Field(default=10, ge=1, le=120)
+    first_response_timeout_seconds: int = Field(default=180, ge=3, le=3600)
+    stream_idle_timeout_seconds: int = Field(default=180, ge=3, le=3600)
+    total_timeout_seconds: int = Field(default=1800, ge=3, le=86400)
     retry_uncertain: bool = False
     failure_threshold: int = Field(default=3, ge=1, le=10)
     cooldown_seconds: int = Field(default=30, ge=5, le=3600)

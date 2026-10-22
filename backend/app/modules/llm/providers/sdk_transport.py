@@ -78,9 +78,11 @@ class RuntimeTransport(httpx.AsyncBaseTransport):
         binary_audio: bool = False,
         trace: AttemptTrace | None = None,
         sdk_errors: bool = False,
+        timeout: httpx.Timeout | None = None,
     ) -> None:
         self.trace = trace
         self.sdk_errors = sdk_errors
+        self.timeout = timeout
         self.inner = PinnedTransport(
             base,
             lambda url: resolve(
@@ -123,6 +125,10 @@ class RuntimeTransport(httpx.AsyncBaseTransport):
                 and exc.status_code == 502
                 and not isinstance(exc, UpstreamFailure)
                 else exc
+            )
+        elif isinstance(exc, httpx2.ConnectTimeout) and self.timeout is not None:
+            self.failure = UpstreamFailure(
+                504, "upstream_connect_timeout", "连接模型供应商超时", retryable=True
             )
         elif isinstance(exc, (httpx2.ConnectError, httpx2.ConnectTimeout)):
             self.failure = UpstreamFailure(
@@ -179,7 +185,10 @@ class RuntimeTransport(httpx.AsyncBaseTransport):
                 url,
                 headers=headers,
                 content=await request.aread(),
-                extensions=request.extensions,
+                extensions={
+                    **request.extensions,
+                    **({"timeout": self.timeout.as_dict()} if self.timeout is not None else {}),
+                },
             )
             response = await self.inner.handle_async_request(forwarded)
             self.responses.append(response)

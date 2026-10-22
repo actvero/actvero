@@ -211,7 +211,10 @@ export const modelSchema = z
       mode: z.enum(['fixed', 'auto']),
       fallback: z.boolean(),
       max_attempts: integer(1, 10),
-      total_timeout_seconds: integer(3, 180),
+      connect_timeout_seconds: integer(1, 120),
+      first_response_timeout_seconds: integer(3, 3600),
+      stream_idle_timeout_seconds: integer(3, 3600),
+      total_timeout_seconds: integer(3, 86400),
       retry_uncertain: z.boolean(),
       failure_threshold: integer(1, 10),
       cooldown_seconds: integer(5, 3600),
@@ -618,8 +621,17 @@ export function values(model?: Model): ModelValues {
       mode: model?.routing?.mode ?? 'fixed',
       fallback: model?.routing?.fallback ?? false,
       max_attempts: String(model?.routing?.max_attempts ?? 3),
+      connect_timeout_seconds: String(
+        model?.routing?.connect_timeout_seconds ?? 10
+      ),
+      first_response_timeout_seconds: String(
+        model?.routing?.first_response_timeout_seconds ?? 180
+      ),
+      stream_idle_timeout_seconds: String(
+        model?.routing?.stream_idle_timeout_seconds ?? 180
+      ),
       total_timeout_seconds: String(
-        model?.routing?.total_timeout_seconds ?? 60
+        model?.routing?.total_timeout_seconds ?? 1800
       ),
       retry_uncertain: model?.routing?.retry_uncertain ?? false,
       failure_threshold: String(model?.routing?.failure_threshold ?? 3),
@@ -741,6 +753,13 @@ export function modelInput(value: ModelValues): Schema['CatalogInput'] {
           ? value.slug
           : value.routing.model_revision,
       max_attempts: Number(value.routing.max_attempts),
+      connect_timeout_seconds: Number(value.routing.connect_timeout_seconds),
+      first_response_timeout_seconds: Number(
+        value.routing.first_response_timeout_seconds
+      ),
+      stream_idle_timeout_seconds: Number(
+        value.routing.stream_idle_timeout_seconds
+      ),
       total_timeout_seconds: Number(value.routing.total_timeout_seconds),
       failure_threshold: Number(value.routing.failure_threshold),
       cooldown_seconds: Number(value.routing.cooldown_seconds),

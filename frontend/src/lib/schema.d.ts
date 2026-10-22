@@ -12947,6 +12947,11 @@ export interface components {
         /** RoutingPolicy */
         RoutingPolicy: {
             /**
+             * Connect Timeout Seconds
+             * @default 10
+             */
+            connect_timeout_seconds: number;
+            /**
              * Cooldown Seconds
              * @default 30
              */
@@ -12961,6 +12966,11 @@ export interface components {
              * @default false
              */
             fallback: boolean;
+            /**
+             * First Response Timeout Seconds
+             * @default 180
+             */
+            first_response_timeout_seconds: number;
             /**
              * Max Attempts
              * @default 3
@@ -12983,8 +12993,13 @@ export interface components {
              */
             retry_uncertain: boolean;
             /**
+             * Stream Idle Timeout Seconds
+             * @default 180
+             */
+            stream_idle_timeout_seconds: number;
+            /**
              * Total Timeout Seconds
-             * @default 60
+             * @default 1800
              */
             total_timeout_seconds: number;
         };

@@ -856,7 +856,7 @@ it('configures automatic routing and validates weights on the routing tab at nar
   await page.getByRole('tab', { name: '渠道与路由' }).click()
   await page.getByRole('combobox', { name: '调度方式' }).click()
   await page.getByRole('option', { name: '自动调度', exact: true }).click()
-  await page.getByRole('button', { name: '高级：失败回退、超时与冷却' }).click()
+  await page.getByRole('button', { name: '高级：失败回退与冷却' }).click()
   await page.getByRole('switch', { name: '失败回退', exact: true }).click()
   await expect
     .element(page.getByLabelText('最多尝试（含首次）'))
@@ -910,6 +910,9 @@ it('separates channel tests from route tests and expands per-attempt costs', asy
       mode: 'auto',
       fallback: true,
       max_attempts: 3,
+      connect_timeout_seconds: 10,
+      first_response_timeout_seconds: 180,
+      stream_idle_timeout_seconds: 180,
       total_timeout_seconds: 60,
       retry_uncertain: false,
       failure_threshold: 3,
@@ -1067,3 +1070,71 @@ it('keeps operation drafts separate, shares model access and saves new operation
     ],
   })
 })
+
+it.each(['fixed', 'auto'] as const)(
+  'edits visible request limits in %s routing without enabling fallback',
+  async (mode) => {
+    const saved = vi.fn()
+    let submitted: Record<string, unknown> | undefined
+    const configuredModel = {
+      ...model,
+      routing: {
+        ...(modelInput(values(model)).routing as NonNullable<Model['routing']>),
+        mode,
+        fallback: false,
+      },
+      access: {
+        enabled: false,
+        audience: 'administrators' as const,
+        member_ids: [],
+        channel_id: mode === 'fixed' ? 'channel-a' : null,
+        upstream_id: mode === 'fixed' ? 'upstream-a' : '',
+      },
+    }
+    stubFetch(async (url, init) => {
+      if (init?.method === 'PUT') {
+        submitted = JSON.parse(String(init.body)) as Record<string, unknown>
+        return Response.json({ ...configuredModel, ...submitted, version: 2 })
+      }
+      if (url.endsWith('/routes')) return Response.json([])
+      return Response.json({ items: [], total: 0 })
+    })
+    await show(
+      <ModelEditor model={configuredModel} saved={saved} close={vi.fn()} />
+    )
+    await page.getByRole('tab', { name: '渠道与路由' }).click()
+    await expect
+      .element(page.getByLabelText('连接超时（秒）'))
+      .toHaveValue('10')
+    await expect
+      .element(page.getByLabelText('首个响应等待（秒）'))
+      .toHaveValue('180')
+    await expect
+      .element(page.getByLabelText('输出停滞超时（秒）'))
+      .toHaveValue('180')
+    await expect
+      .element(page.getByLabelText('总时长上限（秒）'))
+      .toHaveValue('1800')
+    await page.getByLabelText('连接超时（秒）').fill('15')
+    await page.getByLabelText('首个响应等待（秒）').fill('300')
+    await page.getByLabelText('输出停滞超时（秒）').fill('240')
+    await page.getByLabelText('总时长上限（秒）').fill('7200')
+    await page.getByRole('button', { name: '保存配置' }).click()
+    await expect.poll(() => saved.mock.calls.length).toBe(1)
+    expect(submitted?.routing).toMatchObject({
+      mode,
+      fallback: false,
+      connect_timeout_seconds: 15,
+      first_response_timeout_seconds: 300,
+      stream_idle_timeout_seconds: 240,
+      total_timeout_seconds: 7200,
+    })
+    expect(submitted?.operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          routing: expect.objectContaining({ total_timeout_seconds: 7200 }),
+        }),
+      ])
+    )
+  }
+)

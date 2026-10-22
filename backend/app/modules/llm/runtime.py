@@ -144,7 +144,11 @@ async def validate_configuration(
 
 
 async def authorize(
-    request: Request, db: AsyncSession, resource: str | None = None
+    request: Request,
+    db: AsyncSession,
+    resource: str | None = None,
+    *,
+    in_flight: bool = False,
 ) -> BusinessActor:
     if keys.supplied(request):
         resource_id = (
@@ -157,8 +161,12 @@ async def authorize(
     header = request.headers.get("authorization", "")
     if not header.startswith("Bearer avl_") or len(header) > 210:
         fail(401, "invalid_resource_token", "请使用 LLM 资源访问令牌")
-    token = await db.get(ResourceToken, digest(header[7:]), populate_existing=True)
-    if not token or token.expires_at <= now():
+    token_hash = digest(header[7:])
+    token = await db.get(ResourceToken, token_hash, populate_existing=True)
+    admitted = in_flight and getattr(request.state, "llm_admitted_token", None) == token_hash
+    # Expiry limits admission, not the lifetime of an already-authorized stream.
+    # Keep rechecking token existence, device, membership and model permissions.
+    if not token or (token.expires_at <= now() and not admitted):
         fail(401, "resource_token_expired", "LLM 资源令牌已失效，请重新申请")
     expected = "llm:catalog" if token.resource == "llm:catalog" else "llm:invoke"
     if (
@@ -175,6 +183,8 @@ async def authorize(
         db, await desktop.check_device(request, db, device), token.member_id
     )
     request.state.llm_resource = token.resource
+    if not in_flight:
+        request.state.llm_admitted_token = token_hash
     return actor
 
 
@@ -455,7 +465,7 @@ async def check_live(
     actor = (
         await administrator(request, db)
         if test
-        else await authorize(request, db, "llm:" + str(model_id))
+        else await authorize(request, db, "llm:" + str(model_id), in_flight=True)
     )
     row = await model_for_actor(db, actor, model_id)
     config = CatalogInput.model_validate(row.configuration).for_operation(kind)

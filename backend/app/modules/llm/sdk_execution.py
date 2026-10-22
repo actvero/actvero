@@ -145,7 +145,6 @@ def candidates(
                 if channel.sealed_key and channel.auth_mode == "api_key"
                 else None,
                 endpoint=endpoint,
-                timeout=channel.timeout_seconds,
                 priority=binding.priority,
                 weight=binding.weight,
                 allowed_fails=config.routing.failure_threshold,
@@ -297,6 +296,9 @@ async def execute(
         if config.routing.mode == "auto" and config.routing.fallback
         else 1,
         timeout=config.routing.total_timeout_seconds,
+        connect_timeout=config.routing.connect_timeout_seconds,
+        first_response_timeout=config.routing.first_response_timeout_seconds,
+        stream_idle_timeout=config.routing.stream_idle_timeout_seconds,
         retry_uncertain=config.routing.retry_uncertain,
         checkpoint=checkpoint,
         authorize_next=authorize_next,

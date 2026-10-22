@@ -5,7 +5,6 @@ owns selection, weighted failover, exception mapping and cooldowns. These hooks
 only enforce the authorized deployment set and collect billable attempt facts.
 """
 
-import asyncio
 import hashlib
 import json
 import time
@@ -29,6 +28,7 @@ from app.modules.llm.providers.retrieval import UpstreamFailure
 from app.modules.llm.providers.sdk import ChannelHTTPHandler, litellm
 from app.modules.llm.providers.sdk_runtime import prepare_images, selected_usage
 from app.modules.llm.providers.sdk_transport import RuntimeTransport
+from app.modules.llm.providers.timeouts import ExecutionTimeout, Timeouts
 
 
 @dataclass
@@ -39,7 +39,6 @@ class Candidate:
     base: str
     key: str | None
     endpoint: tuple[str, str] | None
-    timeout: float
     priority: int
     weight: int
     allowed_fails: int
@@ -239,7 +238,6 @@ class Gateway:
                                 "order": -c.priority,
                                 "weight": c.weight,
                                 "max_retries": 0,
-                                "timeout": c.timeout,
                             }
                         ),
                         model_info={
@@ -282,6 +280,9 @@ class Invocation:
         operation: str,
         max_attempts: int,
         timeout: float,
+        connect_timeout: float,
+        first_response_timeout: float,
+        stream_idle_timeout: float,
         retry_uncertain: bool,
         checkpoint: Callable[[list[dict[str, Any]]], Awaitable[None]],
         authorize_next: Callable[[Candidate], Awaitable[None]],
@@ -290,7 +291,9 @@ class Invocation:
         self.group, self.candidates = gateway.register(candidates)
         self.payload_fields = set().union(*(c.payload.keys() for c in candidates))
         self.maximum, self.retry_uncertain = max_attempts, retry_uncertain
-        self.deadline = time.monotonic() + timeout
+        self.timeouts = Timeouts(timeout, first_response_timeout, stream_idle_timeout)
+        self.connect_timeout = connect_timeout
+        self.received_chunk = False
         self.checkpoint = checkpoint
         self.authorize_next = authorize_next
         self.attempts: list[Attempt] = []
@@ -313,6 +316,11 @@ class Invocation:
                     "Unconfirmed execution cannot be repeated", model=self.group, llm_provider=""
                 )
         trace = AttemptTrace()
+        # Model execution has its own policy. The channel's directory/diagnostic
+        # timeout must not silently impose another short limit on live output.
+        timeout = httpx.Timeout(
+            self.timeouts.remaining(), connect=self.connect_timeout, pool=self.connect_timeout
+        )
         transport = RuntimeTransport(
             candidate.base,
             candidate.key,
@@ -322,12 +330,13 @@ class Invocation:
             binary_audio=self.operation == "speech",
             trace=trace,
             sdk_errors=True,
+            timeout=timeout,
         )
         http = httpx.AsyncClient(
             transport=transport,
             trust_env=False,
             follow_redirects=False,
-            timeout=min(candidate.timeout, max(0.001, self.deadline - time.monotonic())),
+            timeout=timeout,
         )
         client = (
             AsyncOpenAI(
@@ -370,13 +379,22 @@ class Invocation:
             "max_retries": 0,
             "caching": False,
             "drop_params": False,
-            "timeout": min(candidate.timeout, max(0.001, self.deadline - time.monotonic())),
+            "timeout": self.timeouts.remaining(),
+            "stream_timeout": self.timeouts.remaining(),
         }
 
     def snapshots(self) -> list[dict[str, Any]]:
         return [dict(a.snapshot(), number=i + 1) for i, a in enumerate(self.attempts)]
 
     def failure(self, exc: Exception) -> HTTPException:
+        if isinstance(exc, ExecutionTimeout):
+            return UpstreamFailure(
+                504,
+                exc.code,
+                exc.message,
+                uncertain=bool(self.attempts and self.attempts[-1].trace.sent),
+                health_failure=False,
+            )
         if self.attempts and self.attempts[-1].transport.failure is not None:
             return self.attempts[-1].transport.failure
         if isinstance(exc, HTTPException):
@@ -411,7 +429,7 @@ class Invocation:
         }[self.operation]
         token = _current.set(self)
         try:
-            async with asyncio.timeout(max(0.001, self.deadline - time.monotonic())):
+            async with self.timeouts.waiting(first=True):
                 return await getattr(self.gateway.router, method)(
                     **{
                         **payload,
@@ -434,8 +452,10 @@ class Invocation:
         # each SDK await, never hold a ContextVar token across an application yield.
         token = _current.set(self)
         try:
-            async with asyncio.timeout(max(0.001, self.deadline - time.monotonic())):
-                return await anext(stream)
+            async with self.timeouts.waiting(first=not self.received_chunk):
+                chunk = await anext(stream)
+            self.received_chunk = True
+            return chunk
         except StopAsyncIteration:
             raise
         except Exception as exc:
