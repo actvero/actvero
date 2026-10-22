@@ -15,7 +15,7 @@ from app.modules.desktop.service import pkce
 from app.modules.management.models import ManagementLogin, ManagementSession, ManagementToken
 from app.modules.management.schemas import Organization, Tokens
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor, membership_state
+from app.modules.members.service import BusinessActor, ManagementBusinessActor, membership_state
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
 from app.modules.users.models import LoginIdentity, User
 
@@ -54,7 +54,10 @@ async def check_session(
     settings = provider(request).settings
     if row.revoked_at or min(row.expires_at, row.absolute_expires_at) <= now():
         fail(401, "session_expired", "CLI 登录已撤销或过期，请重新登录")
-    if row.client_id != settings.management_client_id or row.scope != "management:read":
+    if row.client_id != settings.management_client_id or row.scope not in {
+        "management:read",
+        "management:read management:write",
+    }:
         fail(403, "insufficient_scope", "此凭据不适用于管理接口")
     identity = await db.get(LoginIdentity, row.identity_id)
     if not identity or identity.issuer != settings.oidc_issuer:
@@ -145,6 +148,7 @@ async def issue_tokens(request: Request, db: AsyncSession, row: ManagementSessio
         ]
     )
     return Tokens(
+        scope=row.scope,
         access_token=access,
         refresh_token=refresh,
         session_id=row.id,
@@ -162,12 +166,18 @@ async def organization(
     org_id: UUID,
     *,
     require_admin: bool = False,
+    write: bool = False,
 ) -> tuple[BusinessActor, Organization]:
     settings = provider(request).settings
     install = await db.get(Installation, 1)
     if settings.platform_edition == "community" and (not install or install.tenant_id != org_id):
         fail(403, "organization_denied", "没有此组织的管理权限")
-    tenant = await db.get(Tenant, org_id, populate_existing=True)
+    if write and "management:write" not in who.session.scope.split():
+        fail(403, "insufficient_scope", "请使用 auth login --write 重新授权管理写入")
+    query = select(Tenant).where(Tenant.id == org_id)
+    if write:
+        query = query.with_for_update()
+    tenant = await db.scalar(query.execution_options(populate_existing=True))
     member = await db.scalar(
         select(Membership)
         .where(Membership.tenant_id == org_id, Membership.user_id == who.user.id)
@@ -203,6 +213,9 @@ async def organization(
     permissions = ["org.show", "org.permissions"]
     if member.role == "administrator":
         permissions += ["channels.list", "channels.show"]
+        permissions += [f"{kind}.read" for kind in ("skills", "mcp", "experts")]
+        if "management:write" in who.session.scope.split():
+            permissions += [f"{kind}.write" for kind in ("skills", "mcp", "experts")]
     result = Organization(
         org_id=tenant.id,
         name=tenant.name,
@@ -212,4 +225,4 @@ async def organization(
         available=True,
         permissions=permissions,
     )
-    return BusinessActor(who.user, member, tenant), result
+    return ManagementBusinessActor(who.user, member, tenant, who.session.id), result

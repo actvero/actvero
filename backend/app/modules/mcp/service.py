@@ -30,7 +30,7 @@ from app.modules.mcp.schemas import (
     McpRun,
     McpServiceView,
 )
-from app.modules.members.service import Access, BusinessActor, record
+from app.modules.members.service import Access, BusinessActor, ManagementBusinessActor, record
 
 DispatchGuard = Callable[[dict[str, Any] | None], Awaitable[None]]
 
@@ -50,7 +50,10 @@ def capability_allowed(rule: McpPolicy | None, capability: dict[str, Any]) -> bo
 
 
 def can_test(actor: BusinessActor) -> bool:
-    return isinstance(actor, Access) and actor.member.role == "administrator"
+    return (
+        isinstance(actor, (Access, ManagementBusinessActor))
+        and actor.member.role == "administrator"
+    )
 
 
 def administrator(actor: BusinessActor) -> None:
@@ -232,7 +235,7 @@ async def _refresh(
     builtin_content = await contents(db, service) if service.transport == "builtin" else []
     for c in data:
         key = (c["kind"], c["key"])
-        if key not in rules and isinstance(actor, Access):
+        if key not in rules and isinstance(actor, (Access, ManagementBusinessActor)):
             enabled = (first_admin_discovery and service.transport != "builtin") or any(
                 i.enabled
                 and (

@@ -12,7 +12,7 @@ Keycloak 负责认证协议、密码与 MFA。平台负责组织成员关系、�
 
 后端按 `backend/app/modules/` 下的业务域组织；前端按 `frontend/src/features/` 组织页面，`routes/` 仅负责接入。API 的机器可读定义是 [OpenAPI](api/openapi.json)，前端类型由它生成。
 
-57 个历史迁移文件构成当前数据库初始化和升级链，不能为了精简仓库而移除。使用 `alembic heads` 获取实际目标版本。
+历史迁移文件共同构成当前数据库初始化和升级链，不能为了精简仓库而移除。使用 `alembic heads` 获取实际目标版本。
 
 ## 数据与外部访问
 

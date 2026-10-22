@@ -1,0 +1,8 @@
+{
+  "display_name": "Document summary",
+  "description": "Summarize user-provided documents.",
+  "audience": "administrators",
+  "member_ids": [],
+  "category": "uncategorized",
+  "release_notes": "Initial draft."
+}

@@ -1,9 +1,10 @@
 """Management credentials are independent of Web, desktop and resource credentials."""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -49,6 +50,7 @@ class ManagementLogin(Base):
     challenge: Mapped[str] = mapped_column(String(43))
     redirect_uri: Mapped[str] = mapped_column(String(200))
     name: Mapped[str] = mapped_column(String(100))
+    scope: Mapped[str] = mapped_column(String(100), default="management:read")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     consumed: Mapped[bool] = mapped_column(default=False)
     cancelled: Mapped[bool] = mapped_column(default=False)
@@ -56,3 +58,32 @@ class ManagementLogin(Base):
     session_id: Mapped[UUID | None] = mapped_column(ForeignKey("management_sessions.id"))
     response: Mapped[str | None] = mapped_column(Text)
     response_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ManagementCommand(Base):
+    __tablename__ = "management_commands"
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    request_id: Mapped[UUID] = mapped_column(primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    operation: Mapped[str] = mapped_column(String(250))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ManagementOAuthAttempt(Base):
+    __tablename__ = "management_mcp_oauth_attempts"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("management_sessions.id"), index=True)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("memberships.id"))
+    service_id: Mapped[UUID] = mapped_column(ForeignKey("mcp_services.id", ondelete="CASCADE"))
+    version: Mapped[int] = mapped_column()
+    verifier: Mapped[str | None] = mapped_column(Text)
+    authorization_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(30), default="pending")
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    pending_tokens: Mapped[str | None] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

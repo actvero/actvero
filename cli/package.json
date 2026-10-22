@@ -1,0 +1,44 @@
+{
+  "name": "@actvero/cli",
+  "version": "0.2.0-dev.1",
+  "description": "Organization-scoped management CLI for Actvero",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "actvero": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "skills/",
+    "schemas/"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit && node scripts/check-public.mjs",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
+    "prepack": "npm run check && npm run build",
+    "dev": "npm run build && node dist/index.js"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "2.1.1",
+    "commander": "15.0.0",
+    "open": "11.0.4",
+    "proper-lockfile": "4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/proper-lockfile": "^4.1.4",
+    "typescript": "7.0.2"
+  }
+}

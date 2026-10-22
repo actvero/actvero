@@ -1,0 +1,10 @@
+{
+  "name": "Document prompts",
+  "description": "Organization-managed prompt templates and static resources.",
+  "transport": "builtin",
+  "url": "",
+  "enabled": false,
+  "audience": "selected",
+  "member_ids": [],
+  "auth_mode": "none"
+}

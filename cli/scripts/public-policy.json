@@ -1,0 +1,24 @@
+{
+  "documents": [
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+    "skills/actvero-management/SKILL.md",
+    "skills/actvero-management/references/bootstrap.md",
+    "skills/actvero-management/references/commands.md",
+    "skills/actvero-management/references/experts.md",
+    "skills/actvero-management/references/mcp.md",
+    "skills/actvero-management/references/operations.md",
+    "skills/actvero-management/references/recovery.md",
+    "skills/actvero-management/references/skills.md"
+  ],
+  "restricted_identifier_sha256": [
+    "0686ae9f1c93b431e26b7d4771af47bb2fe213af1e138bf0972edf1d56541daf",
+    "47050749c6a294ac173e5a6c24a3e0a8b6d903fc465484317b6ebae1335bd386",
+    "557cde45b25e35bc91ad8646f79a3b2a33914c1a3af4a6fc763aecf826a1cb79",
+    "5f8b6cf93e6fc8ebc3b6e59bf25fcf87b7046d443b9b1f0e711ae79514967bbd",
+    "78595986ae069c3a54593f5cad8520b1d92db6435b96cfd71cb1908c550b8664",
+    "79ecfecd42a7f6be9086a396a32956bd9275c27bff5f7005d850315333f7a815",
+    "830fcc85b276d069fcdede46de0a2a173f03874464f206caa88b5fecd8ca77e7",
+    "fbce95365765dd74d3b3c23a205a762aae0637d303c42dd911cb776497f74f7d"
+  ]
+}

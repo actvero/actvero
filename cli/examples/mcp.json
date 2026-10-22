@@ -1,0 +1,11 @@
+{
+  "name": "Example MCP",
+  "display_name": "Example MCP",
+  "description": "Replace the URL with your MCP endpoint before creating this service.",
+  "transport": "http",
+  "url": "https://mcp.example.com/mcp",
+  "enabled": false,
+  "audience": "selected",
+  "member_ids": [],
+  "auth_mode": "none"
+}

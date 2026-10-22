@@ -28,6 +28,17 @@ def callback_url(request: Request) -> str:
 
 
 async def cancel_pending(db: AsyncSession, service_id: UUID, member_id: UUID) -> None:
+    from app.modules.management.models import ManagementOAuthAttempt
+
+    await db.execute(
+        update(ManagementOAuthAttempt)
+        .where(
+            ManagementOAuthAttempt.service_id == service_id,
+            ManagementOAuthAttempt.member_id == member_id,
+            ManagementOAuthAttempt.status.in_(ACTIVE),
+        )
+        .values(status="cancelled", verifier=None, pending_tokens=None, authorization_url=None)
+    )
     await db.execute(
         update(NativeOAuthAttempt)
         .where(

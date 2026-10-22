@@ -1,0 +1,4 @@
+interface:
+  display_name: "Actvero 平台管理"
+  short_description: "从安装登录到管理多组织 Skills、MCP 和专家，完成发布与结果核验"
+  default_prompt: "使用 $actvero-management 为指定平台和组织维护资源，并核验实际交付结果。"
