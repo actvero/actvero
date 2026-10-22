@@ -57,6 +57,8 @@ def add_activity(
             if getattr(actor, "key", None)
             else "desktop"
             if getattr(actor, "device", None)
+            else "management"
+            if getattr(actor, "management_session_id", None)
             else "console",
             access_key_id=getattr(getattr(actor, "key", None), "id", None),
             device_session_id=getattr(getattr(actor, "device", None), "id", None),

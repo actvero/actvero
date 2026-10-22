@@ -17,7 +17,13 @@ from app.modules.llm.models import (
     RouteHealth,
     UsageSettlement,
 )
-from app.modules.management.models import ManagementLogin, ManagementSession, ManagementToken
+from app.modules.management.models import (
+    ManagementCommand,
+    ManagementLogin,
+    ManagementOAuthAttempt,
+    ManagementSession,
+    ManagementToken,
+)
 from app.modules.mcp.models import (
     McpActivity,
     McpConnection,
@@ -53,11 +59,13 @@ from app.modules.tenants.models import (
 from app.modules.users.models import LoginIdentity, User
 
 __all__ = [
+    "ManagementCommand",
     "BrandAsset",
     "ClientRelease",
     "ClientRecommendation",
     "ClientReleaseEvent",
     "ManagementLogin",
+    "ManagementOAuthAttempt",
     "ManagementSession",
     "ManagementToken",
     "ExpertCategoryRecord",

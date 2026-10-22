@@ -1,0 +1,5 @@
+{
+  "kind": "tools",
+  "key": "add",
+  "arguments": { "a": 2, "b": 3 }
+}

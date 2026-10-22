@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal, TypeVar
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -14,6 +14,7 @@ from app.modules.desktop.schemas import (
     RefreshAcknowledgement,
     RefreshSession,
 )
+from app.modules.desktop_mcp.schemas import OAuthAttemptView
 from app.modules.llm.schemas import ChannelDetail, ChannelPage
 
 
@@ -24,6 +25,7 @@ class StartLogin(BaseModel):
     code_challenge: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     device_name: str = Field(min_length=1, max_length=100)
     reauthenticate: bool = False
+    scope: Literal["management:read", "management:read management:write"] = "management:read"
 
     @field_validator("redirect_uri")
     @classmethod
@@ -52,7 +54,7 @@ class Tokens(BaseModel):
     access_token: str
     refresh_token: str
     token_type: Literal["Bearer"] = "Bearer"
-    scope: Literal["management:read"] = "management:read"
+    scope: Literal["management:read", "management:read management:write"] = "management:read"
     session_id: UUID
     expires_in: int
     server_time: datetime
@@ -69,6 +71,10 @@ class Metadata(BaseModel):
     client_id: str
     issuer: str
     scope: Literal["management:read"] = "management:read"
+    supported_scopes: list[str] = Field(
+        default_factory=lambda: ["management:read", "management:write"]
+    )
+    resource_contract_version: Literal[1] = 1
     callback_template: str = "http://127.0.0.1:{port}/actvero/cli/callback"
     access_seconds: int
     recovery_days: int
@@ -83,6 +89,20 @@ class Metadata(BaseModel):
             "org.permissions",
             "channels.list",
             "channels.show",
+            "skills.read",
+            "skills.write",
+            "mcp.read",
+            "mcp.write",
+            "experts.read",
+            "experts.write",
+            "commands.show",
+            "skills.categories",
+            "skills.download",
+            "experts.categories",
+            "mcp.oauth",
+            "mcp.run",
+            "mcp.activities",
+            "mcp.contents",
         ]
     )
 
@@ -90,7 +110,7 @@ class Metadata(BaseModel):
 class Me(BaseModel):
     user: UserView
     session_id: UUID
-    scope: Literal["management:read"] = "management:read"
+    scope: Literal["management:read", "management:read management:write"] = "management:read"
     session_expires_at: datetime
     reauthenticate_at: datetime
 
@@ -123,6 +143,24 @@ class ChannelResult(BaseModel):
     result: ChannelDetail
 
 
+Result = TypeVar("Result")
+
+
+class ResourceResult[Result](BaseModel):
+    organization: Organization
+    result: Result
+    request_id: UUID | None = None
+
+
+class CommandStatus(BaseModel):
+    request_id: UUID
+    operation: str
+    status: Literal["pending", "succeeded", "unknown"]
+    result: dict[str, Any] | None
+    created_at: datetime
+    finished_at: datetime | None
+
+
 __all__ = [
     "ChannelList",
     "ChannelResult",
@@ -139,3 +177,10 @@ __all__ = [
     "StartLogin",
     "Tokens",
 ]
+
+
+class ManagementOAuthView(OAuthAttemptView):
+    authorization_url: str | None = Field(
+        default=None,
+        description="仅发起会话可读取；pending 状态下可恢复。包含临时 state，不应共享或记录日志。",
+    )

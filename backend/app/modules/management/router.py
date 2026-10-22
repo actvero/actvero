@@ -54,7 +54,11 @@ async def start(payload: s.StartLogin, request: Request, db: DB) -> s.LoginAttem
     await limit(db, address_key(request, "management-login"), 30, 300)
     state, nonce = (secrets.token_urlsafe(32) for _ in range(2))
     url = await service.native(request).authorization(
-        payload.redirect_uri, state, nonce, payload.code_challenge, payload.reauthenticate
+        payload.redirect_uri,
+        state,
+        nonce,
+        payload.code_challenge,
+        payload.reauthenticate or "management:write" in payload.scope.split(),
     )
     attempt = ManagementLogin(
         state_hash=digest(state),
@@ -62,6 +66,7 @@ async def start(payload: s.StartLogin, request: Request, db: DB) -> s.LoginAttem
         challenge=payload.code_challenge,
         redirect_uri=payload.redirect_uri,
         name=payload.device_name,
+        scope=payload.scope,
         expires_at=now() + timedelta(minutes=5),
     )
     db.add(attempt)
@@ -143,7 +148,7 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
     row = ManagementSession(
         identity_id=identity.id,
         client_id=settings.management_client_id,
-        scope="management:read",
+        scope=attempt.scope,
         name=attempt.name,
         authenticated_at=authenticated,
         created_at=stamp,
@@ -259,6 +264,7 @@ async def logout(payload: s.LogoutSession, request: Request, db: DB) -> Message:
 async def me(request: Request, db: DB) -> s.Me:
     who = await service.actor(request, db)
     result = s.Me(
+        scope=who.session.scope,
         user=UserView.model_validate(who.user),
         session_id=who.session.id,
         session_expires_at=who.session.expires_at,
@@ -303,7 +309,15 @@ async def organizations(
         role = "administrator" if platform else member.role
         permissions = ["org.show", "org.permissions"] if reason is None else []
         if reason is None and role == "administrator":
-            permissions += ["channels.list", "channels.show"]
+            permissions += [
+                "channels.list",
+                "channels.show",
+                "skills.read",
+                "mcp.read",
+                "experts.read",
+            ]
+            if "management:write" in who.session.scope.split():
+                permissions += ["skills.write", "mcp.write", "experts.write"]
         items.append(
             s.Organization(
                 org_id=tenant.id,

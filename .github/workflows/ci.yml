@@ -42,14 +42,15 @@ jobs:
         run: |
           uv sync --frozen --directory backend
           uv sync --frozen --directory cli
+          npm ci --prefix cli
           pnpm --dir frontend install --frozen-lockfile
           pnpm --dir frontend exec playwright install chromium --with-deps
       - name: Static checks and builds
-        run: make check cli-check
+        run: make check cli-check cli-legacy-check
       - name: Browser tests
         run: pnpm --dir frontend test
       - name: Application tests
-        run: make test cli-test
+        run: make test cli-test cli-legacy-test
       - name: Identity and deployment tests
         run: |
           python3 scripts/test-identity-theme-assets.py

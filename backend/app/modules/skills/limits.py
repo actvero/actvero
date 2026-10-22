@@ -9,10 +9,18 @@ class SkillUploadLimit:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope.get("path") not in {
-            "/api/v1/skills/import",
-            "/api/v1/skills/preview",
-        }:
+        path = scope.get("path", "")
+        management = path.startswith("/api/v1/management/organizations/") and path.endswith(
+            ("/skills/import", "/skills/preview")
+        )
+        if scope["type"] != "http" or (
+            not management
+            and path
+            not in {
+                "/api/v1/skills/import",
+                "/api/v1/skills/preview",
+            }
+        ):
             await self.app(scope, receive, send)
             return
         size = 0

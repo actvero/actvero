@@ -35,7 +35,7 @@ def client(env):
     return httpx.AsyncClient(transport=httpx.ASGITransport(app=env.app), base_url="http://test")
 
 
-async def login(env, monkeypatch, api, web):
+async def login(env, monkeypatch, api, web, scope="management:read"):
     env.provider.metadata = AsyncMock(
         return_value={"authorization_endpoint": env.provider.settings.oidc_issuer + "/auth"}
     )
@@ -59,6 +59,7 @@ async def login(env, monkeypatch, api, web):
             "redirect_uri": "http://127.0.0.1:49161/actvero/cli/callback",
             "code_challenge": pkce(verifier),
             "device_name": "Test CLI",
+            "scope": scope,
         },
     )
     assert result.status_code == 200, result.text

@@ -114,9 +114,11 @@ export function ActivityPage({
           ? '访问密钥'
           : row.original.source === 'desktop'
             ? '桌面端'
-            : row.original.source === 'health'
-              ? '后台检查'
-              : '控制台',
+            : row.original.source === 'management'
+              ? 'CLI'
+              : row.original.source === 'health'
+                ? '后台检查'
+                : '控制台',
     },
     {
       accessorKey: 'duration_ms',
@@ -267,9 +269,11 @@ export function ActivityPage({
                       ? '访问密钥'
                       : detail.source === 'desktop'
                         ? '桌面端'
-                        : detail.source === 'health'
-                          ? '后台健康检查'
-                          : '控制台',
+                        : detail.source === 'management'
+                          ? 'CLI'
+                          : detail.source === 'health'
+                            ? '后台健康检查'
+                            : '控制台',
                   时间: dateTime(detail.created_at),
                   耗时: `${detail.duration_ms} ms`,
                   结果:

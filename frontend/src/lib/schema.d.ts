@@ -2744,6 +2744,560 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/management/organizations/{org_id}/commands/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Command Status */
+        get: operations["command_status_api_v1_management_organizations__org_id__commands__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Listing */
+        get: operations["experts_listing_api_v1_management_organizations__org_id__experts_get"];
+        put?: never;
+        /** Experts Create */
+        post: operations["experts_create_api_v1_management_organizations__org_id__experts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Category Categories */
+        get: operations["experts_category_categories_api_v1_management_organizations__org_id__experts_categories_get"];
+        put?: never;
+        /** Experts Category Create */
+        post: operations["experts_category_create_api_v1_management_organizations__org_id__experts_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Experts Category Delete */
+        delete: operations["experts_category_delete_api_v1_management_organizations__org_id__experts_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Experts Category Rename */
+        patch: operations["experts_category_rename_api_v1_management_organizations__org_id__experts_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/categories/{category_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Experts Category Move */
+        post: operations["experts_category_move_api_v1_management_organizations__org_id__experts_categories__category_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Options */
+        get: operations["experts_options_api_v1_management_organizations__org_id__experts_dependencies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/dependencies/{kind}/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Dependency Detail */
+        get: operations["experts_dependency_detail_api_v1_management_organizations__org_id__experts_dependencies__kind___resource_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/dependency-commands/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Dependency Receipt */
+        get: operations["experts_dependency_receipt_api_v1_management_organizations__org_id__experts_dependency_commands__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/skill-impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Skill Impact */
+        get: operations["experts_skill_impact_api_v1_management_organizations__org_id__experts_skill_impact_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/{expert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Experts Detail */
+        get: operations["experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get"];
+        /** Experts Update */
+        put: operations["experts_update_api_v1_management_organizations__org_id__experts__expert_id__put"];
+        post?: never;
+        /** Experts Delete Expert */
+        delete: operations["experts_delete_expert_api_v1_management_organizations__org_id__experts__expert_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/{expert_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Experts Publish */
+        post: operations["experts_publish_api_v1_management_organizations__org_id__experts__expert_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/{expert_id}/refresh-skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Experts Refresh Skills */
+        post: operations["experts_refresh_skills_api_v1_management_organizations__org_id__experts__expert_id__refresh_skills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/{expert_id}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Experts Update Scope */
+        put: operations["experts_update_scope_api_v1_management_organizations__org_id__experts__expert_id__scope_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/experts/{expert_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Experts Withdraw */
+        post: operations["experts_withdraw_api_v1_management_organizations__org_id__experts__expert_id__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Activities */
+        get: operations["mcp_activities_api_v1_management_organizations__org_id__mcp_activities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/contents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Contents */
+        get: operations["mcp_contents_api_v1_management_organizations__org_id__mcp_contents_get"];
+        put?: never;
+        /** Mcp Content Create */
+        post: operations["mcp_content_create_api_v1_management_organizations__org_id__mcp_contents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/contents/{content_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mcp Content Update */
+        put: operations["mcp_content_update_api_v1_management_organizations__org_id__mcp_contents__content_id__put"];
+        post?: never;
+        /** Mcp Content Delete */
+        delete: operations["mcp_content_delete_api_v1_management_organizations__org_id__mcp_contents__content_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Export Services */
+        get: operations["mcp_export_services_api_v1_management_organizations__org_id__mcp_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mcp Import Services */
+        post: operations["mcp_import_services_api_v1_management_organizations__org_id__mcp_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mcp Preview Import */
+        post: operations["mcp_preview_import_api_v1_management_organizations__org_id__mcp_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/oauth/{attempt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/oauth/{attempt_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/oauth/{attempt_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete */
+        post: operations["complete_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Services */
+        get: operations["mcp_services_api_v1_management_organizations__org_id__mcp_services_get"];
+        put?: never;
+        /** Mcp Create Service */
+        post: operations["mcp_create_service_api_v1_management_organizations__org_id__mcp_services_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mcp Update Service */
+        put: operations["mcp_update_service_api_v1_management_organizations__org_id__mcp_services__service_id__put"];
+        post?: never;
+        /** Mcp Delete Service */
+        delete: operations["mcp_delete_service_api_v1_management_organizations__org_id__mcp_services__service_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Capabilities */
+        get: operations["mcp_capabilities_api_v1_management_organizations__org_id__mcp_services__service_id__capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mcp Set Connection */
+        put: operations["mcp_set_connection_api_v1_management_organizations__org_id__mcp_services__service_id__connection_put"];
+        post?: never;
+        /** Mcp Disconnect */
+        delete: operations["mcp_disconnect_api_v1_management_organizations__org_id__mcp_services__service_id__connection_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mcp Discover */
+        post: operations["mcp_discover_api_v1_management_organizations__org_id__mcp_services__service_id__discover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/oauth/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_v1_management_organizations__org_id__mcp_services__service_id__oauth_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mcp Policy */
+        put: operations["mcp_policy_api_v1_management_organizations__org_id__mcp_services__service_id__policy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mcp Presentation */
+        put: operations["mcp_presentation_api_v1_management_organizations__org_id__mcp_services__service_id__presentation_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/mcp/services/{service_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mcp Run */
+        post: operations["mcp_run_api_v1_management_organizations__org_id__mcp_services__service_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/management/organizations/{org_id}/permissions": {
         parameters: {
             query?: never;
@@ -2753,6 +3307,247 @@ export interface paths {
         };
         /** Organization */
         get: operations["organization_api_v1_management_organizations__org_id__permissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills List Skills */
+        get: operations["skills_list_skills_api_v1_management_organizations__org_id__skills_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Category Categories */
+        get: operations["skills_category_categories_api_v1_management_organizations__org_id__skills_categories_get"];
+        put?: never;
+        /** Skills Category Create */
+        post: operations["skills_category_create_api_v1_management_organizations__org_id__skills_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Skills Category Delete */
+        delete: operations["skills_category_delete_api_v1_management_organizations__org_id__skills_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Skills Category Rename */
+        patch: operations["skills_category_rename_api_v1_management_organizations__org_id__skills_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/categories/{category_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skills Category Move */
+        post: operations["skills_category_move_api_v1_management_organizations__org_id__skills_categories__category_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/distributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Distributions */
+        get: operations["skills_distributions_api_v1_management_organizations__org_id__skills_distributions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/icon-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Icon Catalog */
+        get: operations["skills_icon_catalog_api_v1_management_organizations__org_id__skills_icon_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skills Import Skill */
+        post: operations["skills_import_skill_api_v1_management_organizations__org_id__skills_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skills Preview */
+        post: operations["skills_preview_api_v1_management_organizations__org_id__skills_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Detail */
+        get: operations["skills_detail_api_v1_management_organizations__org_id__skills__skill_id__get"];
+        /** Skills Update */
+        put: operations["skills_update_api_v1_management_organizations__org_id__skills__skill_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Skills Delete Draft */
+        delete: operations["skills_delete_draft_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}/versions/{version_id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skills Action */
+        post: operations["skills_action_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__actions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}/versions/{version_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Download */
+        post: operations["download_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}/versions/{version_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills File Content */
+        get: operations["skills_file_content_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/skills/{skill_id}/versions/{version_id}/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Overview */
+        get: operations["skills_overview_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5840,6 +6635,32 @@ export interface components {
             /** Tools Declaration */
             tools_declaration?: ("unknown" | "supported" | "unsupported") | null;
         };
+        /** CommandStatus */
+        CommandStatus: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Operation */
+            operation: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Result */
+            result: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "succeeded" | "unknown";
+        };
         /** ConnectionOptions */
         ConnectionOptions: {
             /**
@@ -8679,6 +9500,31 @@ export interface components {
             /** System */
             system: boolean;
         };
+        /** ManagementOAuthView */
+        ManagementOAuthView: {
+            /**
+             * Authorization Url
+             * @description 仅发起会话可读取；pending 状态下可恢复。包含临时 state，不应共享或记录日志。
+             */
+            authorization_url?: string | null;
+            /** Error Code */
+            error_code?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "exchanging" | "awaiting_confirmation" | "completed" | "cancelled" | "expired" | "failed";
+        };
         /** ManifestSkill */
         ManifestSkill: {
             /** Key */
@@ -9259,9 +10105,9 @@ export interface components {
             /**
              * Scope
              * @default management:read
-             * @constant
+             * @enum {string}
              */
-            scope: "management:read";
+            scope: "management:read" | "management:read management:write";
             /**
              * Session Expires At
              * Format: date-time
@@ -9557,11 +10403,19 @@ export interface components {
             /** Recovery Days */
             recovery_days: number;
             /**
+             * Resource Contract Version
+             * @default 1
+             * @constant
+             */
+            resource_contract_version: 1;
+            /**
              * Scope
              * @default management:read
              * @constant
              */
             scope: "management:read";
+            /** Supported Scopes */
+            supported_scopes?: string[];
         };
         /** MetricBucket */
         MetricBucket: {
@@ -11658,6 +12512,198 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ResourceResult[CommandStatus] */
+        ResourceResult_CommandStatus_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["CommandStatus"];
+        };
+        /** ResourceResult[DependencyCommandView] */
+        ResourceResult_DependencyCommandView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["DependencyCommandView"];
+        };
+        /** ResourceResult[ExpertDependencyOption] */
+        ResourceResult_ExpertDependencyOption_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ExpertDependencyOption"];
+        };
+        /** ResourceResult[ExpertDependencyPage] */
+        ResourceResult_ExpertDependencyPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ExpertDependencyPage"];
+        };
+        /** ResourceResult[ExpertPage] */
+        ResourceResult_ExpertPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ExpertPage"];
+        };
+        /** ResourceResult[ExpertSkillImpactView] */
+        ResourceResult_ExpertSkillImpactView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ExpertSkillImpactView"];
+        };
+        /** ResourceResult[ExpertView] */
+        ResourceResult_ExpertView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ExpertView"];
+        };
+        /** ResourceResult[ManagementOAuthView] */
+        ResourceResult_ManagementOAuthView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["ManagementOAuthView"];
+        };
+        /** ResourceResult[McpActivityPage] */
+        ResourceResult_McpActivityPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpActivityPage"];
+        };
+        /** ResourceResult[McpCapabilities] */
+        ResourceResult_McpCapabilities_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpCapabilities"];
+        };
+        /** ResourceResult[McpContentView] */
+        ResourceResult_McpContentView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpContentView"];
+        };
+        /** ResourceResult[McpContents] */
+        ResourceResult_McpContents_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpContents"];
+        };
+        /** ResourceResult[McpImportPreview] */
+        ResourceResult_McpImportPreview_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpImportPreview"];
+        };
+        /** ResourceResult[McpImport] */
+        ResourceResult_McpImport_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpImport"];
+        };
+        /** ResourceResult[McpResult] */
+        ResourceResult_McpResult_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpResult"];
+        };
+        /** ResourceResult[McpServicePage] */
+        ResourceResult_McpServicePage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpServicePage"];
+        };
+        /** ResourceResult[McpServiceView] */
+        ResourceResult_McpServiceView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["McpServiceView"];
+        };
+        /** ResourceResult[Message] */
+        ResourceResult_Message_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["Message"];
+        };
+        /** ResourceResult[SkillDistributionPage] */
+        ResourceResult_SkillDistributionPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillDistributionPage"];
+        };
+        /** ResourceResult[SkillFileContent] */
+        ResourceResult_SkillFileContent_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillFileContent"];
+        };
+        /** ResourceResult[SkillOverview] */
+        ResourceResult_SkillOverview_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillOverview"];
+        };
+        /** ResourceResult[SkillPage] */
+        ResourceResult_SkillPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillPage"];
+        };
+        /** ResourceResult[SkillPreview] */
+        ResourceResult_SkillPreview_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillPreview"];
+        };
+        /** ResourceResult[SkillView] */
+        ResourceResult_SkillView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["SkillView"];
+        };
+        /** ResourceResult[list[ManagedExpertCategory]] */
+        ResourceResult_list_ManagedExpertCategory__: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            /** Result */
+            result: components["schemas"]["ManagedExpertCategory"][];
+        };
+        /** ResourceResult[list[ManagedSkillCategory]] */
+        ResourceResult_list_ManagedSkillCategory__: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            /** Result */
+            result: components["schemas"]["ManagedSkillCategory"][];
+        };
+        /** ResourceResult[list[SkillIconOption]] */
+        ResourceResult_list_SkillIconOption__: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            /** Result */
+            result: components["schemas"]["SkillIconOption"][];
+        };
         /** ResourceTokenInput */
         ResourceTokenInput: {
             /**
@@ -12718,9 +13764,9 @@ export interface components {
             /**
              * Scope
              * @default management:read
-             * @constant
+             * @enum {string}
              */
-            scope: "management:read";
+            scope: "management:read" | "management:read management:write";
             /**
              * Server Time
              * Format: date-time
@@ -13032,6 +14078,12 @@ export interface components {
             reauthenticate: boolean;
             /** Redirect Uri */
             redirect_uri: string;
+            /**
+             * Scope
+             * @default management:read
+             * @enum {string}
+             */
+            scope: "management:read" | "management:read management:write";
         };
     };
     responses: never;
@@ -21446,6 +22498,1502 @@ export interface operations {
             };
         };
     };
+    command_status_api_v1_management_organizations__org_id__commands__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_CommandStatus_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_listing_api_v1_management_organizations__org_id__experts_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                category?: string | null;
+                status?: ("published" | "unpublished") | null;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_create_api_v1_management_organizations__org_id__experts_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_category_categories_api_v1_management_organizations__org_id__experts_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedExpertCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_category_create_api_v1_management_organizations__org_id__experts_categories_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertCategoryName"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedExpertCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_category_delete_api_v1_management_organizations__org_id__experts_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertCategoryDelete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_category_rename_api_v1_management_organizations__org_id__experts_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertCategoryRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedExpertCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_category_move_api_v1_management_organizations__org_id__experts_categories__category_id__move_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertCategoryMove"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedExpertCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_options_api_v1_management_organizations__org_id__experts_dependencies_get: {
+        parameters: {
+            query: {
+                kind: "skills" | "connectors";
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertDependencyPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_dependency_detail_api_v1_management_organizations__org_id__experts_dependencies__kind___resource_id__get: {
+        parameters: {
+            query?: {
+                version_id?: string | null;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+                kind: "skills" | "connectors";
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertDependencyOption_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_dependency_receipt_api_v1_management_organizations__org_id__experts_dependency_commands__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_DependencyCommandView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_skill_impact_api_v1_management_organizations__org_id__experts_skill_impact_get: {
+        parameters: {
+            query: {
+                skill_id: string;
+                target_version_id?: string | null;
+                source_version_id?: string | null;
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertSkillImpactView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_update_api_v1_management_organizations__org_id__experts__expert_id__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_delete_expert_api_v1_management_organizations__org_id__experts__expert_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_publish_api_v1_management_organizations__org_id__experts__expert_id__publish_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertPublish"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_refresh_skills_api_v1_management_organizations__org_id__experts__expert_id__refresh_skills_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertSkillRefresh"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_update_scope_api_v1_management_organizations__org_id__experts__expert_id__scope_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertScope"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experts_withdraw_api_v1_management_organizations__org_id__experts__expert_id__withdraw_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ExpertView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_activities_api_v1_management_organizations__org_id__mcp_activities_get: {
+        parameters: {
+            query: {
+                category: "call" | "connection";
+                page?: number;
+                service_id?: string | null;
+                result?: ("success" | "failed" | "timeout") | null;
+                q?: string;
+                since?: string | null;
+                until?: string | null;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpActivityPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_contents_api_v1_management_organizations__org_id__mcp_contents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpContents_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_content_create_api_v1_management_organizations__org_id__mcp_contents_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpContentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpContentView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_content_update_api_v1_management_organizations__org_id__mcp_contents__content_id__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                content_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpContentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpContentView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_content_delete_api_v1_management_organizations__org_id__mcp_contents__content_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                content_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_export_services_api_v1_management_organizations__org_id__mcp_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpImport_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_import_services_api_v1_management_organizations__org_id__mcp_import_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpImportRequest"] | components["schemas"]["McpImport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpServicePage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_preview_import_api_v1_management_organizations__org_id__mcp_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpImportPreview_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ManagementOAuthView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ManagementOAuthView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_api_v1_management_organizations__org_id__mcp_oauth__attempt_id__complete_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ManagementOAuthView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_services_api_v1_management_organizations__org_id__mcp_services_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpServicePage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_create_service_api_v1_management_organizations__org_id__mcp_services_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpServiceWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpServiceView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_update_service_api_v1_management_organizations__org_id__mcp_services__service_id__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpServiceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpServiceView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_delete_service_api_v1_management_organizations__org_id__mcp_services__service_id__delete: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_capabilities_api_v1_management_organizations__org_id__mcp_services__service_id__capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpCapabilities_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_set_connection_api_v1_management_organizations__org_id__mcp_services__service_id__connection_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpCredentials"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_disconnect_api_v1_management_organizations__org_id__mcp_services__service_id__connection_delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_discover_api_v1_management_organizations__org_id__mcp_services__service_id__discover_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpCapabilities_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_api_v1_management_organizations__org_id__mcp_services__service_id__oauth_start_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_ManagementOAuthView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_policy_api_v1_management_organizations__org_id__mcp_services__service_id__policy_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpPolicyInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_presentation_api_v1_management_organizations__org_id__mcp_services__service_id__presentation_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpPresentationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpServiceView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_run_api_v1_management_organizations__org_id__mcp_services__service_id__run_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                service_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpRun"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_McpResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     organization_api_v1_management_organizations__org_id__permissions_get: {
         parameters: {
             query?: never;
@@ -21464,6 +24012,607 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Organization"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_list_skills_api_v1_management_organizations__org_id__skills_get: {
+        parameters: {
+            query?: {
+                audience?: ("administrators" | "selected" | "organization") | null;
+                category?: string | null;
+                status?: ("published" | "unpublished") | null;
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_category_categories_api_v1_management_organizations__org_id__skills_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedSkillCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_category_create_api_v1_management_organizations__org_id__skills_categories_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryName"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedSkillCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_category_delete_api_v1_management_organizations__org_id__skills_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryDelete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_category_rename_api_v1_management_organizations__org_id__skills_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedSkillCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_category_move_api_v1_management_organizations__org_id__skills_categories__category_id__move_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryMove"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_ManagedSkillCategory__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_distributions_api_v1_management_organizations__org_id__skills_distributions_get: {
+        parameters: {
+            query?: {
+                skill_id?: string | null;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillDistributionPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_icon_catalog_api_v1_management_organizations__org_id__skills_icon_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_list_SkillIconOption__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_import_skill_api_v1_management_organizations__org_id__skills_import_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillImport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_preview_api_v1_management_organizations__org_id__skills_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillPreview_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_detail_api_v1_management_organizations__org_id__skills__skill_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_update_api_v1_management_organizations__org_id__skills__skill_id__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_delete_draft_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__delete: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                skill_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_action_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__actions_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                skill_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__download_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                skill_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_file_content_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__file_get: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+                skill_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillFileContent_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_overview_api_v1_management_organizations__org_id__skills__skill_id__versions__version_id__overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                skill_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_SkillOverview_"];
                 };
             };
             /** @description Validation Error */

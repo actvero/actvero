@@ -27,6 +27,13 @@ class Access(BusinessActor):
     session: WebSession
 
 
+@dataclass
+class ManagementBusinessActor(BusinessActor):
+    """Organization authority checked through an independent management session."""
+
+    management_session_id: UUID
+
+
 async def access(
     request: Request, db: AsyncSession, tenant_id: UUID, admin: bool = True, write: bool = False
 ) -> Access:

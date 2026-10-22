@@ -34,6 +34,8 @@ from app.modules.tenants.models import Tenant
         "93n_experts",
         "94o_channel_routing",
         "95p_merge_experts_routing",
+        "111f_unified_branding",
+        "112g_management_mcp_oauth",
     ],
 )
 async def test_both_migration_branches_upgrade_with_data_preserved(start):
@@ -41,7 +43,7 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
     if not url:
         pytest.skip("ACTVERO_TEST_DATABASE_URL required")
     cfg = Config("alembic.ini")
-    assert ScriptDirectory.from_config(cfg).get_heads() == ["111f_unified_branding"]
+    assert ScriptDirectory.from_config(cfg).get_heads() == ["113h_management_merge"]
     schema = "test_merge_" + uuid4().hex
     owner = create_async_engine(url)
     engine = create_async_engine(url, connect_args={"server_settings": {"search_path": schema}})
@@ -105,7 +107,7 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
             await connection.run_sync(upgrade, "head")
             assert (
                 await connection.execute(text("SELECT version_num FROM alembic_version"))
-            ).scalars().all() == ["111f_unified_branding"]
+            ).scalars().all() == ["113h_management_merge"]
             for table, rows in preserved.items():
                 assert (
                     list(

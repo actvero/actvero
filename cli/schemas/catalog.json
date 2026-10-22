@@ -1,0 +1,3534 @@
+{
+  "resource_contract_version": 1,
+  "minimum_migration": "112g_management_mcp_oauth",
+  "source_sha256": "2225042aa877dced33c83b5057d78b193c847e18d45d0722ed23c4e9def08e79",
+  "roots": [
+    "CategoryDelete",
+    "CategoryMove",
+    "CategoryName",
+    "CategoryRename",
+    "CommandStatus",
+    "DependencyCommandView",
+    "ExpertCategoryDelete",
+    "ExpertCategoryMove",
+    "ExpertCategoryName",
+    "ExpertCategoryRename",
+    "ExpertDependencyOption",
+    "ExpertPublish",
+    "ExpertRevision",
+    "ExpertSave",
+    "ExpertScope",
+    "ExpertSkillImpactView",
+    "ExpertSkillRefresh",
+    "ExpertUpdate",
+    "ExpertView",
+    "ManagedExpertCategory",
+    "ManagedSkillCategory",
+    "ManagementOAuthView",
+    "McpActivityPage",
+    "McpCapabilities",
+    "McpContentInput",
+    "McpCredentials",
+    "McpImport",
+    "McpImportRequest",
+    "McpPolicyInput",
+    "McpPresentationUpdate",
+    "McpResult",
+    "McpRun",
+    "McpServiceUpdate",
+    "McpServiceView",
+    "McpServiceWrite",
+    "Me",
+    "Metadata",
+    "Organization",
+    "Organizations",
+    "SkillAction",
+    "SkillDistributionPage",
+    "SkillFileContent",
+    "SkillIconOption",
+    "SkillImport",
+    "SkillOverview",
+    "SkillPreview",
+    "SkillUpdate",
+    "SkillView"
+  ],
+  "definitions": {
+    "CategoryDelete": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "description": "确认时的技能数量；变化时返回 409",
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "target_id": {
+          "default": "uncategorized",
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "count"
+      ],
+      "title": "CategoryDelete",
+      "type": "object"
+    },
+    "CategoryMove": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "up",
+            "down"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "direction"
+      ],
+      "title": "CategoryMove",
+      "type": "object"
+    },
+    "CategoryName": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CategoryName",
+      "type": "object"
+    },
+    "CategoryRename": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "revision"
+      ],
+      "title": "CategoryRename",
+      "type": "object"
+    },
+    "CommandStatus": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finished At"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "succeeded",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "operation",
+        "status",
+        "result",
+        "created_at",
+        "finished_at"
+      ],
+      "title": "CommandStatus",
+      "type": "object"
+    },
+    "ConnectionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "connect_timeout": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Connect Timeout",
+          "type": "integer"
+        },
+        "health_enabled": {
+          "default": false,
+          "title": "Health Enabled",
+          "type": "boolean"
+        },
+        "health_interval": {
+          "default": 60,
+          "maximum": 3600,
+          "minimum": 30,
+          "title": "Health Interval",
+          "type": "integer"
+        },
+        "request_timeout": {
+          "default": 120,
+          "maximum": 600,
+          "minimum": 1,
+          "title": "Request Timeout",
+          "type": "integer"
+        },
+        "reset_on_progress": {
+          "default": false,
+          "title": "Reset On Progress",
+          "type": "boolean"
+        },
+        "total_timeout": {
+          "default": 300,
+          "maximum": 900,
+          "minimum": 1,
+          "title": "Total Timeout",
+          "type": "integer"
+        }
+      },
+      "title": "ConnectionOptions",
+      "type": "object"
+    },
+    "CredentialField": {
+      "additionalProperties": false,
+      "properties": {
+        "bearer": {
+          "default": false,
+          "title": "Bearer",
+          "type": "boolean"
+        },
+        "header": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Header",
+          "type": "string"
+        },
+        "key": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,49}$",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "header"
+      ],
+      "title": "CredentialField",
+      "type": "object"
+    },
+    "DependencyCommandView": {
+      "properties": {
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "resource_id": {
+          "format": "uuid",
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "updated_experts": {
+          "items": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "title": "Updated Experts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "request_id",
+        "action",
+        "resource_id",
+        "completed_at",
+        "updated_experts"
+      ],
+      "title": "DependencyCommandView",
+      "type": "object"
+    },
+    "ExactSkillChange": {
+      "additionalProperties": false,
+      "properties": {
+        "from_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "From Sha256",
+          "type": "string"
+        },
+        "from_version_id": {
+          "format": "uuid",
+          "title": "From Version Id",
+          "type": "string"
+        },
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "to_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "To Sha256",
+          "type": "string"
+        },
+        "to_version_id": {
+          "format": "uuid",
+          "title": "To Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "from_version_id",
+        "from_sha256",
+        "to_version_id",
+        "to_sha256"
+      ],
+      "title": "ExactSkillChange",
+      "type": "object"
+    },
+    "ExpertCategory": {
+      "properties": {
+        "id": {
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "ExpertCategory",
+      "type": "object"
+    },
+    "ExpertCategoryDelete": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "description": "确认时的专家数量；变化时返回 409",
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "target_id": {
+          "default": "uncategorized",
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "count"
+      ],
+      "title": "ExpertCategoryDelete",
+      "type": "object"
+    },
+    "ExpertCategoryMove": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "up",
+            "down"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "direction"
+      ],
+      "title": "ExpertCategoryMove",
+      "type": "object"
+    },
+    "ExpertCategoryName": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ExpertCategoryName",
+      "type": "object"
+    },
+    "ExpertCategoryRename": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "revision"
+      ],
+      "title": "ExpertCategoryRename",
+      "type": "object"
+    },
+    "ExpertCheck": {
+      "properties": {
+        "audience_count": {
+          "title": "Audience Count",
+          "type": "integer"
+        },
+        "can_publish": {
+          "title": "Can Publish",
+          "type": "boolean"
+        },
+        "dependencies": {
+          "items": {
+            "$ref": "#/$defs/ExpertDependencyState"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "instruction_missing": {
+          "title": "Instruction Missing",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "can_publish",
+        "instruction_missing",
+        "audience_count",
+        "dependencies"
+      ],
+      "title": "ExpertCheck",
+      "type": "object"
+    },
+    "ExpertConnectorRef": {
+      "additionalProperties": false,
+      "properties": {
+        "connector_id": {
+          "format": "uuid",
+          "title": "Connector Id",
+          "type": "string"
+        },
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 512,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "工具名称白名单。null 为兼容旧版、跟随连接器开放工具；[] 禁用全部工具。",
+          "title": "Tools"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "connector_id"
+      ],
+      "title": "ExpertConnectorRef",
+      "type": "object"
+    },
+    "ExpertContent": {
+      "additionalProperties": false,
+      "properties": {
+        "avatar": {
+          "default": "",
+          "maxLength": 500000,
+          "title": "Avatar",
+          "type": "string"
+        },
+        "connectors": {
+          "items": {
+            "$ref": "#/$defs/ExpertConnectorRef"
+          },
+          "maxItems": 32,
+          "title": "Connectors",
+          "type": "array"
+        },
+        "conversation_starters": {
+          "items": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Conversation Starters",
+          "type": "array"
+        },
+        "description": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "instructions": {
+          "default": "",
+          "maxLength": 64000,
+          "title": "Instructions",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "skills": {
+          "items": {
+            "$ref": "#/$defs/ExpertSkillRef"
+          },
+          "maxItems": 32,
+          "title": "Skills",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "maxLength": 30,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ],
+      "title": "ExpertContent",
+      "type": "object"
+    },
+    "ExpertDependencyOption": {
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "icon": {
+          "default": "",
+          "title": "Icon",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "default": "",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "status": {
+          "default": "available",
+          "enum": [
+            "available",
+            "unavailable",
+            "version_conflict"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/ExpertToolOption"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "tools_discovered": {
+          "default": false,
+          "title": "Tools Discovered",
+          "type": "boolean"
+        },
+        "update_available": {
+          "default": false,
+          "title": "Update Available",
+          "type": "boolean"
+        },
+        "version": {
+          "default": "",
+          "title": "Version",
+          "type": "string"
+        },
+        "version_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Version Id"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "ExpertDependencyOption",
+      "type": "object"
+    },
+    "ExpertDependencyState": {
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "skills",
+            "connectors"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "locked_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Locked Version"
+        },
+        "missing_members": {
+          "default": 0,
+          "title": "Missing Members",
+          "type": "integer"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "unavailable",
+            "version_conflict",
+            "unverified"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "update_available": {
+          "default": false,
+          "title": "Update Available",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "label",
+        "required",
+        "status"
+      ],
+      "title": "ExpertDependencyState",
+      "type": "object"
+    },
+    "ExpertDraftSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/ExactSkillChange"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Changes",
+          "type": "array"
+        },
+        "expert_id": {
+          "format": "uuid",
+          "title": "Expert Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expert_id",
+        "revision",
+        "changes"
+      ],
+      "title": "ExpertDraftSelection",
+      "type": "object"
+    },
+    "ExpertPublish": {
+      "additionalProperties": false,
+      "properties": {
+        "release_notes": {
+          "default": "",
+          "maxLength": 4000,
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "version": {
+          "maxLength": 30,
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "version"
+      ],
+      "title": "ExpertPublish",
+      "type": "object"
+    },
+    "ExpertReleaseView": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "publisher_name": {
+          "title": "Publisher Name",
+          "type": "string"
+        },
+        "release_notes": {
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "sha256",
+        "release_notes",
+        "publisher_name",
+        "created_at"
+      ],
+      "title": "ExpertReleaseView",
+      "type": "object"
+    },
+    "ExpertRevision": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision"
+      ],
+      "title": "ExpertRevision",
+      "type": "object"
+    },
+    "ExpertSave": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "default": "uncategorized",
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Category",
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/$defs/ExpertContent"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "ExpertSave",
+      "type": "object"
+    },
+    "ExpertScope": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "audience"
+      ],
+      "title": "ExpertScope",
+      "type": "object"
+    },
+    "ExpertSkillImpact": {
+      "properties": {
+        "current_release_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Release Id"
+        },
+        "draft_changes": {
+          "items": {
+            "$ref": "#/$defs/ExactSkillChange"
+          },
+          "title": "Draft Changes",
+          "type": "array"
+        },
+        "draft_versions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Draft Versions",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "published_versions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Published Versions",
+          "type": "array"
+        },
+        "revision": {
+          "default": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version"
+      ],
+      "title": "ExpertSkillImpact",
+      "type": "object"
+    },
+    "ExpertSkillImpactView": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ExpertSkillImpact"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ],
+      "title": "ExpertSkillImpactView",
+      "type": "object"
+    },
+    "ExpertSkillRef": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "load": {
+          "default": "always",
+          "enum": [
+            "always",
+            "on_demand"
+          ],
+          "title": "Load",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "skill_id": {
+          "format": "uuid",
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "version_id": {
+          "format": "uuid",
+          "title": "Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "skill_id",
+        "version_id",
+        "sha256"
+      ],
+      "title": "ExpertSkillRef",
+      "type": "object"
+    },
+    "ExpertSkillRefresh": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ExactSkillChange"
+              },
+              "maxItems": 32,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Changes"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Request Id"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision"
+      ],
+      "title": "ExpertSkillRefresh",
+      "type": "object"
+    },
+    "ExpertToolOption": {
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "description",
+        "enabled"
+      ],
+      "title": "ExpertToolOption",
+      "type": "object"
+    },
+    "ExpertUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "default": "uncategorized",
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Category",
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/$defs/ExpertContent"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "content",
+        "revision"
+      ],
+      "title": "ExpertUpdate",
+      "type": "object"
+    },
+    "ExpertView": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "avatar": {
+          "title": "Avatar",
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/$defs/ExpertCategory"
+        },
+        "check": {
+          "$ref": "#/$defs/ExpertCheck"
+        },
+        "content": {
+          "$ref": "#/$defs/ExpertContent"
+        },
+        "current_release": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExpertReleaseView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency_issues": {
+          "default": 0,
+          "title": "Dependency Issues",
+          "type": "integer"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "has_changes": {
+          "title": "Has Changes",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "metadata_revision": {
+          "title": "Metadata Revision",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "releases": {
+          "items": {
+            "$ref": "#/$defs/ExpertReleaseView"
+          },
+          "title": "Releases",
+          "type": "array"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "published",
+            "withdrawn"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "avatar",
+        "category",
+        "audience",
+        "revision",
+        "metadata_revision",
+        "current_release",
+        "has_changes",
+        "status",
+        "content",
+        "member_ids",
+        "releases",
+        "check"
+      ],
+      "title": "ExpertView",
+      "type": "object"
+    },
+    "ManagedExpertCategory": {
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "id": {
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "system": {
+          "title": "System",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "count",
+        "revision",
+        "system"
+      ],
+      "title": "ManagedExpertCategory",
+      "type": "object"
+    },
+    "ManagedSkillCategory": {
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "id": {
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "system": {
+          "title": "System",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "count",
+        "revision",
+        "system"
+      ],
+      "title": "ManagedSkillCategory",
+      "type": "object"
+    },
+    "ManagementOAuthView": {
+      "properties": {
+        "authorization_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "仅发起会话可读取；pending 状态下可恢复。包含临时 state，不应共享或记录日志。",
+          "title": "Authorization Url"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "exchanging",
+            "awaiting_confirmation",
+            "completed",
+            "cancelled",
+            "expired",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "expires_at"
+      ],
+      "title": "ManagementOAuthView",
+      "type": "object"
+    },
+    "McpActivityPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/McpActivityView"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "page"
+      ],
+      "title": "McpActivityPage",
+      "type": "object"
+    },
+    "McpActivityView": {
+      "properties": {
+        "actor_name": {
+          "title": "Actor Name",
+          "type": "string"
+        },
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "client_version": {
+          "default": "",
+          "title": "Client Version",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "device_session_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Device Session Id"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "error_code": {
+          "title": "Error Code",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        },
+        "result": {
+          "title": "Result",
+          "type": "string"
+        },
+        "service_id": {
+          "format": "uuid",
+          "title": "Service Id",
+          "type": "string"
+        },
+        "service_name": {
+          "title": "Service Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "service_id",
+        "service_name",
+        "actor_name",
+        "category",
+        "operation",
+        "capability",
+        "source",
+        "result",
+        "duration_ms",
+        "error_code",
+        "message",
+        "request_id",
+        "created_at"
+      ],
+      "title": "McpActivityView",
+      "type": "object"
+    },
+    "McpCapabilities": {
+      "properties": {
+        "checked_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Checked At"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/McpCapability"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "negotiated": {
+          "additionalProperties": true,
+          "title": "Negotiated",
+          "type": "object"
+        },
+        "protocol": {
+          "title": "Protocol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "items",
+        "protocol",
+        "negotiated",
+        "checked_at",
+        "error"
+      ],
+      "title": "McpCapabilities",
+      "type": "object"
+    },
+    "McpCapability": {
+      "properties": {
+        "definition": {
+          "additionalProperties": true,
+          "title": "Definition",
+          "type": "object"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "tools",
+            "prompts",
+            "resources",
+            "templates"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "original_description": {
+          "title": "Original Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "name",
+        "description",
+        "original_description",
+        "enabled",
+        "definition"
+      ],
+      "title": "McpCapability",
+      "type": "object"
+    },
+    "McpContentInput": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Arguments",
+          "type": "array"
+        },
+        "body": {
+          "maxLength": 100000,
+          "minLength": 1,
+          "title": "Body",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "prompts",
+            "resources"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "mime_type": {
+          "default": "text/plain",
+          "enum": [
+            "text/plain",
+            "text/markdown",
+            "application/json"
+          ],
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[\\w.-]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "service_id": {
+          "format": "uuid",
+          "title": "Service Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service_id",
+        "kind",
+        "name",
+        "body"
+      ],
+      "title": "McpContentInput",
+      "type": "object"
+    },
+    "McpCredentials": {
+      "additionalProperties": false,
+      "properties": {
+        "values": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "values"
+      ],
+      "title": "McpCredentials",
+      "type": "object"
+    },
+    "McpImport": {
+      "additionalProperties": false,
+      "properties": {
+        "services": {
+          "items": {
+            "$ref": "#/$defs/McpServiceInput"
+          },
+          "maxItems": 50,
+          "minItems": 1,
+          "title": "Services",
+          "type": "array"
+        }
+      },
+      "required": [
+        "services"
+      ],
+      "title": "McpImport",
+      "type": "object"
+    },
+    "McpImportRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration": {
+          "additionalProperties": true,
+          "title": "Configuration",
+          "type": "object"
+        }
+      },
+      "required": [
+        "configuration"
+      ],
+      "title": "McpImportRequest",
+      "type": "object"
+    },
+    "McpPolicyInput": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 10000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Description"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "key": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "tools",
+            "prompts",
+            "resources",
+            "templates"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "enabled"
+      ],
+      "title": "McpPolicyInput",
+      "type": "object"
+    },
+    "McpPresentationUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "examples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Examples",
+          "type": "array"
+        },
+        "icon": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Icon",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "McpPresentationUpdate",
+      "type": "object"
+    },
+    "McpResult": {
+      "properties": {
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result",
+        "duration_ms"
+      ],
+      "title": "McpResult",
+      "type": "object"
+    },
+    "McpRun": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "key": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "tools",
+            "prompts",
+            "resources",
+            "templates"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Uri"
+        }
+      },
+      "required": [
+        "kind",
+        "key"
+      ],
+      "title": "McpRun",
+      "type": "object"
+    },
+    "McpServiceInput": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "default": "organization",
+          "enum": [
+            "organization",
+            "selected"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "auth_mode": {
+          "default": "none",
+          "enum": [
+            "none",
+            "organization",
+            "personal",
+            "oauth"
+          ],
+          "title": "Auth Mode",
+          "type": "string"
+        },
+        "connection_options": {
+          "$ref": "#/$defs/ConnectionOptions"
+        },
+        "credential_fields": {
+          "items": {
+            "$ref": "#/$defs/CredentialField"
+          },
+          "maxItems": 10,
+          "title": "Credential Fields",
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "examples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Examples",
+          "type": "array"
+        },
+        "icon": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Icon",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "oauth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transport": {
+          "default": "http",
+          "enum": [
+            "http",
+            "sse",
+            "builtin"
+          ],
+          "title": "Transport",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "McpServiceInput",
+      "type": "object"
+    },
+    "McpServiceUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "default": "organization",
+          "enum": [
+            "organization",
+            "selected"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "auth_mode": {
+          "default": "none",
+          "enum": [
+            "none",
+            "organization",
+            "personal",
+            "oauth"
+          ],
+          "title": "Auth Mode",
+          "type": "string"
+        },
+        "connection_options": {
+          "$ref": "#/$defs/ConnectionOptions"
+        },
+        "credential_fields": {
+          "items": {
+            "$ref": "#/$defs/CredentialField"
+          },
+          "maxItems": 10,
+          "title": "Credential Fields",
+          "type": "array"
+        },
+        "credential_values": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Credential Values"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "examples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Examples",
+          "type": "array"
+        },
+        "icon": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Icon",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "oauth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transport": {
+          "default": "http",
+          "enum": [
+            "http",
+            "sse",
+            "builtin"
+          ],
+          "title": "Transport",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "title": "Url",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "McpServiceUpdate",
+      "type": "object"
+    },
+    "McpServiceView": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "default": "organization",
+          "enum": [
+            "organization",
+            "selected"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "auth_mode": {
+          "default": "none",
+          "enum": [
+            "none",
+            "organization",
+            "personal",
+            "oauth"
+          ],
+          "title": "Auth Mode",
+          "type": "string"
+        },
+        "checked_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Checked At"
+        },
+        "configured": {
+          "title": "Configured",
+          "type": "boolean"
+        },
+        "connection_options": {
+          "$ref": "#/$defs/ConnectionOptions"
+        },
+        "counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Counts",
+          "type": "object"
+        },
+        "credential_fields": {
+          "items": {
+            "$ref": "#/$defs/CredentialField"
+          },
+          "maxItems": 10,
+          "title": "Credential Fields",
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "examples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Examples",
+          "type": "array"
+        },
+        "health_checked_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Health Checked At"
+        },
+        "health_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Health Error"
+        },
+        "icon": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Icon",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "oauth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "protocol": {
+          "title": "Protocol",
+          "type": "string"
+        },
+        "transport": {
+          "default": "http",
+          "enum": [
+            "http",
+            "sse",
+            "builtin"
+          ],
+          "title": "Transport",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "title": "Url",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "id",
+        "version",
+        "configured",
+        "checked_at",
+        "error",
+        "protocol",
+        "counts"
+      ],
+      "title": "McpServiceView",
+      "type": "object"
+    },
+    "McpServiceWrite": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "default": "organization",
+          "enum": [
+            "organization",
+            "selected"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "auth_mode": {
+          "default": "none",
+          "enum": [
+            "none",
+            "organization",
+            "personal",
+            "oauth"
+          ],
+          "title": "Auth Mode",
+          "type": "string"
+        },
+        "connection_options": {
+          "$ref": "#/$defs/ConnectionOptions"
+        },
+        "credential_fields": {
+          "items": {
+            "$ref": "#/$defs/CredentialField"
+          },
+          "maxItems": 10,
+          "title": "Credential Fields",
+          "type": "array"
+        },
+        "credential_values": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Credential Values"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "examples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Examples",
+          "type": "array"
+        },
+        "icon": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Icon",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "oauth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transport": {
+          "default": "http",
+          "enum": [
+            "http",
+            "sse",
+            "builtin"
+          ],
+          "title": "Transport",
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "McpServiceWrite",
+      "type": "object"
+    },
+    "Me": {
+      "properties": {
+        "reauthenticate_at": {
+          "format": "date-time",
+          "title": "Reauthenticate At",
+          "type": "string"
+        },
+        "scope": {
+          "default": "management:read",
+          "enum": [
+            "management:read",
+            "management:read management:write"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "session_expires_at": {
+          "format": "date-time",
+          "title": "Session Expires At",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "user": {
+          "$ref": "#/$defs/UserView"
+        }
+      },
+      "required": [
+        "user",
+        "session_id",
+        "session_expires_at",
+        "reauthenticate_at"
+      ],
+      "title": "Me",
+      "type": "object"
+    },
+    "Metadata": {
+      "properties": {
+        "access_seconds": {
+          "title": "Access Seconds",
+          "type": "integer"
+        },
+        "callback_template": {
+          "default": "http://127.0.0.1:{port}/actvero/cli/callback",
+          "title": "Callback Template",
+          "type": "string"
+        },
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "client_id": {
+          "title": "Client Id",
+          "type": "string"
+        },
+        "contract_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Contract Version",
+          "type": "integer"
+        },
+        "instance_id": {
+          "format": "uuid",
+          "title": "Instance Id",
+          "type": "string"
+        },
+        "issuer": {
+          "title": "Issuer",
+          "type": "string"
+        },
+        "platform_name": {
+          "title": "Platform Name",
+          "type": "string"
+        },
+        "reauthentication_days": {
+          "title": "Reauthentication Days",
+          "type": "integer"
+        },
+        "recovery_days": {
+          "title": "Recovery Days",
+          "type": "integer"
+        },
+        "resource_contract_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Resource Contract Version",
+          "type": "integer"
+        },
+        "scope": {
+          "const": "management:read",
+          "default": "management:read",
+          "title": "Scope",
+          "type": "string"
+        },
+        "supported_scopes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Supported Scopes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "instance_id",
+        "platform_name",
+        "client_id",
+        "issuer",
+        "access_seconds",
+        "recovery_days",
+        "reauthentication_days"
+      ],
+      "title": "Metadata",
+      "type": "object"
+    },
+    "OAuthConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "authorization_url": {
+          "title": "Authorization Url",
+          "type": "string"
+        },
+        "client_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Client Id",
+          "type": "string"
+        },
+        "scopes": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Scopes",
+          "type": "string"
+        },
+        "token_url": {
+          "title": "Token Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorization_url",
+        "token_url",
+        "client_id"
+      ],
+      "title": "OAuthConfig",
+      "type": "object"
+    },
+    "Organization": {
+      "properties": {
+        "authority": {
+          "enum": [
+            "membership",
+            "platform"
+          ],
+          "title": "Authority",
+          "type": "string"
+        },
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "membership_id": {
+          "format": "uuid",
+          "title": "Membership Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "org_id": {
+          "format": "uuid",
+          "title": "Org Id",
+          "type": "string"
+        },
+        "permissions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Permissions",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "role": {
+          "enum": [
+            "administrator",
+            "member"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "org_id",
+        "name",
+        "membership_id",
+        "role",
+        "authority",
+        "available",
+        "permissions"
+      ],
+      "title": "Organization",
+      "type": "object"
+    },
+    "Organizations": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/Organization"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 50,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "page"
+      ],
+      "title": "Organizations",
+      "type": "object"
+    },
+    "SkillAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "publish",
+            "withdraw"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "draft_updates": {
+          "items": {
+            "$ref": "#/$defs/ExpertDraftSelection"
+          },
+          "maxItems": 50,
+          "title": "Draft Updates",
+          "type": "array"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Request Id"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "action"
+      ],
+      "title": "SkillAction",
+      "type": "object"
+    },
+    "SkillDistributionPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/SkillDistributionView"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "page": {
+          "title": "Page",
+          "type": "integer"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "page"
+      ],
+      "title": "SkillDistributionPage",
+      "type": "object"
+    },
+    "SkillDistributionView": {
+      "properties": {
+        "actor_name": {
+          "title": "Actor Name",
+          "type": "string"
+        },
+        "client_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Client Version"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "device_session_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Device Session Id"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "skill_id": {
+          "format": "uuid",
+          "title": "Skill Id",
+          "type": "string"
+        },
+        "skill_name": {
+          "title": "Skill Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "skill_id",
+        "skill_name",
+        "version",
+        "actor_name",
+        "source",
+        "created_at"
+      ],
+      "title": "SkillDistributionView",
+      "type": "object"
+    },
+    "SkillFile": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "previewable": {
+          "title": "Previewable",
+          "type": "boolean"
+        },
+        "sha256": {
+          "default": "",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "title": "Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size",
+        "previewable"
+      ],
+      "title": "SkillFile",
+      "type": "object"
+    },
+    "SkillFileContent": {
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "content"
+      ],
+      "title": "SkillFileContent",
+      "type": "object"
+    },
+    "SkillIcon": {
+      "properties": {
+        "image": {
+          "default": "",
+          "description": "规范化图片 data URL；空值时客户端显示名称首字母",
+          "title": "Image",
+          "type": "string"
+        },
+        "sha256": {
+          "default": "",
+          "description": "图片字节 SHA-256，可用于桌面端缓存失效",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source": {
+          "default": "fallback",
+          "enum": [
+            "fallback",
+            "package",
+            "library",
+            "upload"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "title": "SkillIcon",
+      "type": "object"
+    },
+    "SkillIconOption": {
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "image": {
+          "title": "Image",
+          "type": "string"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "category",
+        "image"
+      ],
+      "title": "SkillIconOption",
+      "type": "object"
+    },
+    "SkillIconSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Image",
+          "type": "string"
+        },
+        "key": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Key",
+          "type": "string"
+        },
+        "source": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "library",
+            "upload"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "title": "SkillIconSelection",
+      "type": "object"
+    },
+    "SkillIconSelectionView": {
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "default": "",
+          "maxLength": 350000,
+          "title": "Image",
+          "type": "string"
+        },
+        "key": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Key",
+          "type": "string"
+        },
+        "source": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "library",
+            "upload"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "title": "SkillIconSelectionView",
+      "type": "object"
+    },
+    "SkillImport": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "maxLength": 36,
+              "minLength": 1,
+              "pattern": "^[a-z0-9-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
+          "title": "Category"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "icon_selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkillIconSelection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "省略或 null 保留原设置；auto 恢复跟随生效版本包内图标"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "package_base64": {
+          "maxLength": 28000000,
+          "title": "Package Base64",
+          "type": "string"
+        },
+        "release_notes": {
+          "default": "",
+          "maxLength": 4000,
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revision"
+        },
+        "skill_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Skill Id"
+        },
+        "version": {
+          "maxLength": 50,
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-zA-Z0-9.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "audience",
+        "display_name",
+        "description",
+        "version",
+        "package_base64"
+      ],
+      "title": "SkillImport",
+      "type": "object"
+    },
+    "SkillOverview": {
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "SkillOverview",
+      "type": "object"
+    },
+    "SkillPreview": {
+      "properties": {
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/SkillFile"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "icon_warning": {
+          "default": "",
+          "title": "Icon Warning",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "package_icon": {
+          "default": "",
+          "title": "Package Icon",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "title": "Size",
+          "type": "integer"
+        },
+        "skill_md": {
+          "title": "Skill Md",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "skill_md",
+        "files",
+        "sha256",
+        "size"
+      ],
+      "title": "SkillPreview",
+      "type": "object"
+    },
+    "SkillUpdate": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "maxLength": 36,
+              "minLength": 1,
+              "pattern": "^[a-z0-9-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
+          "title": "Category"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "icon_selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkillIconSelection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "省略或 null 保留原设置；auto 恢复跟随生效版本包内图标"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "audience",
+        "display_name",
+        "description",
+        "revision"
+      ],
+      "title": "SkillUpdate",
+      "type": "object"
+    },
+    "SkillVersionView": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/SkillFile"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "icon_warning": {
+          "default": "",
+          "title": "Icon Warning",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "package_icon": {
+          "default": "",
+          "title": "Package Icon",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Published At"
+        },
+        "release_notes": {
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "title": "Size",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "published",
+            "superseded",
+            "withdrawn"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uploader_name": {
+          "title": "Uploader Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "status",
+        "release_notes",
+        "uploader_name",
+        "sha256",
+        "size",
+        "files",
+        "created_at",
+        "published_at"
+      ],
+      "title": "SkillVersionView",
+      "type": "object"
+    },
+    "SkillView": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "category": {
+          "default": "uncategorized",
+          "maxLength": 36,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Category",
+          "type": "string"
+        },
+        "category_name": {
+          "default": "未分类",
+          "title": "Category Name",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "default_version_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "当前唯一生效的已发布版本；无生效版本时为空。保留原字段名，不再单独设置默认版本。",
+          "title": "Default Version Id"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "downloads": {
+          "title": "Downloads",
+          "type": "integer"
+        },
+        "icon": {
+          "$ref": "#/$defs/SkillIcon"
+        },
+        "icon_selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkillIconSelectionView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "versions": {
+          "items": {
+            "$ref": "#/$defs/SkillVersionView"
+          },
+          "title": "Versions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "display_name",
+        "description",
+        "audience",
+        "member_ids",
+        "id",
+        "name",
+        "revision",
+        "default_version_id",
+        "versions",
+        "downloads",
+        "created_at"
+      ],
+      "title": "SkillView",
+      "type": "object"
+    },
+    "UserView": {
+      "properties": {
+        "avatar_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Avatar Url"
+        },
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Email"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ],
+      "title": "UserView",
+      "type": "object"
+    }
+  }
+}
