@@ -4,6 +4,7 @@ import asyncio
 import importlib.util
 import json
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 
 import httpx
@@ -19,11 +20,57 @@ from test_llm_execution import BASE, GATEWAY, METER, configured, credentials, en
 from test_llm_routing import update
 from test_mcp import listening
 
+from app.modules.auth.service import digest, now
+from app.modules.desktop.models import DeviceSession
+from app.modules.desktop_mcp.models import ResourceToken
 from app.modules.llm.catalog_schemas import RoutingPolicy
 from app.modules.llm.models import ModelChannel
 from app.modules.llm.providers.timeouts import ExecutionTimeout, Timeouts
 
 env = identity_env
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("revoke", [False, True])
+async def test_resource_token_expiry_only_limits_admission_but_revocation_stops_stream(
+    env, monkeypatch, revoke
+):
+    from test_llm_execution import upstream
+
+    admin = await env.client()
+    await billing(admin)
+    app, state = upstream()
+    state["after_first"], state["continue_stream"] = asyncio.Event(), asyncio.Event()
+    async with listening(app) as base:
+        model, _ = await configured(env, admin, base)
+        async with native_client(env) as api:
+            _, token = await credentials(env, monkeypatch, api, admin, model)
+            pending = asyncio.create_task(
+                api.post(GATEWAY, headers=bearer(token), json=payload(model, stream=True))
+            )
+            await asyncio.wait_for(state["after_first"].wait(), 10)
+            try:
+                async with env.sessions() as db:
+                    resource = await db.get(ResourceToken, digest(token["access_token"]))
+                    resource.expires_at = now() - timedelta(seconds=1)
+                    if revoke:
+                        device = await db.get(DeviceSession, resource.device_id)
+                        device.revoked_at = now()
+                    await db.commit()
+                await asyncio.sleep(1.5)  # The background access watch checks once a second.
+            finally:
+                state["continue_stream"].set()
+            result = await asyncio.wait_for(pending, 10)
+            if revoke:
+                assert "device_revoked" in result.text and "[DONE]" not in result.text
+            else:
+                assert result.status_code == 200 and "[DONE]" in result.text, result.text
+                assert '"error"' not in result.text
+                assert (await entries(admin))[0]["status"] == "settled"
+            rejected = await api.post(GATEWAY, headers=bearer(token), json=payload(model))
+            assert rejected.status_code == 401
+            assert rejected.json()["error"]["code"] == "resource_token_expired"
+            assert len(state["calls"]) == 1
 
 
 @pytest.mark.asyncio
