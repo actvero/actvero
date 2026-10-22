@@ -9,9 +9,9 @@ description: 使用 Actvero CLI 管理指定平台和组织的 Skills、MCP 服�
 
 ## 从零开始
 
-1. 检查 `node --version`、`npm --version`、`actvero --version`。本手册对应 `@actvero/cli@0.2.0-dev.1`，Node.js ≥24。没有 CLI 或存在同名旧 Python CLI，读 [安装与初始化](references/bootstrap.md)。未安装时可执行：
+1. 检查 `node --version`、`npm --version`、`actvero --version`。本手册对应 `@actvero/cli@0.2.0-dev.2`，Node.js ≥24。没有 CLI 或存在同名旧 Python CLI，读 [安装与初始化](references/bootstrap.md)。未安装时可执行：
    ```sh
-   npx --yes --package=@actvero/cli@0.2.0-dev.1 actvero --help
+   npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --help
    ```
 2. 从用户当前请求、已授权配置取得平台基础 URL 和目标组织；缺少时只问缺少的值，不猜域名、账号或 UUID。先 `platform info --server <URL> --json` 检查能力，再 `auth status --server <URL> --json`。需要登录由用户在浏览器完成；凭据库/浏览器不可用按 bootstrap 处理。
 3. 用 `org list --server <URL> --json` 发现组织，按完整 UUID 选择，读取 `org permissions --org <UUID> --server <URL> --json`。同名/多个候选无法确定才询问。所有资源操作显式带 `--server` 和 `--org`。

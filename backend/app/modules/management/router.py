@@ -1,6 +1,7 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Literal
+from urllib.parse import urlencode
 from uuid import UUID
 
 import httpx
@@ -22,6 +23,7 @@ from app.modules.members.models import Membership
 from app.modules.members.service import membership_state
 from app.modules.platform.branding import DEFAULT_PLATFORM_NAME
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
+from app.modules.users.models import User
 
 bearer = HTTPBearer(scheme_name="ManagementAccess", auto_error=False)
 router = APIRouter(
@@ -52,24 +54,32 @@ async def metadata(request: Request, db: DB) -> s.Metadata:
 @router.post("/login/start", response_model=s.LoginAttempt)
 async def start(payload: s.StartLogin, request: Request, db: DB) -> s.LoginAttempt:
     await limit(db, address_key(request, "management-login"), 30, 300)
+    if payload.authorization_version == 1 and "management:write" in payload.scope.split():
+        fail(409, "client_upgrade_required", "写权限需要浏览器授权，请升级 CLI 后重新登录")
     state, nonce = (secrets.token_urlsafe(32) for _ in range(2))
-    url = await service.native(request).authorization(
-        payload.redirect_uri,
-        state,
-        nonce,
-        payload.code_challenge,
-        payload.reauthenticate or "management:write" in payload.scope.split(),
-    )
     attempt = ManagementLogin(
         state_hash=digest(state),
         nonce=nonce,
         challenge=payload.code_challenge,
         redirect_uri=payload.redirect_uri,
         name=payload.device_name,
-        scope=payload.scope,
+        scope="management:read",
+        authorization_version=payload.authorization_version,
+        reauthenticate=payload.reauthenticate,
         expires_at=now() + timedelta(minutes=5),
     )
     db.add(attempt)
+    await db.flush()
+    if payload.authorization_version == 2:
+        url = (
+            provider(request).settings.app_url
+            + "/cli/authorize#"
+            + urlencode({"attempt_id": str(attempt.id), "state": state})
+        )
+    else:
+        url = await service.native(request).authorization(
+            payload.redirect_uri, state, nonce, payload.code_challenge, payload.reauthenticate
+        )
     await db.commit()
     return s.LoginAttempt(
         attempt_id=attempt.id,
@@ -123,6 +133,15 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         fail(409, "login_consumed", "登录结果已使用，请使用已保存的凭据")
     if attempt.expires_at <= now():
         fail(401, "login_expired", "登录尝试已过期")
+    if attempt.authorization_version == 2:
+        if (
+            not attempt.approved_at
+            or not attempt.approved_identity_id
+            or not attempt.authorized_org_ids
+        ):
+            fail(403, "consent_required", "请先在浏览器确认 CLI 的组织和权限")
+    elif "management:write" in attempt.scope.split():
+        fail(403, "consent_required", "写权限需要浏览器授权，请升级 CLI 后重新登录")
     attempt.consumed = True
     try:
         claims = await service.native(request).exchange(
@@ -140,6 +159,9 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         await db.commit()
         fail(401, "invalid_login", "登录验证失败，请重新发起")
     identity, _ = await resolve_identity(db, settings.oidc_issuer, claims)
+    if attempt.authorization_version == 2 and identity.id != attempt.approved_identity_id:
+        await db.commit()
+        fail(403, "consent_identity_mismatch", "登录账号与授权账号不同，请重新发起授权")
     stamp = now()
     cap = authenticated + timedelta(days=settings.management_reauthentication_days)
     if cap <= stamp:
@@ -149,6 +171,7 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         identity_id=identity.id,
         client_id=settings.management_client_id,
         scope=attempt.scope,
+        authorized_org_ids=attempt.authorized_org_ids,
         name=attempt.name,
         authenticated_at=authenticated,
         created_at=stamp,
@@ -156,6 +179,17 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         expires_at=min(cap, stamp + timedelta(days=settings.management_recovery_days)),
         absolute_expires_at=cap,
     )
+    if row.authorized_org_ids is not None:
+        user = await db.get(User, identity.user_id)
+        assert user is not None
+        for org_id in row.authorized_org_ids:
+            await service.organization(
+                request,
+                db,
+                service.ManagementActor(row, identity, user),
+                UUID(org_id),
+                require_admin=True,
+            )
     db.add(row)
     await db.flush()
     result = await service.issue_tokens(request, db, row)
@@ -265,6 +299,11 @@ async def me(request: Request, db: DB) -> s.Me:
     who = await service.actor(request, db)
     result = s.Me(
         scope=who.session.scope,
+        authorized_org_ids=(
+            [UUID(value) for value in who.session.authorized_org_ids]
+            if who.session.authorized_org_ids is not None
+            else None
+        ),
         user=UserView.model_validate(who.user),
         session_id=who.session.id,
         session_expires_at=who.session.expires_at,
@@ -281,6 +320,10 @@ async def organizations(
     who = await service.actor(request, db)
     settings = provider(request).settings
     filters = [Membership.user_id == who.user.id, Membership.status != "removed"]
+    if who.session.authorized_org_ids is not None:
+        filters.append(
+            Membership.tenant_id.in_([UUID(value) for value in who.session.authorized_org_ids])
+        )
     if settings.platform_edition == "community":
         install = await db.get(Installation, 1)
         filters.append(Membership.tenant_id == (install.tenant_id if install else None))

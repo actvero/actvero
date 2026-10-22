@@ -1,6 +1,6 @@
 # 安装、初始化与切换
 
-本手册适用于 CLI 0.2.0-dev.1；这是开发预览版。平台必须部署资源管理接口，不能因为 npm 安装成功就认为现有服务器支持这些功能。
+本手册适用于 CLI 0.2.0-dev.2；这是开发预览版。平台必须部署资源管理接口，不能因为 npm 安装成功就认为现有服务器支持这些功能。
 
 ## 1. 获得命令
 
@@ -9,14 +9,14 @@
 固定版本调用，无需全局安装：
 
 ```sh
-npx --yes --package=@actvero/cli@0.2.0-dev.1 actvero --version
-npx --yes --package=@actvero/cli@0.2.0-dev.1 actvero guide show overview
+npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --version
+npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero guide show overview
 ```
 
 长期使用：
 
 ```sh
-npm install --global @actvero/cli@0.2.0-dev.1
+npm install --global @actvero/cli@0.2.0-dev.2
 actvero --version
 actvero --help
 ```
@@ -51,9 +51,9 @@ URL 是平台基础地址，例如 `https://actvero.example.com`，不是 `/cons
 actvero platform info --server https://actvero.example.com --json
 ```
 
-应返回 `contract_version=1`、`resource_contract_version=1`、`instance_id`、`supported_scopes`、`capabilities`。Skills/MCP/专家分别需 `skills.read/write`、`mcp.read/write`、`experts.read/write`；分类、下载、MCP OAuth/run/activities/contents 还需对应同名能力（完整名称见 `schema show Metadata`）。
+应返回 `contract_version=1`、`authorization_contract_version=2`、`resource_contract_version=1`、`instance_id`、`supported_scopes`、`capabilities`。Skills/MCP/专家分别需 `skills.read/write`、`mcp.read/write`、`experts.read/write`；分类、下载、MCP OAuth/run/activities/contents 还需对应同名能力（完整名称见 `schema show Metadata`）。
 
-如果 404/关闭/版本不兼容，先确认 URL，再向平台管理员报告。平台需部署包含 `111f_management_resources`、`112g_management_mcp_oauth` 的版本，通过 SaaS 后台“设置 → CLI 接入”开启接口（需 `114i_cli_settings` 迁移）；首次保存前和社区版使用 `ACTVERO_MANAGEMENT_ENABLED` 部署默认值。登录还需配置独立 OIDC 公共客户端 `actvero-cli`。只修改 Realm 导入模板不会更新已有身份库。管理员根据平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 更新实际部署；本 Skill 不自动部署或升级数据库。能力响应才是当前服务器依据。
+如果 404/关闭/版本不兼容，先确认 URL，再向平台管理员报告。平台需部署包含 `111f_management_resources`、`112g_management_mcp_oauth` 的版本，通过 SaaS 后台“设置 → CLI 接入”开启接口（需 `114i_cli_settings` 迁移，新浏览器授权需 `115j_cli_consent`）；首次保存前和社区版使用 `ACTVERO_MANAGEMENT_ENABLED` 部署默认值。登录还需配置独立 OIDC 公共客户端 `actvero-cli`。只修改 Realm 导入模板不会更新已有身份库。管理员根据平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 更新实际部署；本 Skill 不自动部署或升级数据库。能力响应才是当前服务器依据。
 
 ## 4. 登录与工作空间初始化
 
@@ -61,22 +61,13 @@ actvero platform info --server https://actvero.example.com --json
 
 ```sh
 actvero auth status --server https://actvero.example.com --json
-# 尚未登录；查询任务默认只读
+# 首次接入或调整账号、组织、权限，均运行同一命令
 actvero auth login --server https://actvero.example.com
-# 执行已获授权的资源维护时，首次登录申请写权限
-actvero auth login --server https://actvero.example.com --write
 ```
 
-两条 login 按任务二选一。浏览器登录由用户完成，CLI 在当前机器本地回调等待最多 5 分钟。成功后运行 status，核对账号、scope 与会话期限。不要读取或输出系统凭据库内容。
+本人在浏览器完成登录，选择组织及只读或管理权限并确认。Agent 不代替用户点击授权；提示词和 `--write` 参数都不能授予权限。CLI 等待本机回调最多 5 分钟。成功后运行 status，核对账号、scope、authorized_org_ids 与会话期限。不要读取或输出系统凭据库内容。
 
-已有只读会话需写入、或更换同平台账号：
-
-```sh
-actvero auth logout --server https://actvero.example.com
-actvero auth login --server https://actvero.example.com --write --reauthenticate
-```
-
-`--reauthenticate` 要求浏览器重新验证，不会覆盖已有 CLI 会话，所以仍先 logout。退出只影响所选平台 CLI 登录，浏览器可能保留原 SSO。
+已有会话调整授权时不必先退出；新授权保存成功后撤销旧会话。取消、超时或新凭据保存失败会保留原会话。撤销旧会话暂时失败时 CLI 报告警告，后续命令重试清理。`--reauthenticate` 可要求浏览器重新验证身份，但不绕过授权确认。主动断开此平台使用 `auth logout`。
 
 凭据需要 macOS Keychain、Windows Credential Manager 或 Linux Secret Service。无凭据库/无桌面浏览器的 CI、SSH 无头环境目前没有受支持的 token/password/device-code 登录替代方案。不要退回明文凭据；在具备条件的工作站运行，或报告这个阻塞。只读离线手册不受影响。
 
@@ -92,6 +83,6 @@ actvero org permissions --server https://actvero.example.com --org <ORG_UUID> --
 
 ## 6. 切换平台/组织
 
-每次显式传目标 `--server URL --org UUID`。同平台换组织不必重新登录；组织 ID 在每个平台重新查，不跨平台沿用。不同平台分别登录，凭据按规范化 URL 隔离，最近成功登录的平台成为默认值。
+每次显式传目标 `--server URL --org UUID`。同平台在已授权组织之间切换不必重新登录；访问未授权组织需重新运行 auth login，在浏览器调整授权；组织 ID 在每个平台重新查，不跨平台沿用。不同平台分别登录，凭据按规范化 URL 隔离，最近成功登录的平台成为默认值。
 
-一个平台 URL 只保存一个当前账号，没有具名账号 profile；换账号需 logout/login。别名域名被当作另一个凭据目标。非机密配置默认 `~/.config/actvero-cli/`；`ACTVERO_CLI_HOME` 只改变配置、锁和请求记录目录，**不能隔离同 URL 的系统凭据**。Agent 不应依赖默认平台完成写操作。
+一个平台 URL 只保存一个当前账号，没有具名账号 profile；换账号重新运行 auth login，在浏览器登录目标账号并确认。别名域名被当作另一个凭据目标。非机密配置默认 `~/.config/actvero-cli/`；`ACTVERO_CLI_HOME` 只改变配置、锁和请求记录目录，**不能隔离同 URL 的系统凭据**。Agent 不应依赖默认平台完成写操作。

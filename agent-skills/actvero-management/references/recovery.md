@@ -9,8 +9,10 @@
 | command not found / 同名旧 CLI | 按 bootstrap 固定版本 npx；核对 --version/--help |
 | server_required / invalid_server | 明确正确基础 URL；远端 HTTPS，不附加 console/api 或令牌 |
 | platform info 404 / management_unavailable / unsupported_contract / unsupported_capability | 核对 URL；读取能力。需平台管理员完成部署/启用，不自行回退到 Web 私有 API |
-| login_required | 用户在当前机器浏览器 auth login；写任务需 --write |
-| already_logged_in / insufficient_scope | 已有账号/只读会话不自动升级；明确目标后 logout，再 login --write，换账号用 --reauthenticate |
+| login_required | 运行 auth login，由用户在浏览器确认组织和权限 |
+| insufficient_scope / organization_not_granted | 运行 auth login，在浏览器调整组织或管理权限，无需先退出 |
+| client_upgrade_required / consent_required | 升级 CLI 后运行 auth login，由用户确认授权 |
+| consent_identity_mismatch | 浏览器授权与回环登录的账号不同，重新发起并使用同一账号 |
 | secure_store_unavailable | 解锁/启用系统凭据库，Linux 检查 Secret Service；不导出/明文存令牌 |
 | browser_unavailable / login_timeout / login_cancelled | 需要同机浏览器完成本地回调；修复环境或重新发起登录，不手工拼接回调 |
 | issuer_mismatch / invalid_response | 停止登录/写入，核对平台和 CLI 版本/身份配置，不禁用 issuer 校验 |

@@ -3,7 +3,7 @@ from typing import Any, Literal, TypeVar
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from app.modules.auth.schemas import UserView
 from app.modules.desktop.schemas import (
@@ -21,6 +21,7 @@ from app.modules.llm.schemas import ChannelDetail, ChannelPage
 class StartLogin(BaseModel):
     model_config = ConfigDict(extra="forbid")
     contract_version: Literal[1]
+    authorization_version: Literal[1, 2] = 1
     redirect_uri: str = Field(max_length=200)
     code_challenge: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     device_name: str = Field(min_length=1, max_length=100)
@@ -66,6 +67,7 @@ class Tokens(BaseModel):
 
 class Metadata(BaseModel):
     contract_version: Literal[1] = 1
+    authorization_contract_version: Literal[2] = 2
     instance_id: UUID
     platform_name: str
     client_id: str
@@ -111,6 +113,7 @@ class Me(BaseModel):
     user: UserView
     session_id: UUID
     scope: Literal["management:read", "management:read management:write"] = "management:read"
+    authorized_org_ids: list[UUID] | None = None
     session_expires_at: datetime
     reauthenticate_at: datetime
 
@@ -131,6 +134,29 @@ class Organizations(BaseModel):
     total: int
     page: int
     page_size: int = 50
+
+
+class CliConsentProof(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    attempt_id: UUID
+    state: SecretStr = Field(min_length=43, max_length=100)
+
+
+class CliConsentDecision(CliConsentProof):
+    approve: bool
+    org_ids: list[UUID] = Field(default_factory=list, max_length=100)
+    scope: Literal["management:read", "management:read management:write"] = "management:read"
+
+
+class CliConsentView(BaseModel):
+    device_name: str
+    expires_at: datetime
+    user: UserView
+    organizations: list[Organization]
+
+
+class CliConsentResult(BaseModel):
+    redirect_url: str
 
 
 class ChannelList(BaseModel):

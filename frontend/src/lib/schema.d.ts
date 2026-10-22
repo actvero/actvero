@@ -598,6 +598,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cli-authorization/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** View */
+        post: operations["view_api_v1_cli_authorization_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cli-authorization/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide */
+        post: operations["decide_api_v1_cli_authorization_decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/desktop/avatar": {
         parameters: {
             query?: never;
@@ -6580,6 +6614,60 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** CliConsentDecision */
+        CliConsentDecision: {
+            /** Approve */
+            approve: boolean;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Org Ids */
+            org_ids?: string[];
+            /**
+             * Scope
+             * @default management:read
+             * @enum {string}
+             */
+            scope: "management:read" | "management:read management:write";
+            /**
+             * State
+             * Format: password
+             */
+            state: string;
+        };
+        /** CliConsentProof */
+        CliConsentProof: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * State
+             * Format: password
+             */
+            state: string;
+        };
+        /** CliConsentResult */
+        CliConsentResult: {
+            /** Redirect Url */
+            redirect_url: string;
+        };
+        /** CliConsentView */
+        CliConsentView: {
+            /** Device Name */
+            device_name: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Organizations */
+            organizations: components["schemas"]["Organization"][];
+            user: components["schemas"]["UserView"];
+        };
         /** CliSettingsUpdate */
         CliSettingsUpdate: {
             /** Enabled */
@@ -10136,6 +10224,8 @@ export interface components {
         };
         /** Me */
         Me: {
+            /** Authorized Org Ids */
+            authorized_org_ids?: string[] | null;
             /**
              * Reauthenticate At
              * Format: date-time
@@ -10413,6 +10503,12 @@ export interface components {
         Metadata: {
             /** Access Seconds */
             access_seconds: number;
+            /**
+             * Authorization Contract Version
+             * @default 2
+             * @constant
+             */
+            authorization_contract_version: 2;
             /**
              * Callback Template
              * @default http://127.0.0.1:{port}/actvero/cli/callback
@@ -14101,6 +14197,12 @@ export interface components {
         };
         /** StartLogin */
         app__modules__management__schemas__StartLogin: {
+            /**
+             * Authorization Version
+             * @default 1
+             * @enum {integer}
+             */
+            authorization_version: 1 | 2;
             /** Code Challenge */
             code_challenge: string;
             /**
@@ -15770,6 +15872,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    view_api_v1_cli_authorization_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CliConsentProof"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliConsentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_api_v1_cli_authorization_decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CliConsentDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliConsentResult"];
                 };
             };
             /** @description Validation Error */

@@ -81,7 +81,11 @@ async def test_real_node_resource_commands_over_http(env, monkeypatch, tmp_path)
             stderr=asyncio.subprocess.PIPE,
             env={**os.environ, "ACTVERO_CLI_HOME": str(tmp_path / "cli-config")},
         )
+        env.provider.settings.app_url = f"http://127.0.0.1:{port}"
         payload = {
+            "browser_cookie": "actvero_community_session="
+            + web.api.cookies.get("actvero_community_session"),
+            "browser_csrf": web.session.csrf,
             "issuer": env.provider.settings.oidc_issuer,
             "server": f"http://127.0.0.1:{port}",
             "org": str(web.tenant.id),

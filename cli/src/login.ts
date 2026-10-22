@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { hostname } from 'node:os';
 import open from 'open';
-import { Client, READ_SCOPE, WRITE_SCOPE, validateTokens } from './client.js';
+import { Client, validateTokens } from './client.js';
 import { saveServer } from './config.js';
 import { CliError } from './errors.js';
 import type { LoginProof } from './store.js';
@@ -106,29 +106,30 @@ export async function login(
   browser: Browser = open,
 ): Promise<Record<string, unknown>> {
   return client.store.locked(async () => {
-    let previous = await client.store.load();
+    const previous = await client.store.load();
     if (previous.loginPending) {
       await client.publicRequest('POST', '/login/cancel', previous.loginPending);
-      await client.store.save({});
-      previous = {};
+      delete previous.loginPending;
+      await client.store.save(previous);
     }
-    if (previous.tokens)
+    if (previous.logoutPending)
       throw new CliError(
-        'already_logged_in',
-        '此平台已有登录；更换账号或写权限前请执行 auth logout',
+        'logout_pending',
+        '上次退出尚未确认，请先重试 auth logout',
       );
-    await client.store.save({});
+    await client.retireSessions(previous);
+    await client.store.save(previous);
     const metadata = await client.publicRequest('GET', '/metadata');
     if (
       metadata.contract_version !== 1 ||
+      metadata.authorization_contract_version !== 2 ||
       typeof metadata.issuer !== 'string' ||
       typeof metadata.instance_id !== 'string' ||
-      (write &&
-        (!Array.isArray(metadata.supported_scopes) ||
-          !metadata.supported_scopes.includes('management:write')))
+      !Array.isArray(metadata.supported_scopes)
     ) {
-      throw new CliError('unsupported_contract', '平台尚不支持此次 CLI 登录权限');
+      throw new CliError('unsupported_contract', '平台尚不支持浏览器授权，请先升级平台');
     }
+    if (write) process.stderr.write('--write 仅保留兼容；实际组织和权限由本人在浏览器选择。\n');
     const callback = new Loopback();
     let proof: LoginProof | undefined;
     let completed = false;
@@ -137,11 +138,11 @@ export async function login(
       const verifier = randomBytes(36).toString('base64url');
       const started = await client.publicRequest('POST', '/login/start', {
         contract_version: 1,
+        authorization_version: 2,
         redirect_uri: callback.redirectUri,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         device_name: 'CLI · ' + hostname().slice(0, 80),
         reauthenticate,
-        ...(write ? { scope: WRITE_SCOPE } : {}),
       });
       if (
         typeof started.state !== 'string' ||
@@ -151,19 +152,20 @@ export async function login(
         throw new CliError('invalid_response', '登录请求返回格式不兼容');
       }
       proof = { attempt_id: started.attempt_id, state: started.state, code_verifier: verifier };
-      await client.store.save({ loginPending: proof });
+      await client.store.save({ ...previous, loginPending: proof });
       const target = new URL(started.authorization_url);
-      const issuer = new URL(metadata.issuer);
       if (
         started.issuer !== metadata.issuer ||
-        target.origin !== issuer.origin ||
+        target.origin !== new URL(client.server).origin ||
+        target.pathname !== new URL(client.server + '/cli/authorize').pathname ||
+        target.search !== '' ||
         target.username ||
         target.password ||
         !['https:', 'http:'].includes(target.protocol) ||
         (target.protocol === 'http:' &&
           !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname))
       ) {
-        throw new CliError('issuer_mismatch', '授权地址与平台声明的身份服务不一致');
+        throw new CliError('issuer_mismatch', '授权地址与目标平台不一致');
       }
       callback.expect(started.state, metadata.issuer);
       try {
@@ -175,18 +177,22 @@ export async function login(
       const tokens = validateTokens(
         await client.publicRequest('POST', '/login/exchange', { ...proof, ...returned }),
       );
-      if (tokens.scope !== (write ? WRITE_SCOPE : READ_SCOPE))
-        throw new CliError('insufficient_scope', '平台授予的权限与请求不一致');
-      await client.saveLogin(tokens, metadata.instance_id);
+      const retirePending = [...(previous.retirePending || [])];
+      if (previous.tokens) retirePending.push(previous.tokens.refresh_token);
+      await client.saveLogin(tokens, metadata.instance_id, retirePending);
       completed = true;
+      const retired = await client.retireSessions(await client.store.load());
       await saveServer(client.server);
-      return { server: client.server, session_id: tokens.session_id, scope: tokens.scope };
+      return {
+        server: client.server, session_id: tokens.session_id, scope: tokens.scope,
+        ...(retired ? {} : { warning: '新授权已保存；旧会话退出尚未确认，下次命令会重试清理' }),
+      };
     } finally {
       await callback.close();
       if (proof && !completed) {
         try {
           await client.publicRequest('POST', '/login/cancel', proof);
-          await client.store.clear();
+          await client.store.save(previous);
         } catch {
           /* Preserve the original cancellation proof for the next login. */
         }

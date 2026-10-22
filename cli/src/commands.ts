@@ -69,7 +69,7 @@ export function buildProgram(runtime: Runtime = {}): Command {
     .enablePositionalOptions()
     .name('actvero')
     .description('Actvero 多组织资源管理 CLI')
-    .version('0.2.0-dev.1');
+    .version('0.2.0-dev.2');
   program
     .option('--server <url>', '平台地址；默认使用上次成功登录的平台')
     .option('--json', '输出稳定的 JSON 结果');
@@ -166,7 +166,7 @@ export function buildProgram(runtime: Runtime = {}): Command {
   run(
     auth
       .command('login')
-      .option('--write', '明确申请管理写权限')
+      .option('--write', '兼容旧参数；权限统一在浏览器中选择')
       .option('--reauthenticate', '重新验证登录'),
     (ctx) => login(ctx.client, !!ctx.options.write, !!ctx.options.reauthenticate),
   );

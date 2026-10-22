@@ -109,12 +109,27 @@ export class Client {
     }
   }
 
-  async saveLogin(tokens: Tokens, instanceId: string): Promise<void> {
+  async saveLogin(tokens: Tokens, instanceId: string, retirePending: string[] = []): Promise<void> {
     await this.store.save({
       tokens,
       instanceId,
       accessDeadline: Date.now() + tokens.expires_in * 1000,
+      ...(retirePending.length ? { retirePending } : {}),
     });
+  }
+
+  async retireSessions(state: SessionState): Promise<boolean> {
+    for (const token of [...(state.retirePending || [])]) {
+      try {
+        await this.publicRequest('POST', '/logout', { refresh_token: token });
+      } catch (error) {
+        if (!(error instanceof CliError) || error.code !== 'invalid_credential') return false;
+      }
+      state.retirePending = state.retirePending!.filter((value) => value !== token);
+      if (!state.retirePending.length) delete state.retirePending;
+      await this.store.save(state);
+    }
+    return true;
   }
 
   private async acknowledge(state: SessionState): Promise<void> {
@@ -154,6 +169,7 @@ export class Client {
 
   private async tokens(force = false): Promise<Tokens> {
     let state = await this.store.load();
+    await this.retireSessions(state);
     if (!state.tokens) throw new CliError('login_required', '请先执行 auth login');
     validateTokens(state.tokens);
     if (state.logoutPending)
@@ -180,7 +196,7 @@ export class Client {
       if (requestId && tokens.scope !== WRITE_SCOPE)
         throw new CliError(
           'insufficient_scope',
-          '当前登录只读；退出后使用 auth login --write 授权写入',
+          '当前登录只读；运行 auth login，在浏览器重新授权管理权限',
         );
       const send = () =>
         this.publicRequest(method, path, body, {
@@ -207,7 +223,7 @@ export class Client {
     return this.store.locked(async () => {
       const tokens = await this.tokens();
       if (tokens.scope !== WRITE_SCOPE)
-        throw new CliError('insufficient_scope', '下载会记录分发，需要 auth login --write');
+        throw new CliError('insufficient_scope', '下载会记录分发，请运行 auth login 并在浏览器授权管理权限');
       const response = await this.rawRequest('POST', path, undefined, {
         Authorization: 'Bearer ' + tokens.access_token,
         'X-Management-Request-ID': requestId,
@@ -266,6 +282,8 @@ export class Client {
   async logout(): Promise<void> {
     await this.store.locked(async () => {
       const state = await this.store.load();
+      if (!(await this.retireSessions(state)))
+        throw new CliError('logout_pending', '旧会话退出尚未确认，请重试 auth logout');
       if (state.loginPending)
         await this.publicRequest('POST', '/login/cancel', state.loginPending);
       if (state.tokens) {

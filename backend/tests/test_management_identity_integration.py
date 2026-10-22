@@ -21,7 +21,8 @@ env = identity_environment
 
 
 @pytest.mark.asyncio
-async def test_real_management_oidc_pkce_read_refresh_and_logout(env):
+@pytest.mark.parametrize("authorization_version", [1, 2])
+async def test_real_management_oidc_pkce_read_refresh_and_logout(env, authorization_version):
     issuer = os.getenv("ACTVERO_TEST_MANAGEMENT_ISSUER")
     if not issuer:
         pytest.skip("explicit disposable Keycloak issuer required")
@@ -46,6 +47,7 @@ async def test_real_management_oidc_pkce_read_refresh_and_logout(env):
             "/api/v1/management/login/start",
             json={
                 "contract_version": 1,
+                "authorization_version": authorization_version,
                 "redirect_uri": "http://127.0.0.1:49163/actvero/cli/callback",
                 "code_challenge": pkce(verifier),
                 "device_name": "CLI real identity test",
@@ -53,6 +55,20 @@ async def test_real_management_oidc_pkce_read_refresh_and_logout(env):
         )
         assert started.status_code == 200, started.status_code
         attempt = started.json()
+        browser_url = attempt["authorization_url"]
+        if authorization_version == 2:
+            consent = await web.api.post(
+                "/api/v1/cli-authorization/decision",
+                json={
+                    "attempt_id": attempt["attempt_id"],
+                    "state": attempt["state"],
+                    "approve": True,
+                    "org_ids": [str(web.tenant.id)],
+                    "scope": "management:read management:write",
+                },
+            )
+            assert consent.status_code == 200, consent.status_code
+            browser_url = consent.json()["redirect_url"]
         process = await asyncio.create_subprocess_exec(
             "node",
             str(Path(__file__).resolve().parents[2] / "scripts/test-management-login.mjs"),
@@ -63,9 +79,7 @@ async def test_real_management_oidc_pkce_read_refresh_and_logout(env):
         )
         try:
             stdout, stderr = await asyncio.wait_for(
-                process.communicate(
-                    json.dumps({"authorization_url": attempt["authorization_url"]}).encode()
-                ),
+                process.communicate(json.dumps({"authorization_url": browser_url}).encode()),
                 timeout=45,
             )
         finally:
@@ -92,7 +106,12 @@ async def test_real_management_oidc_pkce_read_refresh_and_logout(env):
         assert exchanged.status_code == 200, exchanged.status_code
         tokens = exchanged.json()
         headers = {"Authorization": "Bearer " + tokens["access_token"]}
-        assert tokens["scope"] == "management:read"
+        assert tokens["scope"] == (
+            "management:read management:write" if authorization_version == 2 else "management:read"
+        )
+        if authorization_version == 2:
+            status = (await api.get("/api/v1/management/me", headers=headers)).json()
+            assert status["authorized_org_ids"] == [str(web.tenant.id)]
         orgs = await api.get("/api/v1/management/organizations", headers=headers)
         assert orgs.status_code == 200, orgs.status_code
         assert orgs.json()["items"][0]["org_id"] == str(web.tenant.id)
