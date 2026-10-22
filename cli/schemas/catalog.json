@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "25301b2db0382272ceec73feec4f8c2ab683164ab7461cc1e0889819ac62d4b6",
+  "source_sha256": "ff556e701c72ad4bd8227973d9c3604bb1981b88c69b71a52998ce78fe6f0191",
   "roots": [
     "CategoryDelete",
     "CategoryMove",

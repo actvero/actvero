@@ -20745,6 +20745,13 @@
       "RoutingPolicy": {
         "additionalProperties": false,
         "properties": {
+          "connect_timeout_seconds": {
+            "default": 10,
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Connect Timeout Seconds",
+            "type": "integer"
+          },
           "cooldown_seconds": {
             "default": 30,
             "maximum": 3600.0,
@@ -20763,6 +20770,13 @@
             "default": false,
             "title": "Fallback",
             "type": "boolean"
+          },
+          "first_response_timeout_seconds": {
+            "default": 180,
+            "maximum": 3600.0,
+            "minimum": 3.0,
+            "title": "First Response Timeout Seconds",
+            "type": "integer"
           },
           "max_attempts": {
             "default": 3,
@@ -20791,9 +20805,16 @@
             "title": "Retry Uncertain",
             "type": "boolean"
           },
+          "stream_idle_timeout_seconds": {
+            "default": 180,
+            "maximum": 3600.0,
+            "minimum": 3.0,
+            "title": "Stream Idle Timeout Seconds",
+            "type": "integer"
+          },
           "total_timeout_seconds": {
-            "default": 60,
-            "maximum": 180.0,
+            "default": 1800,
+            "maximum": 86400.0,
             "minimum": 3.0,
             "title": "Total Timeout Seconds",
             "type": "integer"

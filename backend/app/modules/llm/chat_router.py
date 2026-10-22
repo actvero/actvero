@@ -15,6 +15,7 @@ from app.modules.llm import runtime
 from app.modules.llm.chat_schemas import ChatInput
 from app.modules.llm.inference_router import admin_router, router
 from app.modules.llm.inference_schemas import EmbeddingOutput, RerankOutput
+from app.modules.llm.providers.retrieval import UpstreamFailure
 
 
 @dataclass
@@ -77,7 +78,9 @@ async def response(
                 {
                     "error": {
                         "code": getattr(exc, "code", "stream_failed"),
-                        "message": "对话流已中断，请查看调用状态后重试",
+                        "message": str(exc.detail)
+                        if isinstance(exc, UpstreamFailure)
+                        else "对话流已中断，请查看调用状态后重试",
                     }
                 }
             )
