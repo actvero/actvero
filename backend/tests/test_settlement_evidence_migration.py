@@ -9,6 +9,7 @@ import pytest
 import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy.ext.asyncio import create_async_engine
 
 
@@ -22,6 +23,8 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
     owner = create_async_engine(url)
     engine = create_async_engine(url, connect_args={"server_settings": {"search_path": schema}})
     cfg = Config("alembic.ini")
+    head = ScriptDirectory.from_config(cfg).get_current_head()
+    assert head is not None
     async with owner.begin() as connection:
         await connection.execute(sa.text(f'CREATE SCHEMA "{schema}"'))
     try:
@@ -231,7 +234,7 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
             assert len(before["llm_settlements"]) == 4
             await connection.run_sync(upgrade, "head")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-                "114i_cli_settings"
+                head
             )
             after = await snapshots()
             for key, saved in after["llm_settlements"].items():
@@ -255,7 +258,7 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
                 async with connection.begin_nested():
                     await connection.run_sync(downgrade, "96q_route_protection")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-                "114i_cli_settings"
+                head
             )
             assert await snapshots() == after
     finally:
