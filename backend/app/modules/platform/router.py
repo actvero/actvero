@@ -31,6 +31,8 @@ from app.modules.platform.branding import (
 )
 from app.modules.platform.mail_settings import effective_mail, mail_view
 from app.modules.platform.schemas import (
+    CliSettingsUpdate,
+    CliSettingsView,
     MailRecipient,
     MailSettingsUpdate,
     MailSettingsView,
@@ -58,6 +60,42 @@ from app.modules.tenants.models import OrganizationInvitation as OrganizationInv
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/api/v1/platform", tags=["platform"])
+
+
+def cli_settings_view(request: Request, install: Installation) -> CliSettingsView:
+    settings = provider(request).settings
+    override = install.management_enabled
+    return CliSettingsView(
+        enabled=settings.management_enabled if override is None else override,
+        source="environment" if override is None else "platform",
+        server_url=settings.app_url,
+        client_id=settings.management_client_id,
+        issuer=settings.oidc_issuer,
+    )
+
+
+@router.get("/cli", response_model=CliSettingsView)
+async def cli_settings(request: Request, response: Response, db: DB) -> CliSettingsView:
+    await platform_access(request, db)
+    install = await db.get(Installation, 1)
+    if install is None:
+        raise HTTPException(503, "平台尚未初始化")
+    response.headers["Cache-Control"] = "no-store"
+    return cli_settings_view(request, install)
+
+
+@router.put("/cli", response_model=CliSettingsView)
+async def update_cli_settings(
+    payload: CliSettingsUpdate, request: Request, response: Response, db: DB, _: Mutation
+) -> CliSettingsView:
+    await platform_access(request, db)
+    install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
+    if install is None:
+        raise HTTPException(503, "平台尚未初始化")
+    install.management_enabled = payload.enabled
+    await db.commit()
+    response.headers["Cache-Control"] = "no-store"
+    return cli_settings_view(request, install)
 
 
 def platform_logo_url(request: Request, install: Installation) -> str | None:

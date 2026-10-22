@@ -231,7 +231,7 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
             assert len(before["llm_settlements"]) == 4
             await connection.run_sync(upgrade, "head")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-                "113h_management_merge"
+                "114i_cli_settings"
             )
             after = await snapshots()
             for key, saved in after["llm_settlements"].items():
@@ -255,7 +255,7 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
                 async with connection.begin_nested():
                     await connection.run_sync(downgrade, "96q_route_protection")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-                "113h_management_merge"
+                "114i_cli_settings"
             )
             assert await snapshots() == after
     finally:

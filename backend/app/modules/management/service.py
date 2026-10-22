@@ -7,13 +7,14 @@ from fastapi import Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.service import COOKIE, digest, now, provider
+from app.modules.auth.service import COOKIE, DB, digest, now, provider
 from app.modules.desktop.errors import fail
 from app.modules.desktop.oidc import NativeIdentity
 from app.modules.desktop.schemas import LoginProof
 from app.modules.desktop.service import pkce
 from app.modules.management.models import ManagementLogin, ManagementSession, ManagementToken
 from app.modules.management.schemas import Organization, Tokens
+from app.modules.management.settings import require_enabled
 from app.modules.members.models import Membership
 from app.modules.members.service import BusinessActor, ManagementBusinessActor, membership_state
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
@@ -27,10 +28,9 @@ class ManagementActor:
     user: User
 
 
-def native_request(request: Request) -> None:
+async def native_request(request: Request, db: DB) -> None:
+    await require_enabled(request, db)
     settings = provider(request).settings
-    if not settings.management_enabled:
-        fail(503, "management_disabled", "此平台尚未开启 CLI 管理接口")
     if (
         COOKIE in request.cookies
         or settings.session_cookie_name in request.cookies
@@ -90,7 +90,7 @@ async def token_session(
 
 
 async def actor(request: Request, db: AsyncSession) -> ManagementActor:
-    native_request(request)
+    await native_request(request, db)
     header = request.headers.get("authorization", "")
     if not header.startswith("Bearer "):
         fail(401, "invalid_credential", "请先登录 CLI")

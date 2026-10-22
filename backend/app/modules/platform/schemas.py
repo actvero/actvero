@@ -60,6 +60,19 @@ class PortalSettings(BaseModel):
     portal_enabled: bool = Field(strict=True)
 
 
+class CliSettingsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    enabled: bool = Field(strict=True)
+
+
+class CliSettingsView(BaseModel):
+    enabled: bool
+    source: Literal["environment", "platform"]
+    server_url: str
+    client_id: str
+    issuer: str
+
+
 class PlatformSettingsView(BaseModel):
     platform_name: str
     logo_url: str | None = None

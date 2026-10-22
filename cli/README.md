@@ -34,7 +34,7 @@ actvero agent-skill path
 
 ## 平台配置与登录
 
-平台管理员需开启 `ACTVERO_MANAGEMENT_ENABLED=true`，配置独立 OIDC 公共客户端 `actvero-cli`。已有身份库不会因修改导入模板自动更新客户端；依照平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 配置。资源接口变更在合入部署后生效。
+SaaS 平台运营人员可在“设置 → CLI 接入”开启接口并复制 Agent 接入指令；首次保存前沿用 `ACTVERO_MANAGEMENT_ENABLED` 部署默认值，保存后以平台设置为准。社区版通过部署配置启用。登录需配置独立 OIDC 公共客户端 `actvero-cli`。已有身份库不会因修改导入模板自动更新客户端；依照平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 配置。资源接口变更在合入部署后生效。
 
 ```sh
 # 无需登录，先核对平台已部署所需管理能力

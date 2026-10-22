@@ -4,9 +4,19 @@ Actvero 提供独立的管理凭据与组织管理接口。仓库内 `cli/` 的 
 
 ## 平台启用
 
-开启 `ACTVERO_MANAGEMENT_ENABLED=true` 并配置独立 OIDC 公共客户端 `actvero-cli`，使用 PKCE S256 和本机回环回调。已有身份库不会因修改导入模板自动更新客户端。Web Cookie、桌面令牌与个人访问密钥不能替代管理凭据。
+SaaS 平台运营人员可在 **平台运营 → 设置 → CLI 接入** 开启或关闭接口。保存后立即对新请求生效，无需重启；关闭不撤销已有登录，但会阻止后续请求，重新开启后仍有效的登录可以继续使用。已经发出的外部调用不能撤回。组织管理员没有修改平台开关的权限。
 
-升级时运行 `alembic upgrade head`，当前目标为 `113h_management_merge`。它合并统一品牌与资源管理两条迁移链；`111f_management_resources` 新增请求回执表和登录授权范围，`112g_management_mcp_oauth` 新增独立的 CLI MCP OAuth 尝试表。旧登录尝试和现有会话保持只读。按照[安装与升级](DEPLOYMENT.md)先备份再迁移；迁移不会自动打开管理接口。
+首次保存前，接口沿用 `ACTVERO_MANAGEMENT_ENABLED` 的部署默认值（默认关闭）；保存后使用数据库中的平台设置，环境变量不再覆盖该选择。社区版继续通过部署配置启用。新迁移保留原安装数据，初始值为空，不改变已有部署行为。
+
+登录仍需配置独立 OIDC 公共客户端 `actvero-cli`，使用 PKCE S256 和本机回环回调。已有身份库不会因修改导入模板自动更新客户端。Web Cookie、桌面令牌与个人访问密钥不能替代管理凭据。
+
+升级时运行 `alembic upgrade head`，当前目标为 `114i_cli_settings`。`113h_management_merge` 合并统一品牌与资源管理两条迁移链；`111f_management_resources` 新增请求回执表和登录授权范围，`112g_management_mcp_oauth` 新增独立的 CLI MCP OAuth 尝试表。旧登录尝试和现有会话保持只读。按照[安装与升级](DEPLOYMENT.md)先备份再迁移；迁移不会自动打开管理接口。
+
+## 复制指令给 Agent
+
+在 CLI 接入页选择“只读查询”或“读写管理”，点击“复制给 Agent”，粘贴到 Codex、Claude Code 等支持终端操作的 Agent。指令携带部署配置中的平台地址、固定 npm 版本、Skill 安装说明、能力检查、登录与组织权限核验步骤，不包含登录凭据。平台地址由 `ACTVERO_APP_URL` 决定。
+
+Agent 可以安装并检查客户端；用户仍须在浏览器完成登录。多个可用组织需明确选择。接入指令不会自动创建、发布或删除资源，也不会修改服务器或身份服务配置。只有接口已开启时才能使用复制按钮；页面不把开关状态当作 OIDC 登录已验证。
 
 ## 客户端
 

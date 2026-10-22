@@ -53,7 +53,7 @@ actvero platform info --server https://actvero.example.com --json
 
 应返回 `contract_version=1`、`resource_contract_version=1`、`instance_id`、`supported_scopes`、`capabilities`。Skills/MCP/专家分别需 `skills.read/write`、`mcp.read/write`、`experts.read/write`；分类、下载、MCP OAuth/run/activities/contents 还需对应同名能力（完整名称见 `schema show Metadata`）。
 
-如果 404/关闭/版本不兼容，先确认 URL，再向平台管理员报告。平台需部署包含 `111f_management_resources`、`112g_management_mcp_oauth` 的版本，开启 `ACTVERO_MANAGEMENT_ENABLED=true`，配置独立 OIDC 公共客户端 `actvero-cli`。只修改 Realm 导入模板不会更新已有身份库。管理员根据平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 更新实际部署；本 Skill 不自动部署或升级数据库。能力响应才是当前服务器依据。
+如果 404/关闭/版本不兼容，先确认 URL，再向平台管理员报告。平台需部署包含 `111f_management_resources`、`112g_management_mcp_oauth` 的版本，通过 SaaS 后台“设置 → CLI 接入”开启接口（需 `114i_cli_settings` 迁移）；首次保存前和社区版使用 `ACTVERO_MANAGEMENT_ENABLED` 部署默认值。登录还需配置独立 OIDC 公共客户端 `actvero-cli`。只修改 Realm 导入模板不会更新已有身份库。管理员根据平台 [CLI 接入文档](https://github.com/actvero/actvero/blob/main/docs/CLI.md) 更新实际部署；本 Skill 不自动部署或升级数据库。能力响应才是当前服务器依据。
 
 ## 4. 登录与工作空间初始化
 

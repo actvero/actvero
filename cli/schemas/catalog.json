@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "112g_management_mcp_oauth",
-  "source_sha256": "2225042aa877dced33c83b5057d78b193c847e18d45d0722ed23c4e9def08e79",
+  "source_sha256": "7b19879da13a30c8b78f9d01665b368ac2ee73c17f611d8ce9df96f48d073ce3",
   "roots": [
     "CategoryDelete",
     "CategoryMove",

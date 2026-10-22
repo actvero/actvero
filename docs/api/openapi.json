@@ -4848,6 +4848,57 @@
         "title": "CheckRecord",
         "type": "object"
       },
+      "CliSettingsUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "CliSettingsUpdate",
+        "type": "object"
+      },
+      "CliSettingsView": {
+        "properties": {
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "issuer": {
+            "title": "Issuer",
+            "type": "string"
+          },
+          "server_url": {
+            "title": "Server Url",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "environment",
+              "platform"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "source",
+          "server_url",
+          "client_id",
+          "issuer"
+        ],
+        "title": "CliSettingsView",
+        "type": "object"
+      },
       "ClientAsset": {
         "additionalProperties": false,
         "properties": {
@@ -42643,6 +42694,66 @@
           }
         },
         "summary": "Publish Brand",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/cli": {
+      "get": {
+        "operationId": "cli_settings_api_v1_platform_cli_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliSettingsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cli Settings",
+        "tags": [
+          "platform"
+        ]
+      },
+      "put": {
+        "operationId": "update_cli_settings_api_v1_platform_cli_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CliSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliSettingsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Cli Settings",
         "tags": [
           "platform"
         ]
