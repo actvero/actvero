@@ -57,6 +57,8 @@ class Installation(Base):
     identity_branding_revision: Mapped[UUID | None] = mapped_column()
     platform_mail_ciphertext: Mapped[str | None] = mapped_column(Text)
     portal_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    # None preserves the deployment default until a platform operator saves a choice.
+    management_enabled: Mapped[bool | None] = mapped_column()
     registration_mode: Mapped[str] = mapped_column(
         String(20), default="invite", server_default="invite"
     )

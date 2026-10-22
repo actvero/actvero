@@ -121,6 +121,7 @@ export function platformNavigation(): NavGroup[] {
           icon: Settings,
           items: [
             { title: '注册与开通', url: '/platform/settings/registration' },
+            { title: 'CLI 接入', url: '/platform/settings/cli' },
             { title: '邮件服务', url: '/platform/settings/mail' },
             { title: '邮件模板', url: '/platform/settings/templates' },
           ],

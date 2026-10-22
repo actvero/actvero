@@ -6,11 +6,12 @@ from uuid import UUID
 from fastapi import APIRouter, Header, Request
 from fastapi.responses import PlainTextResponse
 
-from app.modules.auth.service import DB, provider
+from app.modules.auth.service import DB
 from app.modules.desktop.errors import fail
 from app.modules.management import oauth
 from app.modules.management.resources import mutate_resource, read_resource
 from app.modules.management.schemas import ManagementOAuthView, ResourceResult
+from app.modules.management.settings import require_enabled
 
 router = APIRouter(prefix="/api/v1/management", tags=["management-resources"])
 
@@ -63,8 +64,7 @@ async def cancel(
 
 @router.get("/mcp/oauth/callback", include_in_schema=False)
 async def callback(request: Request, db: DB) -> PlainTextResponse:
-    if not provider(request).settings.management_enabled:
-        fail(503, "management_disabled", "CLI 管理接口尚未启用")
+    await require_enabled(request, db)
     values = request.query_params
     if (
         any(len(values.getlist(key)) > 1 for key in ("state", "code", "error"))

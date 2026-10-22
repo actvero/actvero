@@ -43,7 +43,7 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
     if not url:
         pytest.skip("ACTVERO_TEST_DATABASE_URL required")
     cfg = Config("alembic.ini")
-    assert ScriptDirectory.from_config(cfg).get_heads() == ["113h_management_merge"]
+    assert ScriptDirectory.from_config(cfg).get_heads() == ["114i_cli_settings"]
     schema = "test_merge_" + uuid4().hex
     owner = create_async_engine(url)
     engine = create_async_engine(url, connect_args={"server_settings": {"search_path": schema}})
@@ -107,7 +107,7 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
             await connection.run_sync(upgrade, "head")
             assert (
                 await connection.execute(text("SELECT version_num FROM alembic_version"))
-            ).scalars().all() == ["113h_management_merge"]
+            ).scalars().all() == ["114i_cli_settings"]
             for table, rows in preserved.items():
                 assert (
                     list(

@@ -52,6 +52,7 @@ import { Route as PlatformSettingsPortalRouteImport } from './routes/platform.se
 import { Route as PlatformSettingsMailRouteImport } from './routes/platform.settings.mail'
 import { Route as PlatformSettingsGeneralRouteImport } from './routes/platform.settings.general'
 import { Route as PlatformSettingsDownloadsRouteImport } from './routes/platform.settings.downloads'
+import { Route as PlatformSettingsCliRouteImport } from './routes/platform.settings.cli'
 import { Route as AuthenticatedSkillsUploadRouteImport } from './routes/_authenticated/skills.upload'
 import { Route as AuthenticatedSkillsSkillIdRouteImport } from './routes/_authenticated/skills.$skillId'
 import { Route as AuthenticatedExpertsNewRouteImport } from './routes/_authenticated/experts.new'
@@ -281,6 +282,11 @@ const PlatformSettingsDownloadsRoute =
     path: '/downloads',
     getParentRoute: () => PlatformSettingsRoute,
   } as any)
+const PlatformSettingsCliRoute = PlatformSettingsCliRouteImport.update({
+  id: '/cli',
+  path: '/cli',
+  getParentRoute: () => PlatformSettingsRoute,
+} as any)
 const AuthenticatedSkillsUploadRoute =
   AuthenticatedSkillsUploadRouteImport.update({
     id: '/skills/upload',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/experts/new': typeof AuthenticatedExpertsNewRoute
   '/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/experts/new': typeof AuthenticatedExpertsNewRoute
   '/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/_authenticated/experts/new': typeof AuthenticatedExpertsNewRoute
   '/_authenticated/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/_authenticated/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/experts/new'
     | '/skills/$skillId'
     | '/skills/upload'
+    | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
     | '/platform/settings/mail'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/experts/new'
     | '/skills/$skillId'
     | '/skills/upload'
+    | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
     | '/platform/settings/mail'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/_authenticated/experts/new'
     | '/_authenticated/skills/$skillId'
     | '/_authenticated/skills/upload'
+    | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
     | '/platform/settings/mail'
@@ -911,6 +923,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformSettingsDownloadsRouteImport
       parentRoute: typeof PlatformSettingsRoute
     }
+    '/platform/settings/cli': {
+      id: '/platform/settings/cli'
+      path: '/cli'
+      fullPath: '/platform/settings/cli'
+      preLoaderRoute: typeof PlatformSettingsCliRouteImport
+      parentRoute: typeof PlatformSettingsRoute
+    }
     '/_authenticated/skills/upload': {
       id: '/_authenticated/skills/upload'
       path: '/skills/upload'
@@ -1002,6 +1021,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface PlatformSettingsRouteChildren {
+  PlatformSettingsCliRoute: typeof PlatformSettingsCliRoute
   PlatformSettingsDownloadsRoute: typeof PlatformSettingsDownloadsRoute
   PlatformSettingsGeneralRoute: typeof PlatformSettingsGeneralRoute
   PlatformSettingsMailRoute: typeof PlatformSettingsMailRoute
@@ -1012,6 +1032,7 @@ interface PlatformSettingsRouteChildren {
 }
 
 const PlatformSettingsRouteChildren: PlatformSettingsRouteChildren = {
+  PlatformSettingsCliRoute: PlatformSettingsCliRoute,
   PlatformSettingsDownloadsRoute: PlatformSettingsDownloadsRoute,
   PlatformSettingsGeneralRoute: PlatformSettingsGeneralRoute,
   PlatformSettingsMailRoute: PlatformSettingsMailRoute,

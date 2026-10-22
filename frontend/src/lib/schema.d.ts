@@ -4251,6 +4251,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/platform/cli": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cli Settings */
+        get: operations["cli_settings_api_v1_platform_cli_get"];
+        /** Update Cli Settings */
+        put: operations["update_cli_settings_api_v1_platform_cli_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/downloads": {
         parameters: {
             query?: never;
@@ -6561,6 +6579,27 @@ export interface components {
             message: string;
             /** Ok */
             ok: boolean;
+        };
+        /** CliSettingsUpdate */
+        CliSettingsUpdate: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** CliSettingsView */
+        CliSettingsView: {
+            /** Client Id */
+            client_id: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Issuer */
+            issuer: string;
+            /** Server Url */
+            server_url: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "environment" | "platform";
         };
         /** ClientAsset */
         ClientAsset: {
@@ -25887,6 +25926,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BrandingSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cli_settings_api_v1_platform_cli_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliSettingsView"];
+                };
+            };
+        };
+    };
+    update_cli_settings_api_v1_platform_cli_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CliSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CliSettingsView"];
                 };
             };
             /** @description Validation Error */
