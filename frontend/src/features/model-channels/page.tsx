@@ -1,6 +1,5 @@
 import { useDeferredValue, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ColumnDef } from '@tanstack/react-table'
 import {
   Ellipsis,
   Gauge,
@@ -45,7 +44,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { ServerTable } from '@/components/data-table/server-table'
 import { FilterSelect } from '@/components/filter-select'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
@@ -53,6 +51,7 @@ import { useOrganization } from '@/features/auth/session'
 import { channelPath, healthLabels } from './api'
 import { ChannelDetail } from './channel-detail'
 import { ChannelEditor } from './channel-editor'
+import { ChannelTable } from './channel-table'
 import { ListDiagnostic } from './list-diagnostic'
 import { useProviderModules } from './provider-modules'
 import {
@@ -414,105 +413,6 @@ export function ModelChannelsPage() {
       </Tooltip>
     ))
   }
-  const columns: ColumnDef<Channel>[] = [
-    {
-      id: 'select',
-      header: () => (
-        <Checkbox
-          aria-label='选择当前页'
-          checked={selectable.length > 0 && chosen.length === selectable.length}
-          onCheckedChange={(checked) => {
-            setSelected(
-              checked
-                ? new Set(selectable.map((channel) => channel.id))
-                : new Set()
-            )
-            setBatchResults(null)
-          }}
-        />
-      ),
-      cell: ({ row: { original: channel } }) =>
-        channel.archived ? null : (
-          <Checkbox
-            aria-label={`选择${channel.name}`}
-            checked={selected.has(channel.id)}
-            onCheckedChange={(checked) =>
-              toggleSelected(channel.id, checked === true)
-            }
-          />
-        ),
-    },
-    {
-      id: 'name',
-      header: '渠道 / 供应商',
-      cell: ({ row: { original: channel } }) => (
-        <div className='flex min-w-60 items-center gap-3'>
-          <ChannelAvatar channel={channel} />
-          <div className='flex min-w-0 flex-col'>
-            <Button
-              variant='link'
-              className='h-auto max-w-64 justify-start p-0'
-              onClick={() => openDetail(channel)}
-            >
-              <span className='truncate'>{channel.name}</span>
-            </Button>
-            <span className='text-xs text-muted-foreground'>
-              {providers.data?.find((item) => item.id === channel.provider)
-                ?.name ?? channel.provider}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'manual',
-      header: '渠道状态',
-      cell: ({ row }) => <ManualBadge channel={row.original} />,
-    },
-    {
-      id: 'health',
-      header: '绑定健康',
-      cell: ({ row }) => <HealthBadge channel={row.original} />,
-    },
-    {
-      id: 'models',
-      header: '启用绑定 / 库存',
-      cell: ({ row: { original: channel } }) => (
-        <div className='flex flex-col items-start'>
-          <span>
-            {Object.values(channel.health_summary?.health_counts ?? {}).reduce(
-              (sum, count) => sum + count,
-              0
-            )}{' '}
-            个绑定
-          </span>
-          <Button
-            variant='link'
-            size='sm'
-            className='h-auto justify-start p-0'
-            onClick={() => openDetail(channel, 'models')}
-          >
-            {channel.model_count} 个登记模型
-          </Button>
-        </div>
-      ),
-    },
-    {
-      id: 'diagnostic',
-      header: '最近测试',
-      cell: ({ row }) => <ListDiagnostic channel={row.original} />,
-    },
-    {
-      id: 'actions',
-      header: () => <span className='sr-only'>操作</span>,
-      cell: ({ row: { original: channel } }) => (
-        <div className='flex items-center gap-1'>
-          {quickActions(channel)}
-          {more(channel)}
-        </div>
-      ),
-    },
-  ]
   return (
     <PageShell
       title='渠道管理'
@@ -636,9 +536,25 @@ export function ModelChannelsPage() {
       ) : query.isError ? (
         <RequestError error={query.error} retry={() => void query.refetch()} />
       ) : (
-        <ServerTable
+        <ChannelTable
+          controls={{
+            selected,
+            selectable,
+            providers: providers.data ?? [],
+            selectAll: (checked) => {
+              setSelected(
+                checked
+                  ? new Set(selectable.map((channel) => channel.id))
+                  : new Set()
+              )
+              setBatchResults(null)
+            },
+            toggleSelected,
+            openDetail,
+            quickActions,
+            more,
+          }}
           items={query.data.items}
-          columns={columns}
           total={query.data.total}
           page={page}
           onPage={(next) => {

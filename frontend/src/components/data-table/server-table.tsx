@@ -24,6 +24,7 @@ export function ServerTable<T>({
   empty,
   onRowClick,
   renderItems,
+  getRowId,
 }: {
   items: T[]
   columns: ColumnDef<T>[]
@@ -35,12 +36,14 @@ export function ServerTable<T>({
   onRowClick?: (item: T) => void
   /** Alternative presentation that shares the same server pagination. */
   renderItems?: (items: T[]) => ReactNode
+  getRowId?: (item: T) => string
 }) {
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: items,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getRowId,
     manualPagination: true,
     rowCount: total,
     state: { pagination: { pageIndex: page - 1, pageSize: 20 } },

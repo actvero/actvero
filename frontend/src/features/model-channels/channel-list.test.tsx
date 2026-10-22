@@ -413,3 +413,103 @@ it('keeps narrow card actions clickable with stable icon hit areas', async () =>
     .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
 })
+
+it.each([true, false])(
+  'preserves hovered actions and an open menu during refreshes (enabled: %s)',
+  async (enabled) => {
+    const channel = { ...base, manual_enabled: enabled }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ items: [channel], total: 1 }))
+    )
+    await show()
+    const client = clients[0]
+    let modelCount = 1
+    const refresh = () => {
+      modelCount += 1
+      client.setQueriesData(
+        { queryKey: ['organization', 'test-org', 'model-channels', 'list'] },
+        { items: [{ ...channel, model_count: modelCount }], total: 1 }
+      )
+    }
+    const statusLabel = enabled ? '停用' : '启用'
+    for (const label of ['测试', '编辑', statusLabel]) {
+      const button = page.getByRole('button', { name: label, exact: true })
+      await button.hover()
+      const tooltip = page.getByRole('tooltip', { name: label })
+      await expect.element(tooltip).toBeVisible()
+      const trigger = button.element()
+      // Keep the pointer still while independent query updates reach the page.
+      // An immediate hover/click would miss a lost tooltip or replaced trigger.
+      for (let update = 0; update < 3; update += 1) {
+        refresh()
+        await expect
+          .element(page.getByText(`${modelCount} 个登记模型`, { exact: true }))
+          .toBeVisible()
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        expect(button.element()).toBe(trigger)
+        await expect.element(tooltip).toBeVisible()
+      }
+    }
+    await page.getByRole('button', { name: statusLabel, exact: true }).click()
+    await expect
+      .element(page.getByRole('button', { name: '确认', exact: true }))
+      .toBeVisible()
+    await page.getByRole('button', { name: '取消', exact: true }).click()
+
+    const more = page.getByRole('button', { name: '一号渠道的更多操作' })
+    await more.click()
+    const details = page.getByRole('menuitem', { name: '查看详情' })
+    await expect.element(details).toBeVisible()
+    refresh()
+    await expect
+      .element(page.getByText(`${modelCount} 个登记模型`, { exact: true }))
+      .toBeVisible()
+    await expect.element(details).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await expect.element(more).toHaveFocus()
+  }
+)
+
+it('keeps an open menu on its channel after reordering and uses the latest version', async () => {
+  const second = { ...base, id: 'channel-two', name: '二号渠道' }
+  const writes: { url: string; body: Record<string, unknown> }[] = []
+  let items = [base, second]
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, options?: RequestInit) => {
+      if (options?.method === 'PUT') {
+        writes.push({ url, body: JSON.parse(String(options.body)) })
+        return Response.json({ ...base, version: 4, archived: true })
+      }
+      return Response.json({ items, total: items.length })
+    })
+  )
+  await show()
+  await page.getByRole('button', { name: '一号渠道的更多操作' }).click()
+  await expect
+    .element(page.getByRole('menuitem', { name: '归档渠道' }))
+    .toBeVisible()
+
+  items = [second, { ...base, version: 3, name: '更新后的一号渠道' }]
+  clients[0].setQueriesData(
+    { queryKey: ['organization', 'test-org', 'model-channels', 'list'] },
+    { items, total: items.length }
+  )
+  await expect
+    .element(page.getByText('更新后的一号渠道', { exact: true }))
+    .toBeVisible()
+  await page.getByRole('menuitem', { name: '归档渠道' }).click()
+  await expect
+    .element(page.getByText('确认归档“更新后的一号渠道”？'))
+    .toBeVisible()
+  await page.getByRole('button', { name: '确认', exact: true }).click()
+  await expect
+    .poll(() => writes)
+    .toEqual([
+      {
+        url: '/api/v1/llm/channels/channel-one/archive',
+        body: { version: 3, archived: true },
+      },
+    ])
+})
