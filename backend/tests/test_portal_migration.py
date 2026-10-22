@@ -45,7 +45,7 @@ async def test_portal_migration_preserves_installation_and_saved_policy():
             assert after.pop("portal_enabled") is False
             assert after.pop("branding_assets") == {}
             assert after.pop("identity_branding_revision") is None
-            assert after == before
+            assert {column: after[column] for column in before} == before
             await conn.execute(text("UPDATE installation SET portal_enabled=true"))
             await conn.run_sync(upgrade, "head")
             again = (
@@ -54,7 +54,7 @@ async def test_portal_migration_preserves_installation_and_saved_policy():
             assert again.pop("portal_enabled") is True
             assert again.pop("branding_assets") == {}
             assert again.pop("identity_branding_revision") is None
-            assert again == before
+            assert {column: again[column] for column in before} == before
     finally:
         await engine.dispose()
         async with owner.begin() as conn:

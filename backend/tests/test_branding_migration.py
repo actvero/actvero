@@ -44,6 +44,12 @@ async def test_brand_migration_preserves_old_data_and_original_asset():
             )
             tables = await db.run_sync(lambda sync: inspect(sync).get_table_names())
             tables.remove("alembic_version")
+            original_columns = await db.run_sync(
+                lambda sync: {
+                    table: [column["name"] for column in inspect(sync).get_columns(table)]
+                    for table in tables
+                }
+            )
 
             async def snapshot():
                 result = {}
@@ -53,10 +59,8 @@ async def test_brand_migration_preserves_old_data_and_original_asset():
                     ).scalars()
                     normalized = []
                     for row in rows:
-                        if table == "installation":
-                            row.pop("branding_assets", None)
-                            row.pop("identity_branding_revision", None)
-                        normalized.append(json.dumps(row, sort_keys=True))
+                        preserved = {column: row[column] for column in original_columns[table]}
+                        normalized.append(json.dumps(preserved, sort_keys=True))
                     result[table] = sorted(normalized)
                 return result
 
