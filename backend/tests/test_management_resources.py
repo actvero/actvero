@@ -171,7 +171,9 @@ async def test_foreign_org_resources_and_receipts_are_not_visible(env, monkeypat
         )
         await db.commit()
     async with client(env) as api:
-        tokens, _ = await login(env, monkeypatch, api, web, WRITE)
+        tokens, _ = await login(
+            env, monkeypatch, api, web, WRITE, [str(web.tenant.id), str(other.id)]
+        )
         root = f"/api/v1/management/organizations/{web.tenant.id}"
         second = f"/api/v1/management/organizations/{other.id}"
         request_id = uuid4()
@@ -361,9 +363,13 @@ async def test_uncertain_operation_is_recorded_and_never_dispatched_again(env, m
 async def test_write_grant_refresh_is_preserved_and_normal_member_is_not_an_administrator(
     env, monkeypatch
 ):
-    web = await env.client(role="member")
+    web = await env.client()
     async with client(env) as api:
         tokens, _ = await login(env, monkeypatch, api, web, WRITE)
+        async with env.sessions() as db:
+            member = await db.get(Membership, web.member.id)
+            member.role = "member"
+            await db.commit()
         response = await api.post(
             "/api/v1/management/refresh",
             json={

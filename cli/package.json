@@ -1,6 +1,6 @@
 {
   "name": "@actvero/cli",
-  "version": "0.2.0-dev.1",
+  "version": "0.2.0-dev.2",
   "description": "Organization-scoped management CLI for Actvero",
   "type": "module",
   "license": "MIT",

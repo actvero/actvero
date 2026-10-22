@@ -88,7 +88,7 @@ const content =
   JSON.stringify(
     {
       resource_contract_version: 1,
-      minimum_migration: "112g_management_mcp_oauth",
+      minimum_migration: "115j_cli_consent",
       source_sha256: createHash("sha256").update(raw).digest("hex"),
       roots,
       definitions: Object.fromEntries(

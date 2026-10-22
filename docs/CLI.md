@@ -10,13 +10,13 @@ SaaS 平台运营人员可在 **平台运营 → 设置 → CLI 接入** 开启�
 
 登录仍需配置独立 OIDC 公共客户端 `actvero-cli`，使用 PKCE S256 和本机回环回调。已有身份库不会因修改导入模板自动更新客户端。Web Cookie、桌面令牌与个人访问密钥不能替代管理凭据。
 
-升级时运行 `alembic upgrade head`，当前目标为 `114i_cli_settings`。`113h_management_merge` 合并统一品牌与资源管理两条迁移链；`111f_management_resources` 新增请求回执表和登录授权范围，`112g_management_mcp_oauth` 新增独立的 CLI MCP OAuth 尝试表。旧登录尝试和现有会话保持只读。按照[安装与升级](DEPLOYMENT.md)先备份再迁移；迁移不会自动打开管理接口。
+升级时运行 `alembic upgrade head`，当前目标为 `115j_cli_consent`。`113h_management_merge` 合并统一品牌与资源管理两条迁移链；`111f_management_resources` 新增请求回执表和登录授权范围，`112g_management_mcp_oauth` 新增独立的 CLI MCP OAuth 尝试表。旧登录尝试和现有会话保持只读。按照[安装与升级](DEPLOYMENT.md)先备份再迁移；迁移不会自动打开管理接口。
 
 ## 复制指令给 Agent
 
-在 CLI 接入页选择“只读查询”或“读写管理”，点击“复制给 Agent”，粘贴到 Codex、Claude Code 等支持终端操作的 Agent。指令携带部署配置中的平台地址、固定 npm 版本、Skill 安装说明、能力检查、登录与组织权限核验步骤，不包含登录凭据。平台地址由 `ACTVERO_APP_URL` 决定。
+在 CLI 接入页点击“复制给 Agent”，粘贴到 Codex、Claude Code 等支持终端操作的 Agent。指令携带部署配置中的平台地址、固定 npm 版本、Skill 安装说明、能力检查、登录与组织权限核验步骤，不包含登录凭据。平台地址由 `ACTVERO_APP_URL` 决定。
 
-Agent 可以安装并检查客户端；用户仍须在浏览器完成登录。多个可用组织需明确选择。接入指令不会自动创建、发布或删除资源，也不会修改服务器或身份服务配置。只有接口已开启时才能使用复制按钮；页面不把开关状态当作 OIDC 登录已验证。
+Agent 可以安装并检查客户端；用户在浏览器完成登录，然后选择允许访问的组织及“只读查询”或“管理资源”，点击确认才授予权限。接入提示词与 Skill 不决定权限，Agent 不应代替用户确认授权。接入指令不会自动创建、发布或删除资源，也不会修改服务器或身份服务配置。只有接口已开启时才能使用复制按钮；页面不把开关状态当作 OIDC 登录已验证。
 
 ## 客户端
 
@@ -32,7 +32,21 @@ actvero org list --json
 actvero channels list --org <组织UUID> --json
 ```
 
-新客户端执行写操作前需 `auth logout` 后使用 `auth login --write`。默认仅请求 `management:read`；显式写授权为 `management:read management:write`，平台要求重新验证登录。续期保留原授权范围，不会提升权限。
+新客户端统一执行 `auth login`。浏览器授权页默认选择只读，但不会预选组织或自动确认。用户确认只读时授予 `management:read`；确认管理时授予 `management:read management:write`。`--write` 仅保留命令兼容，不能替代用户在浏览器的决定。续期保留原组织和权限，不会提升权限。
+
+需要调整权限、组织或账号时重新运行 `auth login`，不用先退出。CLI 保留原会话，待新授权确认保存到系统凭据库后才撤销旧会话；取消、超时或保存失败时保留原会话。旧会话撤销网络失败会保留清理记录并提示，下次命令重试。显式退出仍使用 `auth logout`。
+
+### 浏览器授权契约
+
+`metadata.authorization_contract_version=2` 表示支持新流程。CLI 调用 `login/start` 时传 `authorization_version=2`，打开返回的平台 `/cli/authorize` 页面。临时 state 在 URL 片段中传递。用户登录 Web 后，通过独立 `/api/v1/cli-authorization/context` 与 `/decision` 接口查看和确认授权；接口要求有效浏览器会话、Origin 和 CSRF，并检查当前组织管理员资格。它们不会返回 CLI 凭据。
+
+确认结果绑定登录尝试、浏览器身份、组织和 scope，随后通过独立 `actvero-cli` OIDC 客户端完成 PKCE 回环登录。`login/exchange` 再核对原登录证明、身份一致性及当前组织资格，才签发管理凭据。拒绝、过期、重复确认、换账号、CLI 开关关闭均不能继续签发。每个资源请求仍检查组织是否在会话授权集合内及当前成员权限；`org list` 仅列出本次授权组织。
+
+### 升级兼容
+
+CLI `0.2.0-dev.2` 的新登录需要浏览器授权契约；旧服务器会明确报不兼容。新平台保留旧客户端的只读登录，不接受旧协议新申请写权限。`115j_cli_consent` 撤销缺少浏览器确认的历史写会话，要求通过新客户端重新授权；原只读会话继续可用，仍按当前组织成员权限校验。数据库降级不会恢复已撤销的会话，并撤销新协议会话，防止旧版本失去组织限制后扩大授权。迁移保留业务资源和其他客户端会话。
+
+平台发布新接入指令前，需先发布对应 CLI npm 版本；开发验证可使用仓库构建或本地打包文件。
 
 所有资源命令显式携带组织 UUID。平台每次检查当前成员状态、组织状态、角色与平台运营分配关系；平台运营身份不自动获得任意组织权限。资源读写及请求回查均要求该组织管理员资格。写授权不绕过角色限制。
 
@@ -49,7 +63,7 @@ actvero channels list --org <组织UUID> --json
 
 这些路由与 Web 路由调用相同的资源操作和领域校验。Web 保留原有 Cookie、CSRF 与权限流程。分类删除需要当前修订号、确认时资源数量和迁移目标，资源数量发生变化返回 409。创建 MCP 默认关闭，保存不触发外网发现；发现需要显式调用。
 
-`GET /api/v1/management/metadata` 保留 `contract_version: 1` 和旧只读 `scope` 字段，新增 `supported_scopes`、`resource_contract_version: 1` 及能力列表。新客户端在资源操作前检查能力；旧客户端的登录请求不带 `scope` 时仍使用只读。
+`GET /api/v1/management/metadata` 保留 `contract_version: 1` 和旧只读 `scope` 字段，新增 `supported_scopes`、`resource_contract_version: 1` 及能力列表。新客户端在资源操作前检查能力；旧客户端的登录请求不带 `scope` 时仍使用只读。新协议中的 scope 仅由浏览器确认结果决定。
 
 ## 写操作回执
 

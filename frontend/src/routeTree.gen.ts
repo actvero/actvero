@@ -24,6 +24,7 @@ import { Route as PlatformSettingsRouteImport } from './routes/platform.settings
 import { Route as PlatformOrganizationsRouteImport } from './routes/platform.organizations'
 import { Route as PlatformInvitationsRouteImport } from './routes/platform.invitations'
 import { Route as PlatformApplicationsRouteImport } from './routes/platform.applications'
+import { Route as CliAuthorizeRouteImport } from './routes/cli.authorize'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedSkillDistributionsRouteImport } from './routes/_authenticated/skill-distributions'
 import { Route as AuthenticatedQuotaPoliciesRouteImport } from './routes/_authenticated/quota-policies'
@@ -131,6 +132,11 @@ const PlatformApplicationsRoute = PlatformApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
   getParentRoute: () => PlatformRoute,
+} as any)
+const CliAuthorizeRoute = CliAuthorizeRouteImport.update({
+  id: '/cli/authorize',
+  path: '/cli/authorize',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/cli/authorize': typeof CliAuthorizeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/cli/authorize': typeof CliAuthorizeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/_authenticated/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/_authenticated/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/cli/authorize': typeof CliAuthorizeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/quota-policies'
     | '/skill-distributions'
     | '/users'
+    | '/cli/authorize'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -537,6 +547,7 @@ export interface FileRouteTypes {
     | '/quota-policies'
     | '/skill-distributions'
     | '/users'
+    | '/cli/authorize'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quota-policies'
     | '/_authenticated/skill-distributions'
     | '/_authenticated/users'
+    | '/cli/authorize'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -618,6 +630,7 @@ export interface RootRouteChildren {
   OrganizationOnboardingRoute: typeof OrganizationOnboardingRoute
   PlatformRoute: typeof PlatformRouteWithChildren
   SetupRoute: typeof SetupRoute
+  CliAuthorizeRoute: typeof CliAuthorizeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/applications'
       preLoaderRoute: typeof PlatformApplicationsRouteImport
       parentRoute: typeof PlatformRoute
+    }
+    '/cli/authorize': {
+      id: '/cli/authorize'
+      path: '/cli/authorize'
+      fullPath: '/cli/authorize'
+      preLoaderRoute: typeof CliAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/users': {
       id: '/_authenticated/users'
@@ -1076,6 +1096,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizationOnboardingRoute: OrganizationOnboardingRoute,
   PlatformRoute: PlatformRouteWithChildren,
   SetupRoute: SetupRoute,
+  CliAuthorizeRoute: CliAuthorizeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

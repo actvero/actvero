@@ -52,9 +52,8 @@ function CliSettingsForm({ saved }: { saved: CliSettings }) {
   const { data: session } = useSession()
   const client = useQueryClient()
   const [draft, setDraft] = useState<boolean | null>(null)
-  const [write, setWrite] = useState(false)
   const enabled = draft ?? saved.enabled
-  const prompt = cliOnboardingPrompt(saved.server_url, write)
+  const prompt = cliOnboardingPrompt(saved.server_url)
   const update = useMutation({
     mutationFn: () =>
       api<CliSettings>('/platform/cli', 'PUT', { enabled }, session?.csrf),
@@ -168,31 +167,8 @@ function CliSettingsForm({ saved }: { saved: CliSettings }) {
             CLI、检查平台连接并引导你登录。当前使用开发预览版 {CLI_VERSION}
             ，需要 Node.js 24 或以上版本。
           </p>
-          <fieldset className='flex flex-wrap gap-4'>
-            <legend className='mb-2 text-sm font-medium'>接入权限</legend>
-            <label className='flex items-center gap-2 text-sm'>
-              <input
-                type='radio'
-                name='cli-scope'
-                checked={!write}
-                onChange={() => setWrite(false)}
-                className='accent-primary'
-              />
-              只读查询
-            </label>
-            <label className='flex items-center gap-2 text-sm'>
-              <input
-                type='radio'
-                name='cli-scope'
-                checked={write}
-                onChange={() => setWrite(true)}
-                className='accent-primary'
-              />
-              读写管理
-            </label>
-          </fieldset>
           <p className='text-sm text-muted-foreground'>
-            读写管理仍受当前组织权限约束，资源维护需要组织管理员资格。
+            组织和权限由你在浏览器授权页选择并确认，复制指令不会授予权限。
           </p>
           {!saved.enabled && (
             <p role='status' className='text-sm'>

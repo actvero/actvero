@@ -59,6 +59,8 @@ async def check_session(
         "management:read management:write",
     }:
         fail(403, "insufficient_scope", "此凭据不适用于管理接口")
+    if "management:write" in row.scope.split() and not row.authorized_org_ids:
+        fail(403, "consent_required", "此写入会话缺少浏览器授权，请重新登录")
     identity = await db.get(LoginIdentity, row.identity_id)
     if not identity or identity.issuer != settings.oidc_issuer:
         fail(401, "invalid_identity", "登录身份已失效")
@@ -170,10 +172,15 @@ async def organization(
 ) -> tuple[BusinessActor, Organization]:
     settings = provider(request).settings
     install = await db.get(Installation, 1)
+    if (
+        who.session.authorized_org_ids is not None
+        and str(org_id) not in who.session.authorized_org_ids
+    ):
+        fail(403, "organization_not_granted", "此组织未授权给当前 CLI，请重新登录并选择组织")
     if settings.platform_edition == "community" and (not install or install.tenant_id != org_id):
         fail(403, "organization_denied", "没有此组织的管理权限")
     if write and "management:write" not in who.session.scope.split():
-        fail(403, "insufficient_scope", "请使用 auth login --write 重新授权管理写入")
+        fail(403, "insufficient_scope", "请运行 auth login，在浏览器重新授权管理写入")
     query = select(Tenant).where(Tenant.id == org_id)
     if write:
         query = query.with_for_update()

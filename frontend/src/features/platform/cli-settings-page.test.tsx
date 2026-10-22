@@ -77,7 +77,7 @@ it('requires saving the switch before enabling copy and persists only the enable
   })
 })
 
-it('copies the canonical platform, fixed version and selected scope with human login and organization selection', async () => {
+it('copies one setup instruction and leaves authorization to the browser', async () => {
   const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
   vi.stubGlobal(
     'fetch',
@@ -87,19 +87,16 @@ it('copies the canonical platform, fixed version and selected scope with human l
   await page.getByRole('button', { name: '复制给 Agent' }).click()
   const read = copy.mock.calls[0][0]
   expect(read).toContain('https://platform.example.com')
-  expect(read).toContain('@actvero/cli@0.2.0-dev.1')
+  expect(read).toContain('@actvero/cli@0.2.0-dev.2')
   expect(read).not.toContain('--write')
   expect(read).toContain('本人在浏览器完成登录')
-  expect(read).toContain('多个可用组织')
+  expect(read).toContain('多个已授权组织')
   expect(read).toContain('不自动创建、发布或删除')
   expect(read).not.toContain('csrf-test')
-  await page.getByRole('radio', { name: '读写管理' }).click()
-  await page.getByRole('button', { name: '复制给 Agent' }).click()
-  expect(copy.mock.calls[1][0]).toContain(
-    'auth login --server <平台地址> --write'
-  )
-  expect(copy.mock.calls[1][0]).toContain('auth logout --server <平台地址>')
-  expect(copy.mock.calls[1][0]).toContain('不代表我已经授权所有业务操作')
+  expect(page.getByRole('radio').query()).toBeNull()
+  expect(read).toContain('不要代替我点击授权')
+  expect(read).not.toContain('auth logout')
+  expect(read).toContain('authorization_contract_version=2')
 })
 
 it('preserves a failed draft and stops further actions after permission is revoked', async () => {

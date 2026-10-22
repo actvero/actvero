@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
-  "minimum_migration": "112g_management_mcp_oauth",
-  "source_sha256": "7b19879da13a30c8b78f9d01665b368ac2ee73c17f611d8ce9df96f48d073ce3",
+  "minimum_migration": "115j_cli_consent",
+  "source_sha256": "25301b2db0382272ceec73feec4f8c2ab683164ab7461cc1e0889819ac62d4b6",
   "roots": [
     "CategoryDelete",
     "CategoryMove",
@@ -2497,6 +2497,21 @@
     },
     "Me": {
       "properties": {
+        "authorized_org_ids": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Authorized Org Ids"
+        },
         "reauthenticate_at": {
           "format": "date-time",
           "title": "Reauthenticate At",
@@ -2538,6 +2553,12 @@
       "properties": {
         "access_seconds": {
           "title": "Access Seconds",
+          "type": "integer"
+        },
+        "authorization_contract_version": {
+          "const": 2,
+          "default": 2,
+          "title": "Authorization Contract Version",
           "type": "integer"
         },
         "callback_template": {

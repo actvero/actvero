@@ -36,7 +36,16 @@ async function command(args) {
 }
 try {
   await login(client, true, false, async (target) => {
-    const authorization = new URL(target);
+    const consent = new URLSearchParams(new URL(target).hash.slice(1));
+    const approval = await fetch(config.server + '/api/v1/cli-authorization/decision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: config.server,
+        Cookie: config.browser_cookie, 'X-CSRF-Token': config.browser_csrf },
+      body: JSON.stringify({ attempt_id: consent.get('attempt_id'), state: consent.get('state'),
+        approve: true, org_ids: [config.org], scope: 'management:read management:write' }),
+    });
+    if (approval.status !== 200) throw Error('browser approval failed');
+    const authorization = new URL((await approval.json()).redirect_url);
     const callback = new URL(authorization.searchParams.get("redirect_uri"));
     callback.search = new URLSearchParams({
       state: authorization.searchParams.get("state"),

@@ -76,7 +76,7 @@ async def test_platform_authority_csrf_and_no_implicit_organization_access(env, 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=env.app), base_url="http://test"
     ) as api:
-        tokens, _ = await login(env, monkeypatch, api, actor, "management:read management:write")
+        tokens, _ = await login(env, monkeypatch, api, actor)
         response = await api.get(
             f"{BASE}/organizations/{admin.tenant.id}/skills", headers=bearer(tokens)
         )

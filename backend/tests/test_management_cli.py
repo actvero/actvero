@@ -35,7 +35,7 @@ def client(env):
     return httpx.AsyncClient(transport=httpx.ASGITransport(app=env.app), base_url="http://test")
 
 
-async def login(env, monkeypatch, api, web, scope="management:read"):
+async def login(env, monkeypatch, api, web, scope="management:read", org_ids=None):
     env.provider.metadata = AsyncMock(
         return_value={"authorization_endpoint": env.provider.settings.oidc_issuer + "/auth"}
     )
@@ -56,6 +56,7 @@ async def login(env, monkeypatch, api, web, scope="management:read"):
         BASE + "/login/start",
         json={
             "contract_version": 1,
+            "authorization_version": 2 if "management:write" in scope else 1,
             "redirect_uri": "http://127.0.0.1:49161/actvero/cli/callback",
             "code_challenge": pkce(verifier),
             "device_name": "Test CLI",
@@ -64,7 +65,21 @@ async def login(env, monkeypatch, api, web, scope="management:read"):
     )
     assert result.status_code == 200, result.text
     attempt = result.json()
-    assert "client_id=actvero-cli" in attempt["authorization_url"]
+    if "management:write" in scope:
+        consent = await web.api.post(
+            "/api/v1/cli-authorization/decision",
+            json={
+                "attempt_id": attempt["attempt_id"],
+                "state": attempt["state"],
+                "approve": True,
+                "scope": scope,
+                "org_ids": org_ids or [str(web.tenant.id)],
+            },
+        )
+        assert consent.status_code == 200, consent.text
+        assert "client_id=actvero-cli" in consent.json()["redirect_url"]
+    else:
+        assert "client_id=actvero-cli" in attempt["authorization_url"]
     proof = {
         "attempt_id": attempt["attempt_id"],
         "state": attempt["state"],

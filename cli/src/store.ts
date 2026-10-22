@@ -25,6 +25,7 @@ export interface SessionState {
   ack?: string;
   logoutPending?: boolean;
   loginPending?: LoginProof;
+  retirePending?: string[];
 }
 export interface Store {
   load(): Promise<SessionState>;

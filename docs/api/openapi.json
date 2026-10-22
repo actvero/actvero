@@ -4848,6 +4848,121 @@
         "title": "CheckRecord",
         "type": "object"
       },
+      "CliConsentDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "approve": {
+            "title": "Approve",
+            "type": "boolean"
+          },
+          "attempt_id": {
+            "format": "uuid",
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "org_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Org Ids",
+            "type": "array"
+          },
+          "scope": {
+            "default": "management:read",
+            "enum": [
+              "management:read",
+              "management:read management:write"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "state": {
+            "format": "password",
+            "maxLength": 100,
+            "minLength": 43,
+            "title": "State",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "attempt_id",
+          "state",
+          "approve"
+        ],
+        "title": "CliConsentDecision",
+        "type": "object"
+      },
+      "CliConsentProof": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt_id": {
+            "format": "uuid",
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "state": {
+            "format": "password",
+            "maxLength": 100,
+            "minLength": 43,
+            "title": "State",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "attempt_id",
+          "state"
+        ],
+        "title": "CliConsentProof",
+        "type": "object"
+      },
+      "CliConsentResult": {
+        "properties": {
+          "redirect_url": {
+            "title": "Redirect Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_url"
+        ],
+        "title": "CliConsentResult",
+        "type": "object"
+      },
+      "CliConsentView": {
+        "properties": {
+          "device_name": {
+            "title": "Device Name",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            },
+            "title": "Organizations",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserView"
+          }
+        },
+        "required": [
+          "device_name",
+          "expires_at",
+          "user",
+          "organizations"
+        ],
+        "title": "CliConsentView",
+        "type": "object"
+      },
       "CliSettingsUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -13205,6 +13320,21 @@
       },
       "Me": {
         "properties": {
+          "authorized_org_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized Org Ids"
+          },
           "reauthenticate_at": {
             "format": "date-time",
             "title": "Reauthenticate At",
@@ -13904,6 +14034,12 @@
         "properties": {
           "access_seconds": {
             "title": "Access Seconds",
+            "type": "integer"
+          },
+          "authorization_contract_version": {
+            "const": 2,
+            "default": 2,
+            "title": "Authorization Contract Version",
             "type": "integer"
           },
           "callback_template": {
@@ -23722,6 +23858,15 @@
       "app__modules__management__schemas__StartLogin": {
         "additionalProperties": false,
         "properties": {
+          "authorization_version": {
+            "default": 1,
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Authorization Version",
+            "type": "integer"
+          },
           "code_challenge": {
             "pattern": "^[A-Za-z0-9_-]{43}$",
             "title": "Code Challenge",
@@ -26040,6 +26185,88 @@
         "summary": "Select Workspace",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/cli-authorization/context": {
+      "post": {
+        "operationId": "view_api_v1_cli_authorization_context_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CliConsentProof"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliConsentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "View",
+        "tags": [
+          "management-consent"
+        ]
+      }
+    },
+    "/api/v1/cli-authorization/decision": {
+      "post": {
+        "operationId": "decide_api_v1_cli_authorization_decision_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CliConsentDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliConsentResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide",
+        "tags": [
+          "management-consent"
         ]
       }
     },

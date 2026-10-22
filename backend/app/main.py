@@ -43,6 +43,7 @@ from app.modules.llm.settlement_router import native_router as llm_member_router
 from app.modules.llm.settlement_router import router as llm_settlement_router
 from app.modules.llm.transcription_router import admin_router as transcription_test_router
 from app.modules.llm.transcription_router import router as transcription_router
+from app.modules.management.consent_router import router as management_consent_router
 from app.modules.management.oauth_router import router as management_oauth_router
 from app.modules.management.resource_router import router as management_resource_router
 from app.modules.management.router import router as management_router
@@ -172,6 +173,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         auth_router,
         desktop_router,
         management_router,
+        management_consent_router,
         management_resource_router,
         management_oauth_router,
         devices_router,

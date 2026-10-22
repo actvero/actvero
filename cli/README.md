@@ -2,18 +2,18 @@
 
 用于管理 Actvero 平台的独立命令行客户端。支持多组织下的 **Skills、MCP 服务、专家**，适合终端操作和 Agent 调用。平台继续负责权限、版本、审计与发布校验。
 
-当前为 `0.2.0-dev.1` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `111f_management_resources`、`112g_management_mcp_oauth` 迁移的资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
+当前为 `0.2.0-dev.2` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `115j_cli_consent` 迁移的浏览器授权与资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
 
 ## 安装与 Agent Skill
 
 需要 Node.js 24 或更高版本，以及可用的系统凭据库：macOS Keychain、Windows Credential Manager 或 Linux Secret Service。
 
 ```sh
-npm install --global @actvero/cli@0.2.0-dev.1
+npm install --global @actvero/cli@0.2.0-dev.2
 actvero --version
 actvero --help
 # 无需全局安装的固定版本调用
-npx --yes --package=@actvero/cli@0.2.0-dev.1 actvero --help
+npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --help
 # 安装配套 Codex Skill；--to 是 skills 父目录，已有同名目录不会覆盖
 actvero agent-skill install --to "$HOME/.codex/skills"
 ```
@@ -39,16 +39,17 @@ SaaS 平台运营人员可在“设置 → CLI 接入”开启接口并复制 Ag
 ```sh
 # 无需登录，先核对平台已部署所需管理能力
 actvero platform info --server https://actvero.example.com --json
-# 默认只读授权；首次登录会打开浏览器
+# 浏览器中选择组织和只读／管理权限，并由本人确认
 actvero auth login --server https://actvero.example.com
 actvero auth status
 actvero org list --json
 actvero org permissions --org <组织UUID>
 
-# 写操作需要独立授权；现有会话不会自动提升权限
-actvero auth logout
-actvero auth login --server https://actvero.example.com --write
+# 调整授权或账号时直接重新登录；取消会保留原会话
+actvero auth login --server https://actvero.example.com
 ```
+
+新登录要求平台返回 `authorization_contract_version=2`。`--write` 仅保留兼容，不能改变浏览器确认的权限。新授权保存后撤销原会话；撤销失败会提示并在后续命令重试。升级平台后，历史写会话需要重新授权，旧只读会话仍兼容。
 
 每条资源命令都必须显式填写 `--org`。命令响应包含服务端确认的组织信息；同一用户可访问多个获授权组织，平台运营身份不会自动取得组织资源权限。资源管理要求该组织的管理员资格。
 
