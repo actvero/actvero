@@ -1,5 +1,6 @@
 """Automatic settlement gates against real SDK, loopback upstream and isolated PG."""
 
+import asyncio
 from copy import deepcopy
 from decimal import Decimal
 from unittest.mock import AsyncMock
@@ -112,18 +113,28 @@ async def configured(env, admin, base, kind, price):
 
 
 async def evidence(env, model):
-    async with env.sessions() as db:
-        call = await db.scalar(select(ModelCall).where(ModelCall.model_id == model["id"]))
-        assert call is not None
-        row = await db.get(UsageSettlement, call.id)
-        assert row is not None
-        return (
-            row.status,
-            deepcopy(row.usage),
-            deepcopy(call.usage),
-            deepcopy(call.attempts),
-            row.evidence.get("reason"),
-        )
+    # Read one committed snapshot after asynchronous outbox replay. Two separate
+    # SELECTs can straddle its commit and combine old attempts with new billing.
+    async with asyncio.timeout(5):
+        while True:
+            async with env.sessions() as db:
+                pair = (
+                    await db.execute(
+                        select(ModelCall, UsageSettlement)
+                        .join(UsageSettlement, UsageSettlement.id == ModelCall.id)
+                        .where(ModelCall.model_id == model["id"])
+                    )
+                ).one_or_none()
+                if pair and pair[0].status != "pending" and pair[1].status != "reserved":
+                    call, row = pair
+                    return (
+                        row.status,
+                        deepcopy(row.usage),
+                        deepcopy(call.usage),
+                        deepcopy(call.attempts),
+                        row.evidence.get("reason"),
+                    )
+            await asyncio.sleep(0.02)
 
 
 @pytest.mark.parametrize("cache_price", ["0", "0.2"])
@@ -181,7 +192,19 @@ async def test_chat_no_special_cache_rate_settles_without_fabricated_zero(env):
 
 
 @pytest.mark.parametrize("metric,expected", [("characters", "settled"), ("tokens", "review")])
-async def test_embedding_character_evidence_vs_missing_raw_tokens(env, metric, expected):
+@pytest.mark.parametrize("deferred", [False, True])
+async def test_embedding_character_evidence_vs_missing_raw_tokens(
+    env, monkeypatch, metric, expected, deferred
+):
+    if deferred:
+        outbox = env.app.state.llm_outbox
+        flush_one = outbox.flush_one
+
+        async def delayed_flush(path):
+            await asyncio.sleep(0.3)
+            await flush_one(path)
+
+        monkeypatch.setattr(outbox, "flush_one", delayed_flush)
     admin, member = await env.client(), await env.client(role="member")
     await billing(admin)
     app, state = upstream()

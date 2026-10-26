@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page, userEvent } from 'vitest/browser'
@@ -260,6 +261,8 @@ it.each([409, 403])(
     )
     await show()
     await page.getByRole('button', { name: '一号渠道', exact: true }).click()
+    await expect.element(page.getByRole('tab', { name: '健康' })).toBeVisible()
+    await waitForAnimations()
     await page.getByRole('tab', { name: '健康' }).click()
     await expect
       .element(page.getByRole('tab', { name: '健康' }))

@@ -12,3 +12,7 @@ Actvero's project code is licensed under MIT. Third-party code, dependencies and
 Names and marks used to identify third-party providers belong to their respective owners. Their presence does not imply endorsement or support for every provider capability.
 
 License notices must be retained when redistributing the relevant code or assets, including in container builds. This index complements the included license texts; it does not replace them.
+
+## S3 SDK
+
+客户端对象存储使用 Boto3 / Botocore（Amazon Web Services，Apache-2.0）处理签名和 multipart 协议。直接依赖固定为现有锁定环境中的 Boto3 版本；保留依赖包内的许可证和版权信息。

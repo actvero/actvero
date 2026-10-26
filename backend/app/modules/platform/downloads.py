@@ -8,6 +8,7 @@ from starlette.responses import RedirectResponse, Response
 from app.modules.auth.router import Mutation
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, now
+from app.modules.client_distribution.models import ClientDistribution
 from app.modules.platform.access import PlatformActor, platform_access
 from app.modules.platform.download_models import (
     ClientRecommendation,
@@ -49,6 +50,8 @@ async def release(db: DB, release_id: UUID, revision: int | None = None) -> Clie
         raise HTTPException(404, "客户端版本不存在")
     if revision is not None and row.revision != revision:
         raise HTTPException(409, "版本已被其他操作修改，请读取最新记录后核对")
+    if revision is not None and (await db.get(ClientDistribution, release_id)) is not None:
+        raise HTTPException(409, "此版本由更新发布管理维护，请使用更新发布入口")
     return row
 
 
@@ -204,6 +207,8 @@ async def save_release(
 ) -> ReleaseView:
     actor = await locked_actor(request, db)
     row = await db.get(ClientRelease, release_id)
+    if await db.get(ClientDistribution, release_id):
+        raise HTTPException(409, "此版本由更新发布管理维护，请使用更新发布入口")
     if row is None and payload.expected_revision != 0:
         raise HTTPException(404, "客户端版本不存在")
     if row and row.revision != payload.expected_revision:

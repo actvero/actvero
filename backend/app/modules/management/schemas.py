@@ -17,16 +17,20 @@ from app.modules.desktop.schemas import (
 from app.modules.desktop_mcp.schemas import OAuthAttemptView
 from app.modules.llm.schemas import ChannelDetail, ChannelPage
 
+ManagementScope = Literal["management:read", "management:read management:write", "platform:read"]
+PlatformPermission = Literal["releases.write", "releases.publish", "storage.manage"]
+
 
 class StartLogin(BaseModel):
     model_config = ConfigDict(extra="forbid")
     contract_version: Literal[1]
-    authorization_version: Literal[1, 2] = 1
+    authorization_version: Literal[1, 2, 3] = 1
+    target: Literal["organization", "platform"] = "organization"
     redirect_uri: str = Field(max_length=200)
     code_challenge: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     device_name: str = Field(min_length=1, max_length=100)
     reauthenticate: bool = False
-    scope: Literal["management:read", "management:read management:write"] = "management:read"
+    scope: ManagementScope = "management:read"
 
     @field_validator("redirect_uri")
     @classmethod
@@ -55,7 +59,7 @@ class Tokens(BaseModel):
     access_token: str
     refresh_token: str
     token_type: Literal["Bearer"] = "Bearer"
-    scope: Literal["management:read", "management:read management:write"] = "management:read"
+    scope: ManagementScope = "management:read"
     session_id: UUID
     expires_in: int
     server_time: datetime
@@ -68,13 +72,15 @@ class Tokens(BaseModel):
 class Metadata(BaseModel):
     contract_version: Literal[1] = 1
     authorization_contract_version: Literal[2] = 2
+    supported_authorization_versions: list[int] = Field(default_factory=lambda: [1, 2, 3])
+    client_distribution_contract_version: Literal[1] = 1
     instance_id: UUID
     platform_name: str
     client_id: str
     issuer: str
     scope: Literal["management:read"] = "management:read"
     supported_scopes: list[str] = Field(
-        default_factory=lambda: ["management:read", "management:write"]
+        default_factory=lambda: ["management:read", "management:write", "platform:read"]
     )
     resource_contract_version: Literal[1] = 1
     callback_template: str = "http://127.0.0.1:{port}/actvero/cli/callback"
@@ -83,6 +89,8 @@ class Metadata(BaseModel):
     reauthentication_days: int
     capabilities: list[str] = Field(
         default_factory=lambda: [
+            "client_distribution.read",
+            "client_distribution.write",
             "auth.login",
             "auth.refresh",
             "auth.logout",
@@ -112,7 +120,8 @@ class Metadata(BaseModel):
 class Me(BaseModel):
     user: UserView
     session_id: UUID
-    scope: Literal["management:read", "management:read management:write"] = "management:read"
+    scope: ManagementScope = "management:read"
+    platform_permissions: list[PlatformPermission] = Field(default_factory=list)
     authorized_org_ids: list[UUID] | None = None
     session_expires_at: datetime
     reauthenticate_at: datetime
@@ -143,12 +152,14 @@ class CliConsentProof(BaseModel):
 
 
 class CliConsentDecision(CliConsentProof):
+    platform_permissions: list[PlatformPermission] = Field(default_factory=list, max_length=3)
     approve: bool
     org_ids: list[UUID] = Field(default_factory=list, max_length=100)
-    scope: Literal["management:read", "management:read management:write"] = "management:read"
+    scope: ManagementScope = "management:read"
 
 
 class CliConsentView(BaseModel):
+    target: Literal["organization", "platform"] = "organization"
     device_name: str
     expires_at: datetime
     user: UserView

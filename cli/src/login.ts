@@ -130,6 +130,8 @@ export async function login(
       throw new CliError('unsupported_contract', '平台尚不支持浏览器授权，请先升级平台');
     }
     if (write) process.stderr.write('--write 仅保留兼容；实际组织和权限由本人在浏览器选择。\n');
+    if (client.target === 'platform' && (!Array.isArray(metadata.supported_authorization_versions) || !metadata.supported_authorization_versions.includes(3)))
+      throw new CliError('unsupported_contract', '平台尚不支持平台发布授权，请先升级平台');
     const callback = new Loopback();
     let proof: LoginProof | undefined;
     let completed = false;
@@ -138,7 +140,8 @@ export async function login(
       const verifier = randomBytes(36).toString('base64url');
       const started = await client.publicRequest('POST', '/login/start', {
         contract_version: 1,
-        authorization_version: 2,
+        authorization_version: client.target === 'platform' ? 3 : 2,
+        ...(client.target === 'platform' ? { target: 'platform' } : {}),
         redirect_uri: callback.redirectUri,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         device_name: 'CLI · ' + hostname().slice(0, 80),
@@ -177,6 +180,8 @@ export async function login(
       const tokens = validateTokens(
         await client.publicRequest('POST', '/login/exchange', { ...proof, ...returned }),
       );
+      if ((tokens.scope === 'platform:read') !== (client.target === 'platform'))
+        throw new CliError('credential_type_mismatch', '授权结果的用途与登录请求不一致');
       const retirePending = [...(previous.retirePending || [])];
       if (previous.tokens) retirePending.push(previous.tokens.refresh_token);
       await client.saveLogin(tokens, metadata.instance_id, retirePending);

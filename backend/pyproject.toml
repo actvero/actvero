@@ -20,6 +20,7 @@ dependencies = [
   "jsonschema>=4,<5",
   "litellm==1.102.1",
   "pyyaml>=6.0.3,<7",
+  "boto3==1.43.103",
 ]
 
 [dependency-groups]

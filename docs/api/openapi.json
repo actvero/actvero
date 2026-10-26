@@ -194,6 +194,243 @@
         "title": "ArchiveInput",
         "type": "object"
       },
+      "ArtifactCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "filename": {
+            "maxLength": 180,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$",
+            "title": "Filename",
+            "type": "string"
+          },
+          "mirror": {
+            "default": false,
+            "title": "Mirror",
+            "type": "boolean"
+          },
+          "role": {
+            "enum": [
+              "installer",
+              "payload",
+              "blockmap"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "sha512": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha512"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 20000000000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "storage_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Id"
+          },
+          "target": {
+            "enum": [
+              "win-x64",
+              "mac-arm64",
+              "mac-x64"
+            ],
+            "title": "Target",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "target",
+          "role",
+          "filename"
+        ],
+        "title": "ArtifactCreate",
+        "type": "object"
+      },
+      "ArtifactView": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "release_id": {
+            "format": "uuid",
+            "title": "Release Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "installer",
+              "payload",
+              "blockmap"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "sha512": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha512"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "storage_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Id"
+          },
+          "target": {
+            "enum": [
+              "win-x64",
+              "mac-arm64",
+              "mac-x64"
+            ],
+            "title": "Target",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "release_id",
+          "target",
+          "role",
+          "filename",
+          "source",
+          "url",
+          "storage_id",
+          "size_bytes",
+          "sha512",
+          "sha256",
+          "status",
+          "error",
+          "published_at"
+        ],
+        "title": "ArtifactView",
+        "type": "object"
+      },
       "AttemptView": {
         "properties": {
           "attempt_id": {
@@ -4869,11 +5106,25 @@
             "title": "Org Ids",
             "type": "array"
           },
+          "platform_permissions": {
+            "items": {
+              "enum": [
+                "releases.write",
+                "releases.publish",
+                "storage.manage"
+              ],
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Platform Permissions",
+            "type": "array"
+          },
           "scope": {
             "default": "management:read",
             "enum": [
               "management:read",
-              "management:read management:write"
+              "management:read management:write",
+              "platform:read"
             ],
             "title": "Scope",
             "type": "string"
@@ -4949,6 +5200,15 @@
             },
             "title": "Organizations",
             "type": "array"
+          },
+          "target": {
+            "default": "organization",
+            "enum": [
+              "organization",
+              "platform"
+            ],
+            "title": "Target",
+            "type": "string"
           },
           "user": {
             "$ref": "#/components/schemas/UserView"
@@ -7244,6 +7504,115 @@
           "settled_points"
         ],
         "title": "DistributionBucket",
+        "type": "object"
+      },
+      "DistributionSave": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "default": "latest",
+            "enum": [
+              "latest",
+              "nightly"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "minimum_os": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "enum": [
+                "win-x64",
+                "mac-arm64",
+                "mac-x64"
+              ]
+            },
+            "title": "Minimum Os",
+            "type": "object"
+          },
+          "notes": {
+            "default": "",
+            "maxLength": 12000,
+            "title": "Notes",
+            "type": "string"
+          },
+          "version": {
+            "maxLength": 50,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "version"
+        ],
+        "title": "DistributionSave",
+        "type": "object"
+      },
+      "DistributionView": {
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactView"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "channel": {
+            "enum": [
+              "latest",
+              "nightly"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "minimum_os": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Minimum Os",
+            "type": "object"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "channel",
+          "notes",
+          "minimum_os",
+          "status",
+          "revision",
+          "artifacts"
+        ],
+        "title": "DistributionView",
         "type": "object"
       },
       "DraftInspectionInput": {
@@ -9652,6 +10021,51 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HeadView": {
+        "properties": {
+          "channel": {
+            "enum": [
+              "latest",
+              "nightly"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "target": {
+            "enum": [
+              "win-x64",
+              "mac-arm64",
+              "mac-x64"
+            ],
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "target",
+          "release_id",
+          "revision"
+        ],
+        "title": "HeadView",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "service": {
@@ -10823,6 +11237,48 @@
           "email"
         ],
         "title": "InviteInput",
+        "type": "object"
+      },
+      "JobView": {
+        "properties": {
+          "artifact_id": {
+            "format": "uuid",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "processed_bytes": {
+            "title": "Processed Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "artifact_id",
+          "status",
+          "processed_bytes",
+          "error"
+        ],
+        "title": "JobView",
         "type": "object"
       },
       "JsonValue": {},
@@ -13335,6 +13791,18 @@
             ],
             "title": "Authorized Org Ids"
           },
+          "platform_permissions": {
+            "items": {
+              "enum": [
+                "releases.write",
+                "releases.publish",
+                "storage.manage"
+              ],
+              "type": "string"
+            },
+            "title": "Platform Permissions",
+            "type": "array"
+          },
           "reauthenticate_at": {
             "format": "date-time",
             "title": "Reauthenticate At",
@@ -13344,7 +13812,8 @@
             "default": "management:read",
             "enum": [
               "management:read",
-              "management:read management:write"
+              "management:read management:write",
+              "platform:read"
             ],
             "title": "Scope",
             "type": "string"
@@ -14054,6 +14523,12 @@
             "title": "Capabilities",
             "type": "array"
           },
+          "client_distribution_contract_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Client Distribution Contract Version",
+            "type": "integer"
+          },
           "client_id": {
             "title": "Client Id",
             "type": "string"
@@ -14096,6 +14571,13 @@
             "default": "management:read",
             "title": "Scope",
             "type": "string"
+          },
+          "supported_authorization_versions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Supported Authorization Versions",
+            "type": "array"
           },
           "supported_scopes": {
             "items": {
@@ -15985,6 +16467,49 @@
         "title": "OverviewActivity",
         "type": "object"
       },
+      "PartAck": {
+        "additionalProperties": false,
+        "properties": {
+          "etag": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9\"._-]+$",
+            "title": "Etag",
+            "type": "string"
+          },
+          "number": {
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "number",
+          "etag"
+        ],
+        "title": "PartAck",
+        "type": "object"
+      },
+      "PartsSign": {
+        "additionalProperties": false,
+        "properties": {
+          "parts": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Parts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "parts"
+        ],
+        "title": "PartsSign",
+        "type": "object"
+      },
       "PasswordAction": {
         "properties": {
           "url": {
@@ -16118,6 +16643,75 @@
           "review_calls"
         ],
         "title": "PersonalOverview",
+        "type": "object"
+      },
+      "PlanCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "targets": {
+            "items": {
+              "enum": [
+                "win-x64",
+                "mac-arm64",
+                "mac-x64"
+              ],
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "targets"
+        ],
+        "title": "PlanCreate",
+        "type": "object"
+      },
+      "PlanView": {
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "release_id": {
+            "format": "uuid",
+            "title": "Release Id",
+            "type": "string"
+          },
+          "release_revision": {
+            "title": "Release Revision",
+            "type": "integer"
+          },
+          "targets": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Targets",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "release_id",
+          "release_revision",
+          "targets",
+          "expires_at"
+        ],
+        "title": "PlanView",
         "type": "object"
       },
       "PlatformOrganization": {
@@ -17583,6 +18177,21 @@
           "assets"
         ],
         "title": "PublicRelease",
+        "type": "object"
+      },
+      "Publish": {
+        "additionalProperties": false,
+        "properties": {
+          "plan_id": {
+            "format": "uuid",
+            "title": "Plan Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_id"
+        ],
+        "title": "Publish",
         "type": "object"
       },
       "PublishedConnectorRef": {
@@ -20674,6 +21283,21 @@
         "title": "RetrievalOptions",
         "type": "object"
       },
+      "Revision": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "Revision",
+        "type": "object"
+      },
       "RouteStateView": {
         "properties": {
           "channel_id": {
@@ -22375,6 +22999,172 @@
         "title": "SpeechOutput",
         "type": "object"
       },
+      "StorageSave": {
+        "additionalProperties": false,
+        "properties": {
+          "access_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Key"
+          },
+          "bucket": {
+            "maxLength": 200,
+            "minLength": 3,
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "title": "Bucket",
+            "type": "string"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "endpoint": {
+            "maxLength": 2048,
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "path_style": {
+            "default": false,
+            "title": "Path Style",
+            "type": "boolean"
+          },
+          "prefix": {
+            "default": "clients",
+            "maxLength": 200,
+            "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$",
+            "title": "Prefix",
+            "type": "string"
+          },
+          "public_url": {
+            "maxLength": 2048,
+            "title": "Public Url",
+            "type": "string"
+          },
+          "region": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[\\w-]+$",
+            "title": "Region",
+            "type": "string"
+          },
+          "secret_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Key"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "name",
+          "endpoint",
+          "region",
+          "bucket",
+          "public_url"
+        ],
+        "title": "StorageSave",
+        "type": "object"
+      },
+      "StorageView": {
+        "properties": {
+          "bucket": {
+            "title": "Bucket",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "path_style": {
+            "title": "Path Style",
+            "type": "boolean"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "public_url": {
+            "title": "Public Url",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "endpoint",
+          "region",
+          "bucket",
+          "prefix",
+          "public_url",
+          "path_style",
+          "enabled",
+          "is_default",
+          "revision"
+        ],
+        "title": "StorageView",
+        "type": "object"
+      },
       "StreamOptions": {
         "additionalProperties": false,
         "properties": {
@@ -23047,7 +23837,8 @@
             "default": "management:read",
             "enum": [
               "management:read",
-              "management:read management:write"
+              "management:read management:write",
+              "platform:read"
             ],
             "title": "Scope",
             "type": "string"
@@ -23226,6 +24017,72 @@
           "usage"
         ],
         "title": "TranscriptionOutput",
+        "type": "object"
+      },
+      "UploadView": {
+        "properties": {
+          "artifact_id": {
+            "format": "uuid",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "expected_sha512": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Sha512"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "part_count": {
+            "title": "Part Count",
+            "type": "integer"
+          },
+          "part_size": {
+            "title": "Part Size",
+            "type": "integer"
+          },
+          "parts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Parts",
+            "type": "object"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "artifact_id",
+          "status",
+          "part_size",
+          "part_count",
+          "size_bytes",
+          "expected_sha512",
+          "parts",
+          "expires_at"
+        ],
+        "title": "UploadView",
         "type": "object"
       },
       "UpstreamModel": {
@@ -23883,7 +24740,8 @@
             "default": 1,
             "enum": [
               1,
-              2
+              2,
+              3
             ],
             "title": "Authorization Version",
             "type": "integer"
@@ -23918,9 +24776,19 @@
             "default": "management:read",
             "enum": [
               "management:read",
-              "management:read management:write"
+              "management:read management:write",
+              "platform:read"
             ],
             "title": "Scope",
+            "type": "string"
+          },
+          "target": {
+            "default": "organization",
+            "enum": [
+              "organization",
+              "platform"
+            ],
+            "title": "Target",
             "type": "string"
           }
         },
@@ -26288,6 +27156,113 @@
         "summary": "Decide",
         "tags": [
           "management-consent"
+        ]
+      }
+    },
+    "/api/v1/client-artifacts/{channel}/{target}/{filename}": {
+      "get": {
+        "operationId": "artifact_redirect_api_v1_client_artifacts__channel___target___filename__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel",
+            "required": true,
+            "schema": {
+              "title": "Channel",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target",
+            "required": true,
+            "schema": {
+              "title": "Target",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "307": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Artifact Redirect",
+        "tags": [
+          "client-updates"
+        ]
+      }
+    },
+    "/api/v1/client-updates/actvero/{target}/{feed}": {
+      "get": {
+        "operationId": "update_feed_api_v1_client_updates_actvero__target___feed__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target",
+            "required": true,
+            "schema": {
+              "title": "Target",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "feed",
+            "required": true,
+            "schema": {
+              "title": "Feed",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Feed",
+        "tags": [
+          "client-updates"
         ]
       }
     },
@@ -41085,6 +42060,1105 @@
         ]
       }
     },
+    "/api/v1/management/platform/client-distribution/artifacts/{ident}": {
+      "delete": {
+        "operationId": "delete_artifact_api_v1_management_platform_client_distribution_artifacts__ident__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Delete Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/artifacts/{ident}/verify": {
+      "post": {
+        "operationId": "verify_artifact_api_v1_management_platform_client_distribution_artifacts__ident__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Verify Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/heads": {
+      "get": {
+        "operationId": "list_heads_api_v1_management_platform_client_distribution_heads_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/HeadView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Heads Api V1 Management Platform Client Distribution Heads Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "List Heads",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/jobs": {
+      "get": {
+        "operationId": "list_jobs_api_v1_management_platform_client_distribution_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "artifact_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Artifact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/JobView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Jobs Api V1 Management Platform Client Distribution Jobs Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "List Jobs",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases": {
+      "get": {
+        "operationId": "list_releases_api_v1_management_platform_client_distribution_releases_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/DistributionView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Releases Api V1 Management Platform Client Distribution Releases Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "List Releases",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases/{ident}": {
+      "get": {
+        "operationId": "get_release_api_v1_management_platform_client_distribution_releases__ident__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Get Release",
+        "tags": [
+          "client-distribution"
+        ]
+      },
+      "put": {
+        "operationId": "save_release_api_v1_management_platform_client_distribution_releases__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributionSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Save Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases/{ident}/artifacts/{artifact_id}": {
+      "put": {
+        "operationId": "add_artifact_api_v1_management_platform_client_distribution_releases__ident__artifacts__artifact_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Add Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases/{ident}/plan": {
+      "post": {
+        "operationId": "plan_release_api_v1_management_platform_client_distribution_releases__ident__plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Plan Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases/{ident}/publish": {
+      "post": {
+        "operationId": "publish_release_api_v1_management_platform_client_distribution_releases__ident__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Publish"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Publish Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/releases/{ident}/withdraw": {
+      "post": {
+        "operationId": "withdraw_release_api_v1_management_platform_client_distribution_releases__ident__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Withdraw Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/storage": {
+      "get": {
+        "operationId": "list_storage_api_v1_management_platform_client_distribution_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/StorageView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Storage Api V1 Management Platform Client Distribution Storage Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "List Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/storage/{ident}": {
+      "put": {
+        "operationId": "save_storage_api_v1_management_platform_client_distribution_storage__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Save Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/storage/{ident}/test": {
+      "post": {
+        "operationId": "test_storage_api_v1_management_platform_client_distribution_storage__ident__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Test Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}": {
+      "get": {
+        "operationId": "get_upload_api_v1_management_platform_client_distribution_uploads__ident__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Get Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/abort": {
+      "post": {
+        "operationId": "abort_upload_api_v1_management_platform_client_distribution_uploads__ident__abort_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Abort Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/ack": {
+      "post": {
+        "operationId": "acknowledge_api_v1_management_platform_client_distribution_uploads__ident__ack_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartAck"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Acknowledge",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/complete": {
+      "post": {
+        "operationId": "complete_upload_api_v1_management_platform_client_distribution_uploads__ident__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Complete Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/parts/{number}": {
+      "put": {
+        "operationId": "proxy_part_api_v1_management_platform_client_distribution_uploads__ident__parts__number__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartAck"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Proxy Part",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/sign": {
+      "post": {
+        "operationId": "sign_parts_api_v1_management_platform_client_distribution_uploads__ident__sign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartsSign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Sign Parts Api V1 Management Platform Client Distribution Uploads  Ident  Sign Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Sign Parts",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/client-distribution/uploads/{ident}/start": {
+      "post": {
+        "operationId": "start_upload_api_v1_management_platform_client_distribution_uploads__ident__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Start Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
     "/api/v1/management/refresh": {
       "post": {
         "operationId": "refresh_api_v1_management_refresh_post",
@@ -43004,6 +45078,1000 @@
         "summary": "Update Cli Settings",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/artifacts/{ident}": {
+      "delete": {
+        "operationId": "delete_artifact_api_v1_platform_client_distribution_artifacts__ident__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/artifacts/{ident}/verify": {
+      "post": {
+        "operationId": "verify_artifact_api_v1_platform_client_distribution_artifacts__ident__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/heads": {
+      "get": {
+        "operationId": "list_heads_api_v1_platform_client_distribution_heads_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/HeadView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Heads Api V1 Platform Client Distribution Heads Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Heads",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/jobs": {
+      "get": {
+        "operationId": "list_jobs_api_v1_platform_client_distribution_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "artifact_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Artifact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/JobView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Jobs Api V1 Platform Client Distribution Jobs Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Jobs",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases": {
+      "get": {
+        "operationId": "list_releases_api_v1_platform_client_distribution_releases_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/DistributionView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Releases Api V1 Platform Client Distribution Releases Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Releases",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases/{ident}": {
+      "get": {
+        "operationId": "get_release_api_v1_platform_client_distribution_releases__ident__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Release",
+        "tags": [
+          "client-distribution"
+        ]
+      },
+      "put": {
+        "operationId": "save_release_api_v1_platform_client_distribution_releases__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributionSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases/{ident}/artifacts/{artifact_id}": {
+      "put": {
+        "operationId": "add_artifact_api_v1_platform_client_distribution_releases__ident__artifacts__artifact_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Artifact",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases/{ident}/plan": {
+      "post": {
+        "operationId": "plan_release_api_v1_platform_client_distribution_releases__ident__plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases/{ident}/publish": {
+      "post": {
+        "operationId": "publish_release_api_v1_platform_client_distribution_releases__ident__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Publish"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publish Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/releases/{ident}/withdraw": {
+      "post": {
+        "operationId": "withdraw_release_api_v1_platform_client_distribution_releases__ident__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Revision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Withdraw Release",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/storage": {
+      "get": {
+        "operationId": "list_storage_api_v1_platform_client_distribution_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/StorageView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Storage Api V1 Platform Client Distribution Storage Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/storage/{ident}": {
+      "put": {
+        "operationId": "save_storage_api_v1_platform_client_distribution_storage__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/storage/{ident}/test": {
+      "post": {
+        "operationId": "test_storage_api_v1_platform_client_distribution_storage__ident__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Storage",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}": {
+      "get": {
+        "operationId": "get_upload_api_v1_platform_client_distribution_uploads__ident__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/abort": {
+      "post": {
+        "operationId": "abort_upload_api_v1_platform_client_distribution_uploads__ident__abort_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Abort Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/ack": {
+      "post": {
+        "operationId": "acknowledge_api_v1_platform_client_distribution_uploads__ident__ack_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartAck"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acknowledge",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/complete": {
+      "post": {
+        "operationId": "complete_upload_api_v1_platform_client_distribution_uploads__ident__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Upload",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/parts/{number}": {
+      "put": {
+        "operationId": "proxy_part_api_v1_platform_client_distribution_uploads__ident__parts__number__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartAck"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proxy Part",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/sign": {
+      "post": {
+        "operationId": "sign_parts_api_v1_platform_client_distribution_uploads__ident__sign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartsSign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Sign Parts Api V1 Platform Client Distribution Uploads  Ident  Sign Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sign Parts",
+        "tags": [
+          "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/platform/client-distribution/uploads/{ident}/start": {
+      "post": {
+        "operationId": "start_upload_api_v1_platform_client_distribution_uploads__ident__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Upload",
+        "tags": [
+          "client-distribution"
         ]
       }
     },

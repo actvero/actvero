@@ -8,6 +8,7 @@ import { saveCommand, serverFor } from './config.js';
 import { CliError, object, uuid } from './errors.js';
 import { login } from './login.js';
 import { CredentialStore } from './store.js';
+import { registerDistribution } from './distribution.js';
 import {
   example,
   exampleNames,
@@ -19,8 +20,8 @@ import {
   skillPath,
 } from './manual.js';
 
-type Options = Record<string, string | boolean | undefined>;
-interface Context {
+export type Options = Record<string, string | boolean | undefined>;
+export interface Context {
   client: Client;
   options: Options;
   root: string;
@@ -109,13 +110,17 @@ export function buildProgram(runtime: Runtime = {}): Command {
     handler: (context: Context, args: string[]) => Promise<unknown>,
   ) => {
     command.option('--server <url>', '平台地址').option('--json', '输出紧凑 JSON');
+    if (command.parent?.name() === 'auth') command.option('--target <target>', '凭据用途：organization 或 platform', (value: string) => {
+      if (!['organization', 'platform'].includes(value)) throw new CliError('invalid_target', '用途须为 organization 或 platform');
+      return value;
+    });
     command.action(async (..._args: unknown[]) => {
       const options = command.optsWithGlobals() as Options;
       const server = await serverFor(
         typeof options.server === 'string' ? options.server : undefined,
       );
       const client =
-        runtime.client?.(server) || new Client(server, new CredentialStore(server));
+        runtime.client?.(server) || new Client(server, new CredentialStore(server, options.target === 'platform' ? 'platform' : 'organization'), globalThis.fetch, options.target === 'platform' ? 'platform' : 'organization');
       const root = typeof options.org === 'string' ? '/organizations/' + uuid(options.org) : '';
       const result = await handler(
         { client, options, root },
@@ -163,6 +168,10 @@ export function buildProgram(runtime: Runtime = {}): Command {
   run(platform.command('info'), (ctx) => ctx.client.publicRequest('GET', '/metadata'));
 
   const auth = program.command('auth').description('独立 CLI 登录与凭据');
+  auth.option('--target <target>', '登录用途：organization 或 platform', (value: string) => {
+    if (!['organization', 'platform'].includes(value)) throw new CliError('invalid_target', '用途须为 organization 或 platform');
+    return value;
+  }, 'organization');
   run(
     auth
       .command('login')
@@ -175,6 +184,7 @@ export function buildProgram(runtime: Runtime = {}): Command {
     await ctx.client.logout();
     return { server: ctx.client.server, message: '已退出 CLI 登录' };
   });
+  registerDistribution(program, run, errorOutput);
   const org = program.command('org').description('组织与当前权限');
   run(org.command('list').option('--page <number>', '页码', positive, '1'), (ctx) =>
     ctx.client.request('GET', '/organizations' + query(ctx.options, ['page'])),

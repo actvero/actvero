@@ -5,11 +5,12 @@ import type { SessionState, Store, Tokens } from './store.js';
 export type Fetch = typeof globalThis.fetch;
 export const READ_SCOPE = 'management:read';
 export const WRITE_SCOPE = 'management:read management:write';
+export const PLATFORM_SCOPE = 'platform:read';
 
 export function validateTokens(value: unknown): Tokens {
   const data = object(value);
   if (
-    ![READ_SCOPE, WRITE_SCOPE].includes(String(data.scope)) ||
+    ![READ_SCOPE, WRITE_SCOPE, PLATFORM_SCOPE].includes(String(data.scope)) ||
     typeof data.access_token !== 'string' ||
     !data.access_token.startsWith('avm_access_') ||
     typeof data.refresh_token !== 'string' ||
@@ -29,6 +30,7 @@ export class Client {
     public readonly server: string,
     public readonly store: Store,
     private readonly fetcher: Fetch = globalThis.fetch,
+    public readonly target: 'organization' | 'platform' = 'organization',
   ) {}
 
   private async rawRequest(
@@ -172,6 +174,8 @@ export class Client {
     await this.retireSessions(state);
     if (!state.tokens) throw new CliError('login_required', '请先执行 auth login');
     validateTokens(state.tokens);
+    if ((state.tokens.scope === PLATFORM_SCOPE) !== (this.target === 'platform'))
+      throw new CliError('credential_type_mismatch', '登录用途不匹配，请使用 auth login --target ' + this.target);
     if (state.logoutPending)
       throw new CliError('logout_pending', '上次退出未确认，请先重试 auth logout');
     if (

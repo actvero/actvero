@@ -103,3 +103,7 @@ OAuth URL 含临时 state，仅交给系统浏览器或本人操作，不提交�
 ## 参考
 
 [文档导航](README.md) · [身份与授权](IDENTITY-FLOW.md) · [专家管理](EXPERTS.md) · [Skills 管理](SKILLS-WORKBENCH.md) · [MCP 服务管理](MCP-WORKBENCH.md)
+
+## 平台客户端发布
+
+`auth login --target platform` 单独授予客户端发布权限，凭据与组织登录隔离。存储、上传、校验、发布和恢复见[客户端更新发布](CLIENT-DISTRIBUTION.md)。

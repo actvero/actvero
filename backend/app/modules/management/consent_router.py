@@ -20,7 +20,7 @@ from app.modules.auth.service import (
 from app.modules.desktop.errors import fail
 from app.modules.management import schemas as s
 from app.modules.management.models import ManagementLogin, ManagementSession
-from app.modules.management.service import ManagementActor, native, organization
+from app.modules.management.service import ManagementActor, native, organization, platform_operator
 from app.modules.management.settings import require_enabled
 from app.modules.members.models import Membership
 from app.modules.tenants.models import Tenant
@@ -52,7 +52,7 @@ async def context(
     ):
         fail(404, "invalid_login", "授权请求无效")
     if (
-        attempt.authorization_version != 2
+        attempt.authorization_version not in {2, 3}
         or attempt.cancelled
         or attempt.consumed
         or attempt.approved_at
@@ -74,6 +74,17 @@ async def context(
 @router.post("/context", response_model=s.CliConsentView)
 async def view(payload: s.CliConsentProof, request: Request, db: DB) -> s.CliConsentView:
     attempt, actor = await context(payload, request, db)
+    if attempt.target == "platform":
+        await platform_operator(request, db, actor.user.id)
+        result = s.CliConsentView(
+            target="platform",
+            device_name=attempt.name,
+            expires_at=attempt.expires_at,
+            user=UserView.model_validate(actor.user),
+            organizations=[],
+        )
+        await db.commit()
+        return result
     ids = (
         await db.scalars(
             select(Tenant.id)
@@ -119,7 +130,14 @@ async def decide(payload: s.CliConsentDecision, request: Request, db: DB) -> s.C
         )
     else:
         ids = sorted(set(payload.org_ids))
-        if not ids or len(ids) != len(payload.org_ids):
+        if attempt.target == "platform":
+            await platform_operator(request, db, actor.user.id)
+            if ids or payload.scope != "platform:read":
+                fail(422, "invalid_scope", "平台授权不能包含组织权限")
+            attempt.platform_permissions = sorted(set(payload.platform_permissions))
+        elif payload.scope == "platform:read" or payload.platform_permissions:
+            fail(422, "invalid_scope", "组织授权不能授予平台权限")
+        elif not ids or len(ids) != len(payload.org_ids):
             fail(422, "invalid_organizations", "请选择至少一个组织，且不能重复选择")
         actor.session.scope = payload.scope
         for org_id in ids:

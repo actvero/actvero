@@ -57,6 +57,7 @@ async def check_session(
     if row.client_id != settings.management_client_id or row.scope not in {
         "management:read",
         "management:read management:write",
+        "platform:read",
     }:
         fail(403, "insufficient_scope", "此凭据不适用于管理接口")
     if "management:write" in row.scope.split() and not row.authorized_org_ids:
@@ -67,8 +68,18 @@ async def check_session(
     user = await db.get(User, identity.user_id)
     if not user:
         fail(401, "invalid_identity", "登录身份已失效")
+    if row.scope == "platform:read":
+        await platform_operator(request, db, user.id)
     await native(request).account_valid(identity.subject, row.authenticated_at)
     return ManagementActor(row, identity, user)
+
+
+async def platform_operator(request: Request, db: AsyncSession, user_id: UUID) -> None:
+    if provider(request).settings.platform_edition != "saas":
+        fail(404, "platform_unavailable", "此部署未开放平台发布管理")
+    operator = await db.get(PlatformOperator, user_id, populate_existing=True)
+    if not operator or operator.status != "active":
+        fail(403, "platform_denied", "此操作仅限当前平台运营人员")
 
 
 async def token_session(
@@ -170,6 +181,8 @@ async def organization(
     require_admin: bool = False,
     write: bool = False,
 ) -> tuple[BusinessActor, Organization]:
+    if who.session.scope == "platform:read":
+        fail(403, "credential_type_mismatch", "平台发布凭据不能访问组织资源")
     settings = provider(request).settings
     install = await db.get(Installation, 1)
     if (

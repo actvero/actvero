@@ -19,6 +19,35 @@ const context = {
   organizations,
 }
 const clients: QueryClient[] = []
+
+it('grants selected platform permissions without granting any organization access', async () => {
+  let decision: Record<string, unknown> | undefined
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init: RequestInit) => {
+      if (url.endsWith('/context'))
+        return Response.json({
+          ...context,
+          target: 'platform',
+          organizations: [],
+        })
+      decision = JSON.parse(init.body as string)
+      return Response.json({
+        redirect_url: 'https://identity.example.com/auth',
+      })
+    })
+  )
+  await show()
+  await page.getByRole('checkbox', { name: '维护版本与上传文件' }).click()
+  await page.getByRole('button', { name: '确认授权' }).click()
+  expect(decision).toEqual({
+    ...proof,
+    approve: true,
+    org_ids: [],
+    scope: 'platform:read',
+    platform_permissions: ['releases.write'],
+  })
+})
 async function show(navigate = vi.fn()) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

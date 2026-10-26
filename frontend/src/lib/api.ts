@@ -20,15 +20,27 @@ export async function api<T>(
   signal?: AbortSignal
 ): Promise<T> {
   const multipart = body instanceof FormData
+  const binary = body instanceof Blob
   const response = await fetch('/api/v1' + path, {
     method,
     credentials: 'same-origin',
     signal,
     headers: {
-      ...(body === undefined || multipart ? {} : { 'Content-Type': 'application/json' }),
+      ...(body === undefined || multipart
+        ? {}
+        : {
+            'Content-Type': binary
+              ? 'application/octet-stream'
+              : 'application/json',
+          }),
       ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
     },
-    body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
+    body:
+      body === undefined
+        ? undefined
+        : multipart || binary
+          ? body
+          : JSON.stringify(body),
   })
   const result = await response.json().catch(() => null)
   if (!response.ok)

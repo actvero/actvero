@@ -15,6 +15,8 @@ const raw = await readFile(args[0], "utf8");
 const source = JSON.parse(raw).components.schemas;
 const roots = [
   "Metadata",
+  "StorageSave", "StorageView", "DistributionSave", "DistributionView",
+  "ArtifactCreate", "ArtifactView", "PlanView", "UploadView", "JobView", "HeadView",
   "Me",
   "Organization",
   "Organizations",

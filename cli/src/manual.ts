@@ -12,6 +12,7 @@ const topics: Record<string, string> = {
   experts: 'references/experts.md',
   recovery: 'references/recovery.md',
   commands: 'references/commands.md',
+  distribution: 'references/distribution.md',
 };
 
 async function packageRoot(): Promise<string> {

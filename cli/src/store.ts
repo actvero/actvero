@@ -35,12 +35,15 @@ export interface Store {
 }
 
 export class CredentialStore implements Store {
-  constructor(private readonly server: string) {}
+  constructor(private readonly server: string, private readonly target = 'organization') {}
+  private key(): string {
+    return serverKey(this.server) + (this.target === 'platform' ? '-platform' : '');
+  }
   private async entry() {
     try {
       const { AsyncEntry } = await import('@napi-rs/keyring');
       // A separate service prevents overwriting the legacy Python client's journal.
-      return new AsyncEntry('actvero-cli-node-v1', serverKey(this.server), {
+      return new AsyncEntry('actvero-cli-node-v1', this.key(), {
         linux: { store: 'secret-service' },
       });
     } catch {
@@ -78,7 +81,7 @@ export class CredentialStore implements Store {
   async locked<T>(action: () => Promise<T>): Promise<T> {
     const directory = join(configHome(), 'locks');
     await mkdir(directory, { recursive: true, mode: 0o700 });
-    const target = join(directory, serverKey(this.server));
+    const target = join(directory, this.key());
     await writeFile(target, '', { flag: 'a', mode: 0o600 });
     let release: () => Promise<void>;
     try {

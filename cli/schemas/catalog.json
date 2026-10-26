@@ -1,14 +1,18 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "ff556e701c72ad4bd8227973d9c3604bb1981b88c69b71a52998ce78fe6f0191",
+  "source_sha256": "6c7b84fdb28bf8ad0f862d866b4f8abf28ca7eb96de9d309c4ccf0958a1a4a50",
   "roots": [
+    "ArtifactCreate",
+    "ArtifactView",
     "CategoryDelete",
     "CategoryMove",
     "CategoryName",
     "CategoryRename",
     "CommandStatus",
     "DependencyCommandView",
+    "DistributionSave",
+    "DistributionView",
     "ExpertCategoryDelete",
     "ExpertCategoryMove",
     "ExpertCategoryName",
@@ -22,6 +26,8 @@
     "ExpertSkillRefresh",
     "ExpertUpdate",
     "ExpertView",
+    "HeadView",
+    "JobView",
     "ManagedExpertCategory",
     "ManagedSkillCategory",
     "ManagementOAuthView",
@@ -42,6 +48,7 @@
     "Metadata",
     "Organization",
     "Organizations",
+    "PlanView",
     "SkillAction",
     "SkillDistributionPage",
     "SkillFileContent",
@@ -50,9 +57,249 @@
     "SkillOverview",
     "SkillPreview",
     "SkillUpdate",
-    "SkillView"
+    "SkillView",
+    "StorageSave",
+    "StorageView",
+    "UploadView"
   ],
   "definitions": {
+    "ArtifactCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_revision": {
+          "minimum": 1,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "filename": {
+          "maxLength": 180,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "mirror": {
+          "default": false,
+          "title": "Mirror",
+          "type": "boolean"
+        },
+        "role": {
+          "enum": [
+            "installer",
+            "payload",
+            "blockmap"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha512": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sha512"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 20000000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Size Bytes"
+        },
+        "storage_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Storage Id"
+        },
+        "target": {
+          "enum": [
+            "win-x64",
+            "mac-arm64",
+            "mac-x64"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Url"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "target",
+        "role",
+        "filename"
+      ],
+      "title": "ArtifactCreate",
+      "type": "object"
+    },
+    "ArtifactView": {
+      "properties": {
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "filename": {
+          "title": "Filename",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Published At"
+        },
+        "release_id": {
+          "format": "uuid",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "installer",
+            "payload",
+            "blockmap"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sha256"
+        },
+        "sha512": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sha512"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Size Bytes"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "storage_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Storage Id"
+        },
+        "target": {
+          "enum": [
+            "win-x64",
+            "mac-arm64",
+            "mac-x64"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "release_id",
+        "target",
+        "role",
+        "filename",
+        "source",
+        "url",
+        "storage_id",
+        "size_bytes",
+        "sha512",
+        "sha256",
+        "status",
+        "error",
+        "published_at"
+      ],
+      "title": "ArtifactView",
+      "type": "object"
+    },
     "CategoryDelete": {
       "additionalProperties": false,
       "properties": {
@@ -332,6 +579,115 @@
         "updated_experts"
       ],
       "title": "DependencyCommandView",
+      "type": "object"
+    },
+    "DistributionSave": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "default": "latest",
+          "enum": [
+            "latest",
+            "nightly"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "expected_revision": {
+          "minimum": 0,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "minimum_os": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "enum": [
+              "win-x64",
+              "mac-arm64",
+              "mac-x64"
+            ]
+          },
+          "title": "Minimum Os",
+          "type": "object"
+        },
+        "notes": {
+          "default": "",
+          "maxLength": 12000,
+          "title": "Notes",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 50,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "version"
+      ],
+      "title": "DistributionSave",
+      "type": "object"
+    },
+    "DistributionView": {
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactView"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "channel": {
+          "enum": [
+            "latest",
+            "nightly"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "minimum_os": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Minimum Os",
+          "type": "object"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "channel",
+        "notes",
+        "minimum_os",
+        "status",
+        "revision",
+        "artifacts"
+      ],
+      "title": "DistributionView",
       "type": "object"
     },
     "ExactSkillChange": {
@@ -1307,6 +1663,93 @@
         "check"
       ],
       "title": "ExpertView",
+      "type": "object"
+    },
+    "HeadView": {
+      "properties": {
+        "channel": {
+          "enum": [
+            "latest",
+            "nightly"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "release_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Release Id"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "target": {
+          "enum": [
+            "win-x64",
+            "mac-arm64",
+            "mac-x64"
+          ],
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "channel",
+        "target",
+        "release_id",
+        "revision"
+      ],
+      "title": "HeadView",
+      "type": "object"
+    },
+    "JobView": {
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "processed_bytes": {
+          "title": "Processed Bytes",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "artifact_id",
+        "status",
+        "processed_bytes",
+        "error"
+      ],
+      "title": "JobView",
       "type": "object"
     },
     "ManagedExpertCategory": {
@@ -2512,6 +2955,18 @@
           ],
           "title": "Authorized Org Ids"
         },
+        "platform_permissions": {
+          "items": {
+            "enum": [
+              "releases.write",
+              "releases.publish",
+              "storage.manage"
+            ],
+            "type": "string"
+          },
+          "title": "Platform Permissions",
+          "type": "array"
+        },
         "reauthenticate_at": {
           "format": "date-time",
           "title": "Reauthenticate At",
@@ -2521,7 +2976,8 @@
           "default": "management:read",
           "enum": [
             "management:read",
-            "management:read management:write"
+            "management:read management:write",
+            "platform:read"
           ],
           "title": "Scope",
           "type": "string"
@@ -2573,6 +3029,12 @@
           "title": "Capabilities",
           "type": "array"
         },
+        "client_distribution_contract_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Client Distribution Contract Version",
+          "type": "integer"
+        },
         "client_id": {
           "title": "Client Id",
           "type": "string"
@@ -2615,6 +3077,13 @@
           "default": "management:read",
           "title": "Scope",
           "type": "string"
+        },
+        "supported_authorization_versions": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Supported Authorization Versions",
+          "type": "array"
         },
         "supported_scopes": {
           "items": {
@@ -2764,6 +3233,45 @@
         "page"
       ],
       "title": "Organizations",
+      "type": "object"
+    },
+    "PlanView": {
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "release_id": {
+          "format": "uuid",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "release_revision": {
+          "title": "Release Revision",
+          "type": "integer"
+        },
+        "targets": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Targets",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "release_id",
+        "release_revision",
+        "targets",
+        "expires_at"
+      ],
+      "title": "PlanView",
       "type": "object"
     },
     "SkillAction": {
@@ -3507,6 +4015,238 @@
         "created_at"
       ],
       "title": "SkillView",
+      "type": "object"
+    },
+    "StorageSave": {
+      "additionalProperties": false,
+      "properties": {
+        "access_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Access Key"
+        },
+        "bucket": {
+          "maxLength": 200,
+          "minLength": 3,
+          "pattern": "^[a-zA-Z0-9._-]+$",
+          "title": "Bucket",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "endpoint": {
+          "maxLength": 2048,
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "expected_revision": {
+          "minimum": 0,
+          "title": "Expected Revision",
+          "type": "integer"
+        },
+        "is_default": {
+          "default": false,
+          "title": "Is Default",
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "path_style": {
+          "default": false,
+          "title": "Path Style",
+          "type": "boolean"
+        },
+        "prefix": {
+          "default": "clients",
+          "maxLength": 200,
+          "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$",
+          "title": "Prefix",
+          "type": "string"
+        },
+        "public_url": {
+          "maxLength": 2048,
+          "title": "Public Url",
+          "type": "string"
+        },
+        "region": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[\\w-]+$",
+          "title": "Region",
+          "type": "string"
+        },
+        "secret_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Secret Key"
+        }
+      },
+      "required": [
+        "expected_revision",
+        "name",
+        "endpoint",
+        "region",
+        "bucket",
+        "public_url"
+      ],
+      "title": "StorageSave",
+      "type": "object"
+    },
+    "StorageView": {
+      "properties": {
+        "bucket": {
+          "title": "Bucket",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "endpoint": {
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "is_default": {
+          "title": "Is Default",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path_style": {
+          "title": "Path Style",
+          "type": "boolean"
+        },
+        "prefix": {
+          "title": "Prefix",
+          "type": "string"
+        },
+        "public_url": {
+          "title": "Public Url",
+          "type": "string"
+        },
+        "region": {
+          "title": "Region",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "endpoint",
+        "region",
+        "bucket",
+        "prefix",
+        "public_url",
+        "path_style",
+        "enabled",
+        "is_default",
+        "revision"
+      ],
+      "title": "StorageView",
+      "type": "object"
+    },
+    "UploadView": {
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "expected_sha512": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Sha512"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "part_count": {
+          "title": "Part Count",
+          "type": "integer"
+        },
+        "part_size": {
+          "title": "Part Size",
+          "type": "integer"
+        },
+        "parts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Parts",
+          "type": "object"
+        },
+        "size_bytes": {
+          "title": "Size Bytes",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "artifact_id",
+        "status",
+        "part_size",
+        "part_count",
+        "size_bytes",
+        "expected_sha512",
+        "parts",
+        "expires_at"
+      ],
+      "title": "UploadView",
       "type": "object"
     },
     "UserView": {

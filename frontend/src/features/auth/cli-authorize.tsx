@@ -21,7 +21,7 @@ export function CliAuthorizePage() {
   return (
     <AuthLayout
       title='授权 CLI 接入'
-      description='选择允许这台设备访问的组织和权限。'
+      description='确认这台设备的接入用途和权限。'
     >
       {!valid ? (
         <p role='alert'>授权链接无效，请返回 CLI 重新发起。</p>
@@ -77,6 +77,9 @@ export function CliConsentForm({
 }) {
   const [orgIds, setOrgIds] = useState<string[]>([])
   const [write, setWrite] = useState(false)
+  const [platformPermissions, setPlatformPermissions] = useState<
+    NonNullable<Schema['CliConsentDecision']['platform_permissions']>
+  >([])
   const [finished, setFinished] = useState(false)
   const context = useQuery({
     queryKey: ['cli-authorization', proof, csrf],
@@ -98,8 +101,16 @@ export function CliConsentForm({
         {
           ...proof,
           approve,
-          org_ids: approve ? orgIds : [],
-          scope: write ? 'management:read management:write' : 'management:read',
+          org_ids: approve && context.data?.target !== 'platform' ? orgIds : [],
+          scope:
+            context.data?.target === 'platform'
+              ? 'platform:read'
+              : write
+                ? 'management:read management:write'
+                : 'management:read',
+          ...(context.data?.target === 'platform'
+            ? { platform_permissions: approve ? platformPermissions : [] }
+            : {}),
         } satisfies Schema['CliConsentDecision'],
         csrf
       ),
@@ -134,77 +145,121 @@ export function CliConsentForm({
       <p className='text-sm text-muted-foreground'>
         仅在你刚刚从自己的终端或 Agent 发起接入时继续。
       </p>
-      <fieldset className='space-y-3' disabled={disabled}>
-        <legend className='mb-2 text-sm font-medium'>允许访问的组织</legend>
-        {context.data.organizations.length ? (
-          context.data.organizations.map((org) => (
-            <label key={org.org_id} className='flex items-start gap-2 text-sm'>
+      {context.data.target === 'platform' ? (
+        <fieldset className='space-y-3' disabled={disabled}>
+          <legend className='mb-2 text-sm font-medium'>
+            平台客户端发布权限
+          </legend>
+          <p className='text-sm text-muted-foreground'>
+            可查询版本和存储配置。按需授予以下操作权限；存储密钥不会返回 CLI。
+          </p>
+          {(
+            [
+              ['releases.write', '维护版本与上传文件'],
+              ['releases.publish', '发布更新与下架版本'],
+              ['storage.manage', '配置和测试对象存储'],
+            ] as const
+          ).map(([permission, label]) => (
+            <label key={permission} className='flex items-center gap-2 text-sm'>
               <input
                 type='checkbox'
-                className='mt-1 accent-primary'
-                checked={orgIds.includes(org.org_id)}
-                onChange={(event) =>
-                  setOrgIds(
-                    event.target.checked
-                      ? [...orgIds, org.org_id]
-                      : orgIds.filter((id) => id !== org.org_id)
+                className='accent-primary'
+                checked={platformPermissions.includes(permission)}
+                onChange={(e) =>
+                  setPlatformPermissions(
+                    e.target.checked
+                      ? [...platformPermissions, permission]
+                      : platformPermissions.filter((p) => p !== permission)
                   )
                 }
               />
+              {label}
+            </label>
+          ))}
+        </fieldset>
+      ) : (
+        <>
+          <fieldset className='space-y-3' disabled={disabled}>
+            <legend className='mb-2 text-sm font-medium'>允许访问的组织</legend>
+            {context.data.organizations.length ? (
+              context.data.organizations.map((org) => (
+                <label
+                  key={org.org_id}
+                  className='flex items-start gap-2 text-sm'
+                >
+                  <input
+                    type='checkbox'
+                    className='mt-1 accent-primary'
+                    checked={orgIds.includes(org.org_id)}
+                    onChange={(event) =>
+                      setOrgIds(
+                        event.target.checked
+                          ? [...orgIds, org.org_id]
+                          : orgIds.filter((id) => id !== org.org_id)
+                      )
+                    }
+                  />
+                  <span>
+                    {org.name}
+                    <span className='block text-xs break-all text-muted-foreground'>
+                      {org.org_id}
+                    </span>
+                  </span>
+                </label>
+              ))
+            ) : (
+              <p className='text-sm text-muted-foreground'>
+                当前账号没有可管理的组织，请联系组织管理员。
+              </p>
+            )}
+          </fieldset>
+          <fieldset className='space-y-3' disabled={disabled}>
+            <legend className='mb-2 text-sm font-medium'>
+              授予这台设备的权限
+            </legend>
+            <label className='flex items-start gap-2 text-sm'>
+              <input
+                type='radio'
+                name='cli-permission'
+                className='mt-1 accent-primary'
+                checked={!write}
+                onChange={() => setWrite(false)}
+              />
               <span>
-                {org.name}
-                <span className='block text-xs break-all text-muted-foreground'>
-                  {org.org_id}
+                只读查询
+                <span className='block text-muted-foreground'>
+                  查看渠道、Skills、MCP 与专家。
                 </span>
               </span>
             </label>
-          ))
-        ) : (
+            <label className='flex items-start gap-2 text-sm'>
+              <input
+                type='radio'
+                name='cli-permission'
+                className='mt-1 accent-primary'
+                checked={write}
+                onChange={() => setWrite(true)}
+              />
+              <span>
+                管理资源
+                <span className='block text-muted-foreground'>
+                  包括新建、修改、发布、删除 Skills、MCP 与专家，以及执行 MCP
+                  测试。
+                </span>
+              </span>
+            </label>
+          </fieldset>
           <p className='text-sm text-muted-foreground'>
-            当前账号没有可管理的组织，请联系组织管理员。
+            每次操作仍受你在组织内的当前权限约束。此授权不会自动执行资源操作。
           </p>
-        )}
-      </fieldset>
-      <fieldset className='space-y-3' disabled={disabled}>
-        <legend className='mb-2 text-sm font-medium'>授予这台设备的权限</legend>
-        <label className='flex items-start gap-2 text-sm'>
-          <input
-            type='radio'
-            name='cli-permission'
-            className='mt-1 accent-primary'
-            checked={!write}
-            onChange={() => setWrite(false)}
-          />
-          <span>
-            只读查询
-            <span className='block text-muted-foreground'>
-              查看渠道、Skills、MCP 与专家。
-            </span>
-          </span>
-        </label>
-        <label className='flex items-start gap-2 text-sm'>
-          <input
-            type='radio'
-            name='cli-permission'
-            className='mt-1 accent-primary'
-            checked={write}
-            onChange={() => setWrite(true)}
-          />
-          <span>
-            管理资源
-            <span className='block text-muted-foreground'>
-              包括新建、修改、发布、删除 Skills、MCP 与专家，以及执行 MCP 测试。
-            </span>
-          </span>
-        </label>
-      </fieldset>
-      <p className='text-sm text-muted-foreground'>
-        每次操作仍受你在组织内的当前权限约束。此授权不会自动执行资源操作。
-      </p>
+        </>
+      )}
       {decision.isError && <RequestError error={decision.error} />}
       <div className='flex gap-3'>
         <Button
-          disabled={disabled || !orgIds.length}
+          disabled={
+            disabled || (context.data.target !== 'platform' && !orgIds.length)
+          }
           onClick={() => decision.mutate(true)}
         >
           {disabled ? '正在返回 CLI…' : '确认授权'}
