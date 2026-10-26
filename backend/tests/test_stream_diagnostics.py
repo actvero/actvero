@@ -19,6 +19,7 @@ from app.modules.auth.service import now
 from app.modules.llm.diagnostic_schemas import ChatDiagnostic, EmbeddingDiagnostic
 from app.modules.llm.diagnostic_stream import DeltaRedactor
 from app.modules.llm.models import ModelCall, ModelChannel, RouteHealth
+from app.modules.llm.providers.attempt import AttemptTrace
 
 pytestmark = pytest.mark.asyncio
 env = identity_env
@@ -306,12 +307,20 @@ async def test_stream_health_certification_requires_complete_upstream(env, broke
         assert len(state["calls"]) == 1
 
 
-async def test_cancelled_stream_preserves_partial_usage_and_no_certification(env):
+async def test_cancelled_stream_preserves_partial_usage_and_no_certification(env, monkeypatch):
     admin = await env.client()
     upstream = FastAPI()
-    partial = asyncio.Event()
+    usage_observed = asyncio.Event()
     release = asyncio.Event()
     calls = []
+    original_observe = AttemptTrace.observe_usage
+
+    def observe_usage(trace, usage, *, phase="terminal"):
+        original_observe(trace, usage, phase=phase)
+        if usage.get("raw_prompt_tokens") == 2:
+            usage_observed.set()
+
+    monkeypatch.setattr(AttemptTrace, "observe_usage", observe_usage)
 
     @upstream.post("/{path:path}")
     async def reply(path: str, request: Request):
@@ -338,7 +347,6 @@ async def test_cancelled_stream_preserves_partial_usage_and_no_certification(env
                 + json.dumps({"choices": [], "usage": {"prompt_tokens": 2, "completion_tokens": 1}})
                 + "\n\n"
             )
-            partial.set()
             await release.wait()
             yield "data: [DONE]\n\n"
 
@@ -356,8 +364,8 @@ async def test_cancelled_stream_preserves_partial_usage_and_no_certification(env
         }
         endpoint = f"/api/v1/llm/channels/{selected['id']}/diagnostics"
         task = asyncio.create_task(admin.api.post(endpoint, json=request))
-        await asyncio.wait_for(partial.wait(), 5)
-        await asyncio.sleep(0.05)  # Let the SDK consume the two already-sent SSE frames.
+        # Cancel only after the real transport has observed the usage frame.
+        await asyncio.wait_for(usage_observed.wait(), 5)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
