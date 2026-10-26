@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
@@ -81,9 +82,11 @@ async function show(component: ReactNode, staleTime = 0) {
     defaultOptions: { queries: { retry: false, staleTime } },
   })
   clients.push(client)
-  return render(
+  const view = await render(
     <QueryClientProvider client={client}>{component}</QueryClientProvider>
   )
+  await waitForAnimations()
+  return view
 }
 beforeEach(async () => {
   await page.viewport(1280, 900)
