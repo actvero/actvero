@@ -380,7 +380,10 @@ it('keeps action hit areas stable while tooltips change and preserves click and 
   await expect
     .element(page.getByRole('menuitem', { name: '查看详情' }))
     .not.toBeInTheDocument()
+  // Wait for the menu's deferred focus restoration before moving focus again.
+  await expect.element(more).toHaveFocus()
   status.element().focus()
+  await expect.element(status).toHaveFocus()
   await userEvent.keyboard('{Enter}')
   await expect
     .element(page.getByText('渠道状态与绑定健康独立。', { exact: false }))
