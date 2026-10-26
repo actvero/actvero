@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ClientDownloadsSettingsPage } from '@/features/platform/client-downloads-page'
+import { ClientDistributionPage } from '@/features/client-distribution/page'
 
 export const Route = createFileRoute('/platform/settings/downloads')({
-  component: ClientDownloadsSettingsPage,
+  component: ClientDistributionPage,
 })

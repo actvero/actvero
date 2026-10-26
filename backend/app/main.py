@@ -21,6 +21,9 @@ from app.modules.account.router import router as account_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.oidc import IdentityProvider
 from app.modules.auth.router import router as auth_router
+from app.modules.client_distribution.router import public_router as update_feed_router
+from app.modules.client_distribution.router import router as distribution_router
+from app.modules.client_distribution.worker import monitor as monitor_distribution
 from app.modules.desktop.router import router as desktop_router
 from app.modules.desktop.router import web_router as devices_router
 from app.modules.desktop_mcp.gateway import router as mcp_gateway_router
@@ -46,6 +49,7 @@ from app.modules.llm.transcription_router import router as transcription_router
 from app.modules.management.consent_router import router as management_consent_router
 from app.modules.management.oauth_router import router as management_oauth_router
 from app.modules.management.resource_router import router as management_resource_router
+from app.modules.management.router import BEARER as management_bearer
 from app.modules.management.router import router as management_router
 from app.modules.mcp.health import monitor, stop
 from app.modules.mcp.router import router as mcp_router
@@ -83,9 +87,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         branding_task = (
             asyncio.create_task(monitor_branding(application)) if settings.database_url else None
         )
+        distribution_task = (
+            asyncio.create_task(monitor_distribution(application))
+            if settings.database_url and settings.client_distribution_worker_enabled
+            else None
+        )
         try:
             yield
         finally:
+            if distribution_task is not None:
+                distribution_task.cancel()
+                await asyncio.gather(distribution_task, return_exceptions=True)
             if branding_task is not None:
                 branding_task.cancel()
                 await asyncio.gather(branding_task, return_exceptions=True)
@@ -169,6 +181,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.add_middleware(BrandUploadLimit)
     register_error_handlers(application)
     application.include_router(router)
+    application.include_router(distribution_router, prefix="/api/v1/platform/client-distribution")
+    application.include_router(
+        distribution_router,
+        prefix="/api/v1/management/platform/client-distribution",
+        dependencies=management_bearer,
+    )
     for business_router in (
         auth_router,
         desktop_router,
@@ -187,6 +205,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         platform_router,
         branding_router,
         client_downloads_router,
+        update_feed_router,
         onboarding_router,
         platform_invitations_router,
         mcp_router,

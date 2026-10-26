@@ -56,6 +56,10 @@ async def start(payload: s.StartLogin, request: Request, db: DB) -> s.LoginAttem
     await limit(db, address_key(request, "management-login"), 30, 300)
     if payload.authorization_version == 1 and "management:write" in payload.scope.split():
         fail(409, "client_upgrade_required", "写权限需要浏览器授权，请升级 CLI 后重新登录")
+    if payload.target == "platform" and payload.authorization_version != 3:
+        fail(409, "client_upgrade_required", "平台管理需要新版浏览器授权")
+    if payload.scope == "platform:read" and payload.target != "platform":
+        fail(422, "invalid_scope", "平台凭据须选择平台授权")
     state, nonce = (secrets.token_urlsafe(32) for _ in range(2))
     attempt = ManagementLogin(
         state_hash=digest(state),
@@ -65,12 +69,13 @@ async def start(payload: s.StartLogin, request: Request, db: DB) -> s.LoginAttem
         name=payload.device_name,
         scope="management:read",
         authorization_version=payload.authorization_version,
+        target=payload.target,
         reauthenticate=payload.reauthenticate,
         expires_at=now() + timedelta(minutes=5),
     )
     db.add(attempt)
     await db.flush()
-    if payload.authorization_version == 2:
+    if payload.authorization_version >= 2:
         url = (
             provider(request).settings.app_url
             + "/cli/authorize#"
@@ -133,11 +138,11 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         fail(409, "login_consumed", "登录结果已使用，请使用已保存的凭据")
     if attempt.expires_at <= now():
         fail(401, "login_expired", "登录尝试已过期")
-    if attempt.authorization_version == 2:
+    if attempt.authorization_version >= 2:
         if (
             not attempt.approved_at
             or not attempt.approved_identity_id
-            or not attempt.authorized_org_ids
+            or (attempt.target != "platform" and not attempt.authorized_org_ids)
         ):
             fail(403, "consent_required", "请先在浏览器确认 CLI 的组织和权限")
     elif "management:write" in attempt.scope.split():
@@ -159,7 +164,7 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         await db.commit()
         fail(401, "invalid_login", "登录验证失败，请重新发起")
     identity, _ = await resolve_identity(db, settings.oidc_issuer, claims)
-    if attempt.authorization_version == 2 and identity.id != attempt.approved_identity_id:
+    if attempt.authorization_version >= 2 and identity.id != attempt.approved_identity_id:
         await db.commit()
         fail(403, "consent_identity_mismatch", "登录账号与授权账号不同，请重新发起授权")
     stamp = now()
@@ -172,6 +177,7 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
         client_id=settings.management_client_id,
         scope=attempt.scope,
         authorized_org_ids=attempt.authorized_org_ids,
+        platform_permissions=attempt.platform_permissions,
         name=attempt.name,
         authenticated_at=authenticated,
         created_at=stamp,
@@ -190,6 +196,8 @@ async def exchange(payload: s.ExchangeLogin, request: Request, db: DB) -> s.Toke
                 UUID(org_id),
                 require_admin=True,
             )
+    if row.scope == "platform:read":
+        await service.platform_operator(request, db, identity.user_id)
     db.add(row)
     await db.flush()
     result = await service.issue_tokens(request, db, row)
@@ -299,6 +307,7 @@ async def me(request: Request, db: DB) -> s.Me:
     who = await service.actor(request, db)
     result = s.Me(
         scope=who.session.scope,
+        platform_permissions=who.session.platform_permissions,
         authorized_org_ids=(
             [UUID(value) for value in who.session.authorized_org_ids]
             if who.session.authorized_org_ids is not None
@@ -318,6 +327,8 @@ async def organizations(
     request: Request, db: DB, page: int = Query(default=1, ge=1)
 ) -> s.Organizations:
     who = await service.actor(request, db)
+    if who.session.scope == "platform:read":
+        fail(403, "credential_type_mismatch", "请使用组织登录查询组织资源")
     settings = provider(request).settings
     filters = [Membership.user_id == who.user.id, Membership.status != "removed"]
     if who.session.authorized_org_ids is not None:

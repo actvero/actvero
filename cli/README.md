@@ -170,3 +170,7 @@ npm pack --dry-run
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。
+
+## 客户端更新发布
+
+使用 `auth login --target platform` 在浏览器选择平台发布权限，再运行 `storage` 和 `releases` 命令。`guide show distribution` 提供存储配置、构建清单导入、续传、检查发布和下架步骤；平台与组织凭据分开保存，组织命令保持原行为。

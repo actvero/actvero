@@ -9,6 +9,7 @@
 - [项目标识与来源](BRANDING.md)
 - [管理 CLI 接入](CLI.md)
 - [客户端下载管理](CLIENT-DOWNLOADS.md)
+- [客户端更新发布](CLIENT-DISTRIBUTION.md)
 - [配置参考](CONFIGURATION.md)
 - [安装与升级](DEPLOYMENT.md)
 - [桌面登录与设备会话](DESKTOP-ACCESS.md)

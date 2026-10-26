@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     llm_router_redis_url: SecretStr | None = None
     mcp_allowed_private_origins: list[str] = []
     mcp_public_dns: Literal["system", "cloudflare"] = "system"
+    client_distribution_allowed_private_origins: list[str] = []
+    client_distribution_worker_enabled: bool = True
 
     model_config = SettingsConfigDict(
         env_prefix="ACTVERO_", env_file=PROJECT_ROOT / ".env", extra="ignore", env_ignore_empty=True

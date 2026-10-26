@@ -3,6 +3,15 @@
 from app.modules.access_keys.models import AccessKey, AccessKeyPolicy
 from app.modules.audit.models import AuditEvent
 from app.modules.auth.models import OrganizationOpeningFlow, RateLimit, WebSession
+from app.modules.client_distribution.models import (
+    ClientArtifact,
+    ClientDistribution,
+    ClientJob,
+    ClientPublicationPlan,
+    ClientStorage,
+    ClientUpdateHead,
+    ClientUpload,
+)
 from app.modules.desktop.models import DesktopLogin, DeviceSession, DeviceToken
 from app.modules.desktop_mcp.models import NativeOAuthAttempt, ResourceToken
 from app.modules.experts.models import ExpertCategoryRecord, ExpertRecord, ExpertRelease
@@ -59,6 +68,13 @@ from app.modules.tenants.models import (
 from app.modules.users.models import LoginIdentity, User
 
 __all__ = [
+    "ClientArtifact",
+    "ClientDistribution",
+    "ClientJob",
+    "ClientPublicationPlan",
+    "ClientStorage",
+    "ClientUpdateHead",
+    "ClientUpload",
     "ManagementCommand",
     "BrandAsset",
     "ClientRelease",
