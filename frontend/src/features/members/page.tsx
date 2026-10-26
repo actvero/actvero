@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -133,48 +133,53 @@ export function MembersPage() {
       ),
     },
   ]
-  const invitations: ColumnDef<Invitation>[] = [
-    {
-      accessorKey: 'email',
-      header: '受邀成员',
-      cell: ({ row }) => (
-        <div>
-          <p className='max-w-60 truncate'>{row.original.email}</p>
-          <p className='text-sm text-muted-foreground'>
-            {row.original.name || '—'}
-          </p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: '邀请状态',
-      cell: ({ row }) => (
-        <Badge variant='outline'>{states[row.original.status]}</Badge>
-      ),
-    },
-    {
-      accessorKey: 'mail_status',
-      header: '邮件状态',
-      cell: ({ row }) =>
-        row.original.mail_status === 'pending'
-          ? '待发送'
-          : states[row.original.mail_status],
-    },
-    {
-      accessorKey: 'expires_at',
-      header: '到期时间',
-      meta: { className: 'hidden lg:table-cell' },
-      cell: ({ row }) => dateTime(row.original.expires_at),
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <InvitationAction invitation={row.original} path={path} />
-      ),
-    },
-  ]
+  // TanStack renders cell callbacks as components. Preserve their identities
+  // across session/list refreshes so open invitation actions remain mounted.
+  const invitations = useMemo<ColumnDef<Invitation>[]>(
+    () => [
+      {
+        accessorKey: 'email',
+        header: '受邀成员',
+        cell: ({ row }) => (
+          <div>
+            <p className='max-w-60 truncate'>{row.original.email}</p>
+            <p className='text-sm text-muted-foreground'>
+              {row.original.name || '—'}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: '邀请状态',
+        cell: ({ row }) => (
+          <Badge variant='outline'>{states[row.original.status]}</Badge>
+        ),
+      },
+      {
+        accessorKey: 'mail_status',
+        header: '邮件状态',
+        cell: ({ row }) =>
+          row.original.mail_status === 'pending'
+            ? '待发送'
+            : states[row.original.mail_status],
+      },
+      {
+        accessorKey: 'expires_at',
+        header: '到期时间',
+        meta: { className: 'hidden lg:table-cell' },
+        cell: ({ row }) => dateTime(row.original.expires_at),
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <InvitationAction invitation={row.original} path={path} />
+        ),
+      },
+    ],
+    [path]
+  )
   return (
     <PageShell
       title='成员管理'
@@ -265,6 +270,7 @@ export function MembersPage() {
         <ServerTable
           items={query.data.items as Invitation[]}
           columns={invitations}
+          getRowId={(invitation) => invitation.id}
           total={query.data.total}
           page={search.page}
           onPage={(page) => update({ page })}
