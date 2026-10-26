@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
+import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
@@ -124,7 +125,7 @@ afterEach(async () => {
   vi.restoreAllMocks()
 })
 async function show(initialTab = 'connection') {
-  return render(
+  const screen = await render(
     <QueryClientProvider client={client}>
       <ChannelDetail
         id={channel.id}
@@ -136,6 +137,8 @@ async function show(initialTab = 'connection') {
       />
     </QueryClientProvider>
   )
+  await waitForAnimations()
+  return screen
 }
 
 it('shows pure address targets and keeps directory, diagnostic and health separate', async () => {
