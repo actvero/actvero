@@ -1,5 +1,6 @@
 """Real pinned SDK against loopback providers; no credentials or paid inference."""
 
+import asyncio
 import json
 from decimal import Decimal
 from unittest.mock import AsyncMock
@@ -410,13 +411,29 @@ async def test_native_unimplemented_operations_cannot_be_enabled(env, adapter):
 
 
 @pytest.mark.parametrize(
-    "adapter,priced_writes", [("anthropic", True), ("gemini", False), ("gemini", True)]
+    "adapter,priced_writes,deferred",
+    [
+        ("anthropic", True, False),
+        ("gemini", False, False),
+        ("gemini", True, False),
+        pytest.param("gemini", False, True, id="gemini-deferred-accounting"),
+    ],
 )
 @pytest.mark.parametrize("stream", [False, True])
 async def test_native_member_key_authorization_settlement_and_live_revocation(
-    env, monkeypatch, adapter, stream, priced_writes
+    env, monkeypatch, adapter, stream, priced_writes, deferred
 ):
     monkeypatch.setattr(NativeIdentity, "account_valid", AsyncMock(return_value=True))
+    if deferred:
+        outbox = env.app.state.llm_outbox
+        flush_one = outbox.flush_one
+
+        async def delayed_flush(path):
+            # Exercise replay after the 250 ms foreground flush budget expires.
+            await asyncio.sleep(0.3)
+            await flush_one(path)
+
+        monkeypatch.setattr(outbox, "flush_one", delayed_flush)
     admin, member, other = (
         await env.client(),
         await env.client(role="member"),
@@ -474,7 +491,11 @@ async def test_native_member_key_authorization_settlement_and_live_revocation(
                 assert "[DONE]" in response.text and '"error"' not in response.text
             else:
                 assert response.json()["choices"][0]["message"]["content"] == "hello"
-            rows = await entries(admin)
+            # A slow database may exceed the synchronous outbox flush budget.
+            # Wait for the real replay worker before asserting final billing.
+            async with asyncio.timeout(5):
+                while (rows := await entries(admin))[0]["status"] == "reserved":
+                    await asyncio.sleep(0.02)
             assert len(rows) == 1 and len(calls) == 1
             if adapter == "gemini" and priced_writes:
                 # Gemini did not report these cache-write buckets; SDK default
