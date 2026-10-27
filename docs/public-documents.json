@@ -87,6 +87,7 @@
     "frontend/README.md": "Actvero Web 后台",
     "frontend/public/notices/lucide.txt": "第三方许可证声明",
     "frontend/public/notices/magic-ui.txt": "第三方许可证声明",
+    "frontend/public/notices/tabler-icons.txt": "第三方许可证声明",
     "frontend/src/assets/provider-avatars/README.md": "Provider avatar artwork"
   },
   "restricted_identifier_sha256": [
