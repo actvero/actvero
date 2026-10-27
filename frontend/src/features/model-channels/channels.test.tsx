@@ -131,6 +131,7 @@ async function show(component: ReactNode) {
   const screen = await render(
     <QueryClientProvider client={client}>{component}</QueryClientProvider>
   )
+  await waitForAnimations()
   return { screen, client }
 }
 

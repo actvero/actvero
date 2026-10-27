@@ -10,7 +10,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && npm install --global pnpm@11.25.0
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/pnpm/store pnpm install --frozen-lockfile --store-dir /pnpm/store --fetch-timeout 180000
 COPY frontend/ ./
 COPY scripts/build-identity-theme.py /build/scripts/build-identity-theme.py
 COPY identity/ /build/identity/
