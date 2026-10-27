@@ -5,7 +5,6 @@ import windowsIcon from '@/assets/platforms/windows.svg'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useBranding } from '@/features/branding/data'
 import { PublicLayout } from '@/features/portal/public-layout'
@@ -21,7 +20,6 @@ import {
   type Asset,
   type PublicDownloads,
 } from './data'
-import { ReleaseBrowser } from './release-browser'
 
 export function ClientDownloadsPage() {
   const brand = useBranding()
@@ -56,24 +54,17 @@ export function ClientDownloadsPage() {
         )}
         {catalog &&
           (catalog.items.length ? (
-            <>
-              <div className='grid items-stretch gap-4 md:grid-cols-2'>
-                {order.map((platform) => (
-                  <PlatformDownload
-                    key={platform}
-                    platform={platform}
-                    catalog={catalog}
-                    current={platform === current}
-                    commonVersion={version}
-                  />
-                ))}
-              </div>
-              <div className='flex items-center justify-center gap-4 sm:gap-6'>
-                <ReleaseBrowser releases={catalog.items} mode='notes' />
-                <Separator orientation='vertical' className='h-4' />
-                <ReleaseBrowser releases={catalog.items} mode='history' />
-              </div>
-            </>
+            <div className='grid items-stretch gap-4 md:grid-cols-2'>
+              {order.map((platform) => (
+                <PlatformDownload
+                  key={platform}
+                  platform={platform}
+                  catalog={catalog}
+                  current={platform === current}
+                  commonVersion={version}
+                />
+              ))}
+            </div>
           ) : (
             <p
               role='status'

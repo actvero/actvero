@@ -120,7 +120,7 @@ it('读取失败可重试，不把失败显示成未发布', async () => {
     .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toHaveTextContent('下载 EXE')
 })
-it('各 Mac 架构直接提供准确下载入口，更新日志作为文本渲染', async () => {
+it('各 Mac 架构直接下载，不显示更新日志或历史版本入口', async () => {
   await show(async () =>
     Response.json(catalog([asset('arm64', 'macos'), asset('x64', 'macos')]))
   )
@@ -131,12 +131,13 @@ it('各 Mac 架构直接提供准确下载入口，更新日志作为文本渲�
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=arm64'
     )
-  await page.getByRole('button', { name: '更新日志', exact: true }).click()
-  await expect.element(page.getByText(/<script>unsafe/)).toBeVisible()
   expect(
-    document.querySelector('script:not([src])')?.textContent
-  ).not.toContain('unsafe()')
-  await page.getByRole('button', { name: 'Close', exact: true }).click()
+    page.getByRole('button', { name: '更新日志', exact: true }).query()
+  ).toBeNull()
+  expect(
+    page.getByRole('button', { name: '历史版本', exact: true }).query()
+  ).toBeNull()
+  expect(document.body.textContent).not.toContain('unsafe()')
   await expect
     .element(page.getByRole('link', { name: '下载 macOS Intel 芯片' }))
     .toHaveAttribute(
@@ -147,22 +148,19 @@ it('各 Mac 架构直接提供准确下载入口，更新日志作为文本渲�
     path: '__screenshots__/actvero-downloads-desktop.png',
   })
 })
-it('未推荐时不自行选择旧版本，历史版本仍可查看；下架刷新清除旧链接', async () => {
+it('未推荐时不自行选择旧版本，下架刷新清除旧链接', async () => {
   let body = { ...catalog(), recommendations: [] }
   const client = await show(async () => Response.json(body))
   await expect
     .element(page.getByRole('button', { name: 'Windows x64未设置推荐版本' }))
     .toBeDisabled()
-  await page.getByRole('button', { name: '历史版本', exact: true }).click()
-  await expect
-    .element(page.getByRole('link', { name: '下载 Windows · x64' }))
-    .toBeVisible()
+  expect(document.querySelector('a[href*="/file?"]')).toBeNull()
   body = { items: [], recommendations: [] }
   await client.invalidateQueries({ queryKey: ['public', 'client-downloads'] })
   await expect.element(page.getByText('客户端安装包暂未发布。')).toBeVisible()
   expect(document.querySelector('a[href*="/file?"]')).toBeNull()
 })
-it('390px 保持架构下载、更新说明与校验可读，无横向溢出', async () => {
+it('390px 保持架构下载可读，无横向溢出', async () => {
   await page.viewport(390, 844)
   const body = catalog()
   body.items[0].assets[0].filename =
@@ -171,11 +169,6 @@ it('390px 保持架构下载、更新说明与校验可读，无横向溢出', a
   await expect
     .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toBeInTheDocument()
-  await page.getByRole('button', { name: '历史版本', exact: true }).click()
-  await page.getByRole('button', { name: '文件信息与校验' }).click()
-  await expect
-    .element(page.getByRole('textbox', { name: 'SHA256 · Windows · x64' }))
-    .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
     window.innerWidth
   )
@@ -336,13 +329,9 @@ it('预览版本不覆盖后台推荐，不同目标版本分别显示', async (
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=arm64'
     )
   expect(page.getByText('v9.0.0-preview.1', { exact: true }).query()).toBeNull()
-  await page.getByRole('button', { name: '历史版本', exact: true }).click()
-  await expect
-    .element(page.getByRole('heading', { name: 'v9.0.0-preview.1' }))
-    .toBeVisible()
 })
 
-it('Windows ARM64、单一架构和文件信息来自目录，未发布系统不提供假链接', async () => {
+it('Windows ARM64 直接下载，未发布系统不提供假链接', async () => {
   await show(async () => Response.json(catalog([asset('arm64', 'windows')])))
   expect(
     page.getByRole('link', { name: '下载 Windows x64' }).query()
@@ -357,14 +346,9 @@ it('Windows ARM64、单一架构和文件信息来自目录，未发布系统不
   await expect
     .element(page.getByText('暂未发布', { exact: true }))
     .toBeVisible()
-  await page.getByRole('button', { name: '历史版本', exact: true }).click()
-  await page.getByRole('button', { name: '文件信息与校验' }).click()
   await expect
-    .element(page.getByRole('textbox', { name: 'SHA256 · Windows · ARM64' }))
-    .toHaveValue('a'.repeat(64))
-  await expect
-    .element(page.getByText('actvero.exe', { exact: true }))
-    .toBeVisible()
+    .element(page.getByRole('link', { name: '下载 Windows ARM64' }))
+    .toHaveTextContent('下载 EXE')
 })
 
 it('刷新下架架构时移除其入口，其他架构保留准确的下载链接', async () => {
