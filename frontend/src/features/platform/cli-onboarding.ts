@@ -1,4 +1,4 @@
-export const CLI_VERSION = '0.2.0-dev.2'
+export const CLI_VERSION = '0.2.0-dev.3'
 
 export function cliOnboardingPrompt(serverUrl: string): string {
   const server = JSON.stringify(serverUrl)

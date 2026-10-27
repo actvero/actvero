@@ -87,7 +87,7 @@ it('copies one setup instruction and leaves authorization to the browser', async
   await page.getByRole('button', { name: '复制给 Agent' }).click()
   const read = copy.mock.calls[0][0]
   expect(read).toContain('https://platform.example.com')
-  expect(read).toContain('@actvero/cli@0.2.0-dev.2')
+  expect(read).toContain('@actvero/cli@0.2.0-dev.3')
   expect(read).not.toContain('--write')
   expect(read).toContain('本人在浏览器完成登录')
   expect(read).toContain('多个已授权组织')
