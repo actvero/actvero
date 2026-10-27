@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Literal, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import Integer, func, select
 from sqlalchemy import cast as sql_cast
@@ -18,6 +18,7 @@ from app.modules.llm.catalog_schemas import (
     OperationKind,
     effective_reasoning_format,
 )
+from app.modules.llm.chat_media import IMAGE_INPUT
 from app.modules.llm.inference_schemas import (
     PublicChatRoute,
     PublicModel,
@@ -62,7 +63,7 @@ class MemberModelPage(BaseModel):
 
 
 async def available_models(
-    db: AsyncSession, actor: BusinessActor
+    db: AsyncSession, actor: BusinessActor, request: Request | None = None
 ) -> list[tuple[UUID, PublicModel, dict[OperationKind, str]]]:
     """Filter current member permission and route readiness before any pagination.
 
@@ -82,8 +83,20 @@ async def available_models(
     )
     available: list[tuple[UUID, PublicModel, dict[OperationKind, str]]] = []
     conversion = await current_conversion(db, actor.tenant.id)
+    gateway_channels: list[dict[str, Any]] | None = None
     for row in rows:
         config = CatalogInput.model_validate(row.configuration)
+        if request is not None and config.gateway:
+            from app.modules.model_gateway.capabilities import effective
+
+            try:
+                if config.gateway.capability_mode == "auto" and gateway_channels is None:
+                    from app.modules.model_gateway.service import all_channels
+
+                    gateway_channels = await all_channels(request, actor.tenant.id)
+                config = await effective(request, actor.tenant.id, config, gateway_channels)
+            except HTTPException:
+                continue
         if not runtime.visible(config, actor) or not keys.permits(actor, "llm", row.id, "read"):
             continue
         operations: list[PublicOperation] = []
@@ -151,9 +164,24 @@ async def available_models(
                         if profile not in profiles:
                             profiles.append(profile)
             point_price_view = point_price(operation.budget_price, conversion)
+            if operation.gateway:
+                point_price_view.status = (
+                    "unconfigured"
+                    if not conversion
+                    else "ready"
+                    if conversion.currency == "USD"
+                    else "currency_mismatch"
+                )
             price_statuses[operation.kind] = point_price_view.status
             operations.append(
                 PublicOperation(
+                    image_input=IMAGE_INPUT
+                    if operation.kind == "chat" and operation.capabilities.vision == "supported"
+                    else None,
+                    capability_source=operation.gateway.capability_source
+                    if operation.gateway
+                    else None,
+                    billing_engine="newapi" if operation.gateway else "direct",
                     parameter_routes=profiles,
                     default_parameters_ready=default_ready if operation.kind == "chat" else None,
                     pricing_status=point_price_view.status,
@@ -212,8 +240,10 @@ async def available_models(
     return available
 
 
-async def public_page(db: AsyncSession, actor: BusinessActor, page: int) -> PublicModels:
-    available = await available_models(db, actor)
+async def public_page(
+    db: AsyncSession, actor: BusinessActor, page: int, request: Request | None = None
+) -> PublicModels:
+    available = await available_models(db, actor, request)
     start = (page - 1) * 20
     return PublicModels(
         data=[model for _, model, _ in available[start : start + 20]],
@@ -229,8 +259,9 @@ async def member_page(
     q: str = "",
     operation: OperationKind | None = None,
     page: int = 1,
+    request: Request | None = None,
 ) -> MemberModelPage:
-    available = await available_models(db, actor)
+    available = await available_models(db, actor, request)
     term = q.strip().casefold()
     filtered = [
         (model_id, model, statuses)

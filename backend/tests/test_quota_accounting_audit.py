@@ -101,7 +101,7 @@ async def test_consumption_belongs_to_admission_window_even_when_unresolved(
     assert after[0]["reserved"] == after[0]["used"] == "0"
     assert after[0]["started_at"] is None  # Reading does not start a new window.
     assert after[1]["remaining"] == "780"  # Still belongs to this week.
-    next_week = await quota(env, admin, monkeypatch, datetime(2026, 10, 18, 16, tzinfo=UTC))
+    next_week = await quota(env, admin, monkeypatch, START + timedelta(hours=168))
     assert next_week[1]["remaining"] == "800"
     async with env.sessions() as db:
         row = await db.get(UsageSettlement, row_id)

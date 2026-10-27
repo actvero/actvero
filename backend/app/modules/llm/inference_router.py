@@ -70,7 +70,7 @@ admin_router = APIRouter(
 @router.get("/models", response_model=PublicModels, summary="读取已授权模型与积分单价")
 async def models(request: Request, db: DB, page: int = Query(1, ge=1)) -> PublicModels:
     actor = await runtime.authorize(request, db, "llm:catalog")
-    result = await member_catalog.public_page(db, actor, page)
+    result = await member_catalog.public_page(db, actor, page, request)
     if isinstance(actor, keys.KeyActor):
         actor.key.last_used_at = now()
         await db.commit()

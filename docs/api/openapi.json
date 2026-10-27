@@ -911,42 +911,6 @@
         "title": "BrandingUpdate",
         "type": "object"
       },
-      "CalendarWeek": {
-        "additionalProperties": false,
-        "properties": {
-          "kind": {
-            "const": "calendar_week",
-            "title": "Kind",
-            "type": "string"
-          },
-          "points": {
-            "maxLength": 31,
-            "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]{1,12})?$",
-            "title": "Points",
-            "type": "string"
-          },
-          "timezone": {
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Timezone",
-            "type": "string"
-          },
-          "week_start": {
-            "maximum": 6.0,
-            "minimum": 0.0,
-            "title": "Week Start",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "kind",
-          "points",
-          "timezone",
-          "week_start"
-        ],
-        "title": "CalendarWeek",
-        "type": "object"
-      },
       "CallAttemptView": {
         "properties": {
           "attempt_id": {
@@ -1790,6 +1754,16 @@
             "title": "Display Order",
             "type": "integer"
           },
+          "gateway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatewayExecution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "icon": {
             "default": "",
             "maxLength": 350000,
@@ -2039,6 +2013,16 @@
             "title": "Display Order",
             "type": "integer"
           },
+          "gateway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatewayExecution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "icon": {
             "default": "",
             "maxLength": 350000,
@@ -2258,6 +2242,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/EndpointSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatewayExecution"
               },
               {
                 "type": "null"
@@ -2924,6 +2918,16 @@
           "model_count": {
             "title": "Model Count",
             "type": "integer"
+          },
+          "model_directory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelDirectory"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "models": {
             "items": {
@@ -4488,6 +4492,37 @@
           "input"
         ],
         "title": "ChatDiagnostic",
+        "type": "object"
+      },
+      "ChatImageInput": {
+        "description": "Platform transport bounds, independent of supplier model capacities.",
+        "properties": {
+          "max_image_bytes": {
+            "default": 1048576,
+            "minimum": 1.0,
+            "title": "Max Image Bytes",
+            "type": "integer"
+          },
+          "max_images": {
+            "default": 32,
+            "minimum": 1.0,
+            "title": "Max Images",
+            "type": "integer"
+          },
+          "max_total_bytes": {
+            "default": 8388608,
+            "minimum": 1.0,
+            "title": "Max Total Bytes",
+            "type": "integer"
+          },
+          "target_pixels": {
+            "default": 4194304,
+            "minimum": 1.0,
+            "title": "Target Pixels",
+            "type": "integer"
+          }
+        },
+        "title": "ChatImageInput",
         "type": "object"
       },
       "ChatInput": {
@@ -7804,6 +7839,16 @@
             "title": "Message",
             "type": "string"
           },
+          "model_directory": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelDirectory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "ok": {
             "title": "Ok",
             "type": "boolean"
@@ -9977,6 +10022,706 @@
           "name"
         ],
         "title": "FunctionDefinition",
+        "type": "object"
+      },
+      "GatewayChannelInput": {
+        "additionalProperties": false,
+        "properties": {
+          "auto_ban": {
+            "default": 1,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Auto Ban",
+            "type": "integer"
+          },
+          "base_url": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "groups": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Groups",
+            "type": "array"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 1000,
+            "title": "Model Mapping",
+            "type": "object"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Models",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "param_override": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Param Override",
+            "type": "string"
+          },
+          "priority": {
+            "default": 0,
+            "maximum": 2147483647.0,
+            "minimum": -999.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status_code_mapping": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Status Code Mapping",
+            "type": "string"
+          },
+          "tag": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Tag",
+            "type": "string"
+          },
+          "test_model": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Test Model",
+            "type": "string"
+          },
+          "type": {
+            "maximum": 63.0,
+            "minimum": 1.0,
+            "title": "Type",
+            "type": "integer"
+          },
+          "weight": {
+            "default": 1,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "GatewayChannelInput",
+        "type": "object"
+      },
+      "GatewayChannelPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -999.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "title": "GatewayChannelPatch",
+        "type": "object"
+      },
+      "GatewayChannelStatus": {
+        "properties": {
+          "status": {
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "GatewayChannelStatus",
+        "type": "object"
+      },
+      "GatewayDeleteInput": {
+        "properties": {
+          "remove_from_channels": {
+            "default": false,
+            "title": "Remove From Channels",
+            "type": "boolean"
+          },
+          "remove_pricing": {
+            "default": false,
+            "title": "Remove Pricing",
+            "type": "boolean"
+          }
+        },
+        "title": "GatewayDeleteInput",
+        "type": "object"
+      },
+      "GatewayDirectoryView": {
+        "properties": {
+          "fetched_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "models"
+        ],
+        "title": "GatewayDirectoryView",
+        "type": "object"
+      },
+      "GatewayDiscoveryInput": {
+        "properties": {
+          "base_url": {
+            "maxLength": 2000,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "key": {
+            "format": "password",
+            "title": "Key",
+            "type": "string",
+            "writeOnly": true
+          },
+          "type": {
+            "maximum": 63.0,
+            "minimum": 1.0,
+            "title": "Type",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "type",
+          "base_url",
+          "key"
+        ],
+        "title": "GatewayDiscoveryInput",
+        "type": "object"
+      },
+      "GatewayExecution": {
+        "additionalProperties": false,
+        "description": "Internal publication pointer; routing and actual prices remain in New API.",
+        "properties": {
+          "capability_mode": {
+            "default": "manual",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "title": "Capability Mode",
+            "type": "string"
+          },
+          "capability_source": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Capability Source",
+            "type": "object"
+          },
+          "origin_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Origin Hash",
+            "type": "string"
+          },
+          "reserve_usd": {
+            "default": "0.01",
+            "deprecated": true,
+            "description": "Legacy compatibility field; reservations are calculated by New API.",
+            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{1,8})?$",
+            "title": "Reserve Usd",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin_hash"
+        ],
+        "title": "GatewayExecution",
+        "type": "object"
+      },
+      "GatewayMappingInput": {
+        "properties": {
+          "channel_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Channel Id",
+            "type": "integer"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[^,\\n]+$",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "remove": {
+            "default": false,
+            "title": "Remove",
+            "type": "boolean"
+          },
+          "revision": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Revision",
+            "type": "string"
+          },
+          "upstream_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Upstream Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id",
+          "model_name",
+          "upstream_id",
+          "revision"
+        ],
+        "title": "GatewayMappingInput",
+        "type": "object"
+      },
+      "GatewayModelInput": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Description",
+            "type": "string"
+          },
+          "endpoints": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Endpoints",
+            "type": "string"
+          },
+          "icon": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Icon",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "name_rule": {
+            "default": 0,
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "title": "Name Rule",
+            "type": "integer"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status": {
+            "default": 1,
+            "enum": [
+              0,
+              1
+            ],
+            "title": "Status",
+            "type": "integer"
+          },
+          "sync_official": {
+            "default": 1,
+            "enum": [
+              0,
+              1
+            ],
+            "title": "Sync Official",
+            "type": "integer"
+          },
+          "tags": {
+            "default": "",
+            "maxLength": 255,
+            "title": "Tags",
+            "type": "string"
+          },
+          "vendor_id": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Vendor Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "GatewayModelInput",
+        "type": "object"
+      },
+      "GatewayPriceInput": {
+        "properties": {
+          "expected_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "pricing": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "maxProperties": 20,
+            "title": "Pricing",
+            "type": "object"
+          },
+          "reset": {
+            "default": false,
+            "title": "Reset",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model_name",
+          "expected_version",
+          "pricing"
+        ],
+        "title": "GatewayPriceInput",
+        "type": "object"
+      },
+      "GatewayPricePreview": {
+        "properties": {
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "pricing": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "maxProperties": 20,
+            "title": "Pricing",
+            "type": "object"
+          }
+        },
+        "required": [
+          "model_name",
+          "pricing"
+        ],
+        "title": "GatewayPricePreview",
+        "type": "object"
+      },
+      "GatewayReferenceImport": {
+        "properties": {
+          "selections": {
+            "items": {
+              "$ref": "#/components/schemas/GatewayReferenceSelection"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Selections",
+            "type": "array"
+          },
+          "source_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version",
+          "selections"
+        ],
+        "title": "GatewayReferenceImport",
+        "type": "object"
+      },
+      "GatewayReferenceSelection": {
+        "properties": {
+          "create": {
+            "title": "Create",
+            "type": "boolean"
+          },
+          "fields": {
+            "items": {
+              "enum": [
+                "description",
+                "icon",
+                "tags",
+                "vendor",
+                "endpoints",
+                "name_rule",
+                "status"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "title": "Fields",
+            "type": "array"
+          },
+          "model_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "record_version": {
+            "maxLength": 128,
+            "title": "Record Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name",
+          "record_version",
+          "create",
+          "fields"
+        ],
+        "title": "GatewayReferenceSelection",
+        "type": "object"
+      },
+      "GatewayResult": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "title": "GatewayResult",
+        "type": "object"
+      },
+      "GatewayStatus": {
+        "properties": {
+          "backend": {
+            "enum": [
+              "newapi",
+              "direct"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "console_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Console Url"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "required": [
+          "configured",
+          "backend"
+        ],
+        "title": "GatewayStatus",
+        "type": "object"
+      },
+      "GatewayTestInput": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint_type": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "openai",
+              "openai-response",
+              "openai-response-compact",
+              "anthropic",
+              "gemini",
+              "jina-rerank",
+              "image-generation",
+              "embeddings"
+            ],
+            "title": "Endpoint Type",
+            "type": "string"
+          },
+          "model": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Model",
+            "type": "string"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          }
+        },
+        "title": "GatewayTestInput",
+        "type": "object"
+      },
+      "GatewayVendorInput": {
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Description",
+            "type": "string"
+          },
+          "icon": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Icon",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "default": 1,
+            "enum": [
+              0,
+              1
+            ],
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "GatewayVendorInput",
         "type": "object"
       },
       "GeneratedAudio": {
@@ -14120,8 +14865,31 @@
       },
       "MemberOperationView": {
         "properties": {
+          "billing_engine": {
+            "default": "direct",
+            "enum": [
+              "direct",
+              "newapi"
+            ],
+            "title": "Billing Engine",
+            "type": "string"
+          },
           "capabilities": {
             "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_source": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability Source"
           },
           "chat_policy": {
             "anyOf": [
@@ -14162,6 +14930,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ImageOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "image_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatImageInput"
               },
               {
                 "type": "null"
@@ -14368,6 +15146,31 @@
       },
       "MemberQuotaMatch": {
         "properties": {
+          "assigned": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyMatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignment_version": {
+            "title": "Assignment Version",
+            "type": "integer"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "email": {
             "anyOf": [
               {
@@ -14378,13 +15181,6 @@
               }
             ],
             "title": "Email"
-          },
-          "matched": {
-            "items": {
-              "$ref": "#/components/schemas/PolicyMatch"
-            },
-            "title": "Matched",
-            "type": "array"
           },
           "member_id": {
             "format": "uuid",
@@ -14401,21 +15197,7 @@
           },
           "rules": {
             "items": {
-              "discriminator": {
-                "mapping": {
-                  "calendar_week": "#/components/schemas/CalendarWeek",
-                  "fixed_hours": "#/components/schemas/FixedHours"
-                },
-                "propertyName": "kind"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/FixedHours"
-                },
-                {
-                  "$ref": "#/components/schemas/CalendarWeek"
-                }
-              ]
+              "$ref": "#/components/schemas/FixedHours"
             },
             "title": "Rules",
             "type": "array"
@@ -14429,6 +15211,14 @@
                 "type": "null"
               }
             ]
+          },
+          "status": {
+            "enum": [
+              "active",
+              "paused"
+            ],
+            "title": "Status",
+            "type": "string"
           }
         },
         "required": [
@@ -14436,7 +15226,9 @@
           "name",
           "email",
           "role",
-          "matched",
+          "status",
+          "assigned",
+          "assignment_version",
           "selected",
           "rules"
         ],
@@ -14475,6 +15267,17 @@
       },
       "MemberView": {
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "email": {
             "anyOf": [
               {
@@ -15019,6 +15822,45 @@
         "title": "ModelCapabilities",
         "type": "object"
       },
+      "ModelDirectory": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/UpstreamModel"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "fetched_at": {
+            "format": "date-time",
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "partial": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partial"
+          },
+          "snapshot_id": {
+            "format": "uuid",
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "fetched_at",
+          "candidates"
+        ],
+        "title": "ModelDirectory",
+        "type": "object"
+      },
       "ModelEndpoints": {
         "properties": {
           "endpoints": {
@@ -15224,6 +16066,16 @@
             "title": "Enabled",
             "type": "boolean"
           },
+          "gateway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatewayExecution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "image": {
             "$ref": "#/components/schemas/ImageOptions"
           },
@@ -15357,6 +16209,16 @@
             "default": false,
             "title": "Enabled",
             "type": "boolean"
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatewayExecution"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "image": {
             "$ref": "#/components/schemas/ImageOptions"
@@ -15586,6 +16448,72 @@
           "function"
         ],
         "title": "NamedTool",
+        "type": "object"
+      },
+      "NativeCreateInput": {
+        "properties": {
+          "batch_add_set_key_prefix_2_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Add Set Key Prefix 2 Name"
+          },
+          "channel": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "maxProperties": 60,
+            "title": "Channel",
+            "type": "object"
+          },
+          "mode": {
+            "enum": [
+              "single",
+              "batch",
+              "multi_to_single"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "multi_key_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Multi Key Mode"
+          }
+        },
+        "required": [
+          "mode",
+          "channel"
+        ],
+        "title": "NativeCreateInput",
+        "type": "object"
+      },
+      "NativeUpdateInput": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JsonValue"
+        },
+        "properties": {
+          "id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "NativeUpdateInput",
         "type": "object"
       },
       "OAuthAttemptView": {
@@ -17101,19 +18029,28 @@
             "title": "Id",
             "type": "string"
           },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
           "name": {
             "title": "Name",
             "type": "string"
-          },
-          "priority": {
-            "title": "Priority",
-            "type": "integer"
           }
         },
         "required": [
           "id",
           "name",
-          "priority"
+          "mode",
+          "is_default"
         ],
         "title": "PolicyMatch",
         "type": "object"
@@ -17366,6 +18303,12 @@
           "allow_no_auth": {
             "default": false,
             "title": "Allow No Auth",
+            "type": "boolean"
+          },
+          "available_for_new_channels": {
+            "default": true,
+            "description": "是否允许新增此供应商渠道；停用新增不影响已有渠道的配置与调用",
+            "title": "Available For New Channels",
             "type": "boolean"
           },
           "balance_query": {
@@ -17689,8 +18632,31 @@
       },
       "PublicModel": {
         "properties": {
+          "billing_engine": {
+            "default": "direct",
+            "enum": [
+              "direct",
+              "newapi"
+            ],
+            "title": "Billing Engine",
+            "type": "string"
+          },
           "capabilities": {
             "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_source": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability Source"
           },
           "chat_policy": {
             "anyOf": [
@@ -17761,6 +18727,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ImageOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "image_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatImageInput"
               },
               {
                 "type": "null"
@@ -17991,8 +18967,31 @@
       },
       "PublicOperation": {
         "properties": {
+          "billing_engine": {
+            "default": "direct",
+            "enum": [
+              "direct",
+              "newapi"
+            ],
+            "title": "Billing Engine",
+            "type": "string"
+          },
           "capabilities": {
             "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_source": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability Source"
           },
           "chat_policy": {
             "anyOf": [
@@ -18030,6 +19029,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ImageOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "image_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatImageInput"
               },
               {
                 "type": "null"
@@ -18229,6 +19238,485 @@
         "title": "PublicRelease",
         "type": "object"
       },
+      "PublicationCheck": {
+        "properties": {
+          "action": {
+            "enum": [
+              "deployment",
+              "channels",
+              "pricing",
+              "quota",
+              "parameters",
+              "members"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "key": {
+            "enum": [
+              "relay",
+              "channels",
+              "pricing",
+              "conversion",
+              "parameters",
+              "members"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "blocked",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "status",
+          "message",
+          "action"
+        ],
+        "title": "PublicationCheck",
+        "type": "object"
+      },
+      "PublicationInput": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "pattern": "^(administrators|organization|selected)$",
+            "title": "Audience",
+            "type": "string"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "title": "Capability Mode",
+            "type": "string"
+          },
+          "chat_policy": {
+            "$ref": "#/components/schemas/ChatPolicy"
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "image": {
+            "$ref": "#/components/schemas/ImageOptions"
+          },
+          "kind": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank",
+              "image_generation",
+              "speech",
+              "transcription"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_output": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "model_name": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,127}$",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reasoning_options": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "budget_tokens": "#/components/schemas/ReasoningBudget",
+                  "effort": "#/components/schemas/ReasoningEffort",
+                  "toggle": "#/components/schemas/ReasoningToggle"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ReasoningToggle"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningEffort"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningBudget"
+                }
+              ]
+            },
+            "maxItems": 3,
+            "title": "Reasoning Options",
+            "type": "array"
+          },
+          "reserve_usd": {
+            "default": "0.01",
+            "deprecated": true,
+            "description": "Legacy compatibility field; reservations are calculated by New API.",
+            "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{1,8})?$",
+            "title": "Reserve Usd",
+            "type": "string"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalOptions"
+          },
+          "speech": {
+            "$ref": "#/components/schemas/SpeechOptions"
+          },
+          "transcription": {
+            "$ref": "#/components/schemas/TranscriptionOptions"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_name",
+          "name"
+        ],
+        "title": "PublicationInput",
+        "type": "object"
+      },
+      "PublicationNames": {
+        "properties": {
+          "models": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,127}$",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "models"
+        ],
+        "title": "PublicationNames",
+        "type": "object"
+      },
+      "PublicationPreview": {
+        "properties": {
+          "access_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Message"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/PublicationStatus"
+          },
+          "discoverable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discoverable"
+          },
+          "member_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Name"
+          },
+          "quota_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "active",
+                  "unconfigured",
+                  "exhausted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Status"
+          },
+          "remaining_points": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Points"
+          },
+          "resets_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resets At"
+          }
+        },
+        "required": [
+          "configuration"
+        ],
+        "title": "PublicationPreview",
+        "type": "object"
+      },
+      "PublicationPreviewInput": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/PublicationInput"
+          },
+          "member_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Id"
+          }
+        },
+        "required": [
+          "draft"
+        ],
+        "title": "PublicationPreviewInput",
+        "type": "object"
+      },
+      "PublicationStatus": {
+        "properties": {
+          "active_channels": {
+            "title": "Active Channels",
+            "type": "integer"
+          },
+          "audience": {
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "automatic": {
+            "additionalProperties": true,
+            "title": "Automatic",
+            "type": "object"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "chat_policy": {
+            "$ref": "#/components/schemas/ChatPolicy"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/PublicationCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank",
+              "image_generation",
+              "speech",
+              "transcription"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "latest_test_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Test At"
+          },
+          "max_output": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output"
+          },
+          "member_count": {
+            "title": "Member Count",
+            "type": "integer"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "reasoning_options": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "budget_tokens": "#/components/schemas/ReasoningBudget",
+                  "effort": "#/components/schemas/ReasoningEffort",
+                  "toggle": "#/components/schemas/ReasoningToggle"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ReasoningToggle"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningEffort"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningBudget"
+                }
+              ]
+            },
+            "title": "Reasoning Options",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_name",
+          "enabled",
+          "audience",
+          "member_count",
+          "ready",
+          "checks",
+          "active_channels",
+          "kind",
+          "capabilities",
+          "chat_policy"
+        ],
+        "title": "PublicationStatus",
+        "type": "object"
+      },
+      "PublicationStatuses": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicationStatus"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PublicationStatuses",
+        "type": "object"
+      },
       "Publish": {
         "additionalProperties": false,
         "properties": {
@@ -18395,6 +19883,34 @@
         "title": "QuotaArchive",
         "type": "object"
       },
+      "QuotaAssignmentInput": {
+        "additionalProperties": false,
+        "properties": {
+          "policy_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "policy_id",
+          "version"
+        ],
+        "title": "QuotaAssignmentInput",
+        "type": "object"
+      },
       "QuotaMatchPage": {
         "properties": {
           "enforcement": {
@@ -18425,14 +19941,19 @@
       "QuotaPolicyInput": {
         "additionalProperties": false,
         "properties": {
-          "member_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "maxItems": 1000,
-            "title": "Member Ids",
-            "type": "array"
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "default": "limited",
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
           },
           "name": {
             "maxLength": 100,
@@ -18440,40 +19961,17 @@
             "title": "Name",
             "type": "string"
           },
-          "priority": {
-            "maximum": 1000000.0,
-            "minimum": 0.0,
-            "title": "Priority",
-            "type": "integer"
-          },
           "rules": {
             "items": {
-              "discriminator": {
-                "mapping": {
-                  "calendar_week": "#/components/schemas/CalendarWeek",
-                  "fixed_hours": "#/components/schemas/FixedHours"
-                },
-                "propertyName": "kind"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/FixedHours"
-                },
-                {
-                  "$ref": "#/components/schemas/CalendarWeek"
-                }
-              ]
+              "$ref": "#/components/schemas/FixedHours"
             },
             "maxItems": 10,
-            "minItems": 1,
             "title": "Rules",
             "type": "array"
           }
         },
         "required": [
-          "name",
-          "priority",
-          "rules"
+          "name"
         ],
         "title": "QuotaPolicyInput",
         "type": "object"
@@ -18524,14 +20022,19 @@
       "QuotaPolicyUpdate": {
         "additionalProperties": false,
         "properties": {
-          "member_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "maxItems": 1000,
-            "title": "Member Ids",
-            "type": "array"
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "default": "limited",
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
           },
           "name": {
             "maxLength": 100,
@@ -18539,32 +20042,11 @@
             "title": "Name",
             "type": "string"
           },
-          "priority": {
-            "maximum": 1000000.0,
-            "minimum": 0.0,
-            "title": "Priority",
-            "type": "integer"
-          },
           "rules": {
             "items": {
-              "discriminator": {
-                "mapping": {
-                  "calendar_week": "#/components/schemas/CalendarWeek",
-                  "fixed_hours": "#/components/schemas/FixedHours"
-                },
-                "propertyName": "kind"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/FixedHours"
-                },
-                {
-                  "$ref": "#/components/schemas/CalendarWeek"
-                }
-              ]
+              "$ref": "#/components/schemas/FixedHours"
             },
             "maxItems": 10,
-            "minItems": 1,
             "title": "Rules",
             "type": "array"
           },
@@ -18576,8 +20058,6 @@
         },
         "required": [
           "name",
-          "priority",
-          "rules",
           "version"
         ],
         "title": "QuotaPolicyUpdate",
@@ -18600,14 +20080,17 @@
             "title": "Id",
             "type": "string"
           },
-          "member_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "maxItems": 1000,
-            "title": "Member Ids",
-            "type": "array"
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
           },
           "name": {
             "maxLength": 100,
@@ -18615,32 +20098,10 @@
             "title": "Name",
             "type": "string"
           },
-          "priority": {
-            "maximum": 1000000.0,
-            "minimum": 0.0,
-            "title": "Priority",
-            "type": "integer"
-          },
           "rules": {
             "items": {
-              "discriminator": {
-                "mapping": {
-                  "calendar_week": "#/components/schemas/CalendarWeek",
-                  "fixed_hours": "#/components/schemas/FixedHours"
-                },
-                "propertyName": "kind"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/FixedHours"
-                },
-                {
-                  "$ref": "#/components/schemas/CalendarWeek"
-                }
-              ]
+              "$ref": "#/components/schemas/FixedHours"
             },
-            "maxItems": 10,
-            "minItems": 1,
             "title": "Rules",
             "type": "array"
           },
@@ -18656,7 +20117,8 @@
         },
         "required": [
           "name",
-          "priority",
+          "is_default",
+          "mode",
           "rules",
           "id",
           "archived",
@@ -18684,6 +20146,7 @@
           "status": {
             "enum": [
               "active",
+              "unlimited",
               "unconfigured"
             ],
             "title": "Status",
@@ -32592,6 +34055,60 @@
         ]
       }
     },
+    "/api/v1/enterprises/{tenant_id}/members/{member_id}/avatar": {
+      "get": {
+        "operationId": "avatar_api_v1_enterprises__tenant_id__members__member_id__avatar_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取组织成员头像，权限与成员资料一致",
+        "tags": [
+          "members"
+        ]
+      }
+    },
     "/api/v1/experts": {
       "get": {
         "operationId": "listing_api_v1_experts_get",
@@ -34129,7 +35646,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "检查尚未保存的连接，可预览模型；不写入渠道配置",
+        "summary": "读取连接的模型目录；连接未变更时缓存到已有渠道，不修改配置",
         "tags": [
           "llm-channels"
         ]
@@ -44422,6 +45939,1958 @@
         ]
       }
     },
+    "/api/v1/model-gateway/channel-options": {
+      "get": {
+        "operationId": "channel_options_api_v1_model_gateway_channel_options_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Channel Options",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels": {
+      "get": {
+        "operationId": "channels_api_v1_model_gateway_channels_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Model",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Group",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "",
+              "pattern": "^(enabled|disabled)?$",
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 1000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "priority",
+              "enum": [
+                "id",
+                "name",
+                "priority",
+                "balance",
+                "response_time",
+                "test_time"
+              ],
+              "title": "Sort By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "title": "Sort Order",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Channels",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "post": {
+        "operationId": "create_channel_api_v1_model_gateway_channels_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayChannelInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Channel",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/discover": {
+      "post": {
+        "operationId": "discover_api_v1_model_gateway_channels_discover_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayDiscoveryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayDirectoryView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discover",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/{channel_id}": {
+      "delete": {
+        "operationId": "delete_channel_api_v1_model_gateway_channels__channel_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Channel",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "get": {
+        "operationId": "get_channel_api_v1_model_gateway_channels__channel_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Channel",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "update_channel_api_v1_model_gateway_channels__channel_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayChannelInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Channel",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/{channel_id}/directory": {
+      "get": {
+        "operationId": "directory_api_v1_model_gateway_channels__channel_id__directory_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayDirectoryView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Directory",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "post": {
+        "operationId": "refresh_directory_api_v1_model_gateway_channels__channel_id__directory_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayDirectoryView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Directory",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/{channel_id}/fields": {
+      "patch": {
+        "operationId": "patch_channel_fields_api_v1_model_gateway_channels__channel_id__fields_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayChannelPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Channel Fields",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/{channel_id}/status": {
+      "post": {
+        "operationId": "channel_status_api_v1_model_gateway_channels__channel_id__status_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayChannelStatus"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Channel Status",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/channels/{channel_id}/test": {
+      "post": {
+        "operationId": "test_channel_api_v1_model_gateway_channels__channel_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "title": "Channel Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayTestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Channel",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/logs": {
+      "get": {
+        "operationId": "logs_api_v1_model_gateway_logs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model_name",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Model Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "request_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 128,
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Logs",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/mappings": {
+      "get": {
+        "operationId": "mappings_api_v1_model_gateway_mappings_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model_name",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Model Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mappings",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "update_mapping_api_v1_model_gateway_mappings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayMappingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Mapping",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/models": {
+      "get": {
+        "operationId": "models_api_v1_model_gateway_models_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "",
+              "pattern": "^(visible|unavailable|hidden|partial)?$",
+              "title": "State",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Models",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "post": {
+        "operationId": "create_model_api_v1_model_gateway_models_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayModelInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Model",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/models/{model_id}": {
+      "put": {
+        "operationId": "update_model_api_v1_model_gateway_models__model_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "title": "Model Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayModelInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Model",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/models/{model_id}/delete": {
+      "post": {
+        "operationId": "delete_model_api_v1_model_gateway_models__model_id__delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "title": "Model Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayDeleteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Model",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/native/api/channel": {
+      "post": {
+        "operationId": "native_create_api_v1_model_gateway_native_api_channel_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NativeCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Native Create Api V1 Model Gateway Native Api Channel Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Create",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/native/api/channel/": {
+      "put": {
+        "operationId": "native_update_api_v1_model_gateway_native_api_channel__put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 64,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NativeUpdateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Native Update Api V1 Model Gateway Native Api Channel  Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Update",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/native/api/channel/fetch_models": {
+      "post": {
+        "operationId": "native_discover_api_v1_model_gateway_native_api_channel_fetch_models_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Native Discover Api V1 Model Gateway Native Api Channel Fetch Models Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Discover",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/native/{path}": {
+      "delete": {
+        "operationId": "model_gateway_native_model_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValue"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Model Gateway Native Model Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Model Write",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "get": {
+        "operationId": "native_read_api_v1_model_gateway_native__path__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Read",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "patch": {
+        "operationId": "model_gateway_native_model_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValue"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Model Gateway Native Model Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Model Write",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "post": {
+        "operationId": "model_gateway_native_model_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValue"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Model Gateway Native Model Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Model Write",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "model_gateway_native_model_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValue"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Model Gateway Native Model Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Native Model Write",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/prices": {
+      "get": {
+        "operationId": "prices_api_v1_model_gateway_prices_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prices",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "update_prices_api_v1_model_gateway_prices_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayPriceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Prices",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/prices/preview": {
+      "post": {
+        "operationId": "price_preview_api_v1_model_gateway_prices_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayPricePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Price Preview",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/publication": {
+      "get": {
+        "operationId": "publication_view_api_v1_model_gateway_publication_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication View",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "save_publication_api_v1_model_gateway_publication_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Publication",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/publication/preview": {
+      "post": {
+        "operationId": "publication_preview_api_v1_model_gateway_publication_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationPreviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Preview",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/publication/status": {
+      "post": {
+        "operationId": "publication_statuses_api_v1_model_gateway_publication_status_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationNames"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationStatuses"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Statuses",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/reference": {
+      "get": {
+        "operationId": "reference_api_v1_model_gateway_reference_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reference",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/reference/import": {
+      "post": {
+        "operationId": "import_reference_api_v1_model_gateway_reference_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayReferenceImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Reference",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/settlements": {
+      "get": {
+        "operationId": "gateway_settlements_api_v1_model_gateway_settlements_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gateway Settlements",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/settlements/{call_id}/recheck": {
+      "post": {
+        "operationId": "recheck_settlement_api_v1_model_gateway_settlements__call_id__recheck_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Version",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recheck Settlement",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/status": {
+      "get": {
+        "operationId": "status_api_v1_model_gateway_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/vendors": {
+      "get": {
+        "operationId": "vendors_api_v1_model_gateway_vendors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Vendors",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "post": {
+        "operationId": "create_vendor_api_v1_model_gateway_vendors_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayVendorInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Vendor",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
     "/api/v1/organization-invitations/activate": {
       "post": {
         "operationId": "activate_api_v1_organization_invitations_activate_post",
@@ -47732,6 +51201,59 @@
         ]
       }
     },
+    "/api/v1/quota/members/{member_id}/assignment": {
+      "put": {
+        "operationId": "assign_api_v1_quota_members__member_id__assignment_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotaAssignmentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberQuotaMatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign",
+        "tags": [
+          "quota-policies"
+        ]
+      }
+    },
     "/api/v1/quota/policies": {
       "get": {
         "operationId": "listing_api_v1_quota_policies_get",
@@ -47759,6 +51281,16 @@
               ],
               "title": "State",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assignable_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Assignable Only",
+              "type": "boolean"
             }
           },
           {

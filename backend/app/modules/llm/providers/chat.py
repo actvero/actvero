@@ -51,6 +51,19 @@ def prepare(
             payload["reasoning_effort"] = "none"
         # Preserve remaining requested options for SDK validation/conversion.
         # Never guess compatibility or silently discard a budget/effort.
+    if (
+        binding
+        and config.gateway
+        and config.gateway.capability_source.get("provider") == "deepseek"
+        and body.reasoning_effort is not None
+    ):
+        # DeepSeek's compatible chat endpoint requires an explicit thinking switch.
+        # Effort alone does not enable thinking, and "none" is not its wire effort.
+        extra = dict(payload.get("extra_body") or {})
+        extra["thinking"] = {"type": "disabled" if body.reasoning_effort == "none" else "enabled"}
+        payload["extra_body"] = extra
+        if body.reasoning_effort == "none":
+            payload.pop("reasoning_effort", None)
     if body.stream:
         payload["stream_options"] = {"include_usage": True}
     return payload

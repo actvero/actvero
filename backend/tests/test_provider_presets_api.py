@@ -23,12 +23,20 @@ pytestmark = pytest.mark.asyncio
 BASE = "/api/v1/llm"
 PRESETS = {
     "aihubmix": ("https://aihubmix.com", "/v1", True),
-    "volcengine": ("https://ark.cn-beijing.volces.com", "/api/v3", False),
-    "zhipu": ("https://open.bigmodel.cn", "/api/paas/v4", False),
-    "moonshot": ("https://api.moonshot.cn", "/v1", False),
-    "qwen": ("https://maas.qianwenaiapi.com", "/compatible-mode/v1", False),
-    "qwen-token-plan": ("https://token-plan.maas.qianwenaiapi.com", "/compatible-mode/v1", False),
+    "volcengine": ("https://ark.cn-beijing.volces.com", "/api/v3", True),
+    "zhipu": ("https://open.bigmodel.cn", "/api/paas/v4", True),
+    "moonshot": ("https://api.moonshot.cn", "/v1", True),
+    "qwen": ("https://maas.qianwenaiapi.com", "/compatible-mode/v1", True),
+    "qwen-token-plan": ("https://token-plan.maas.qianwenaiapi.com", "/compatible-mode/v1", True),
 }
+RETIRED = {"zhipu", "qwen", "qwen-token-plan", "volcengine-agent-plan", "volcengine-coding-plan"}
+
+
+async def historical_channel(admin, monkeypatch, body):
+    """Seed a pre-retirement channel, restoring the policy before exercising it."""
+    with monkeypatch.context() as seed:
+        seed.setattr(PROVIDERS[body["provider"]].info, "available_for_new_channels", True)
+        return await admin.api.post(BASE + "/channels", json=body)
 
 
 def fake_key(provider_id):
@@ -53,10 +61,10 @@ async def test_preset_modules_and_default_preview_are_admin_only_and_no_io(env, 
     assert PRESETS.keys() <= modules.keys()
     plan = modules["qwen-token-plan"]
     assert "团队版" in plan["name"]
-    assert "qwen3.8-max" in plan["reference_catalog"]["models"]
-    assert "deepseek-v4-pro" in plan["reference_catalog"]["models"]
-    assert plan["reference_catalog"]["source_url"].endswith("token-plan-team-overview")
-    assert modules["qwen"]["reference_catalog"] is None
+    for info in modules.values():
+        assert info["model_discovery"] is True
+        assert info["reference_catalog"] is None
+        assert info["available_for_new_channels"] is (info["id"] not in RETIRED)
     assert (await member.api.get(BASE + "/providers")).status_code == 403
 
     outbound = AsyncMock(side_effect=AssertionError("preview must not inspect upstream models"))
@@ -117,6 +125,8 @@ async def test_preset_save_registers_inventory_only_without_model_or_price(env, 
     for adapter in PROVIDERS.values():
         monkeypatch.setattr(adapter, "list_models", outbound)
     for provider_id, (root, prefix, _) in PRESETS.items():
+        if provider_id in RETIRED:
+            continue
         response = await admin.api.post(
             BASE + "/channels",
             json={
@@ -139,8 +149,53 @@ async def test_preset_save_registers_inventory_only_without_model_or_price(env, 
         assert row["models"][0]["source"] == "configuration"
         assert row["model_count"] == 1
         assert fake_key(provider_id) not in response.text
-    assert (await counts(env))[:2] == (len(PRESETS), 0)
+    assert (await counts(env))[:2] == (len(PRESETS.keys() - RETIRED), 0)
     outbound.assert_not_awaited()
+
+
+@pytest.mark.parametrize("provider_id", sorted(RETIRED))
+async def test_retired_presets_block_new_and_copied_channels_but_keep_existing(
+    env, monkeypatch, provider_id
+):
+    admin = await env.client()
+    body = {
+        "request_id": str(uuid4()),
+        "name": "Historical channel",
+        "provider": provider_id,
+        "connection": {"address_mode": "provider_default"},
+        "api_key": fake_key(provider_id),
+        "models": [{"id": "existing-model"}],
+    }
+    created = await historical_channel(admin, monkeypatch, body)
+    assert created.status_code == 200, created.text
+    row = created.json()
+    before = await counts(env)
+    for new_body in (
+        {**body, "request_id": str(uuid4())},
+        {**body, "request_id": None, "name": "Copied channel"},
+    ):
+        rejected = await admin.api.post(BASE + "/channels", json=new_body)
+        assert rejected.status_code == 422, rejected.text
+        assert "停止新增" in rejected.json()["error"]["message"]
+        assert body["api_key"] not in rejected.text
+    # A completed receipt still recovers the same channel after retirement.
+    replay = await admin.api.post(BASE + "/channels", json=body)
+    assert replay.status_code == 200 and replay.json()["id"] == row["id"]
+    assert await counts(env) == before
+    updated = await admin.api.put(
+        BASE + "/channels/" + row["id"],
+        json={
+            "version": row["version"],
+            "provider": provider_id,
+            "name": "Renamed historical channel",
+            "models": [{"id": "existing-model"}],
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["base_url"] == row["base_url"]
+    assert updated.json()["credential_configured"] is True
+    assert updated.json()["models"] == row["models"]
+    assert (await counts(env))[:2] == (1, 0)
 
 
 async def test_unsupported_operations_and_missing_bearer_rejected_before_save(env):
@@ -203,12 +258,21 @@ async def test_qwen_key_product_mismatch_is_actionable_without_io_or_secret_echo
         "connection": {"address_mode": "provider_default"},
         "api_key": key,
     }
+    created = await historical_channel(
+        admin, monkeypatch, {**data, "name": "Existing product", "api_key": fake_key(provider_id)}
+    )
+    assert created.status_code == 200, created.text
+    row = created.json()
     before = await counts(env)
-    for path, body in (
-        ("/channels", {**data, "name": "Wrong product"}),
-        ("/channel-drafts/inspect", data),
+    for method, path, body in (
+        (
+            admin.api.put,
+            "/channels/" + row["id"],
+            {**data, "name": row["name"], "version": row["version"]},
+        ),
+        (admin.api.post, "/channel-drafts/inspect", data),
     ):
-        result = await admin.api.post(BASE + path, json=body)
+        result = await method(BASE + path, json=body)
         assert result.status_code == 422, result.text
         assert "套餐" in result.json()["error"]["message"]
         assert key not in result.text
@@ -216,49 +280,58 @@ async def test_qwen_key_product_mismatch_is_actionable_without_io_or_secret_echo
     outbound.assert_not_awaited()
 
 
-async def test_manual_directory_presets_draft_and_saved_checks_have_no_http(env, monkeypatch):
-    from app.modules.llm.providers import openai_compatible
+@pytest.mark.parametrize("provider_id", PRESETS)
+async def test_presets_fetch_draft_and_saved_directories_with_channel_credentials(
+    env, monkeypatch, provider_id
+):
+    import httpx2
+    from test_provider_presets_runtime import BytesStream, memory_transport
 
     admin = await env.client()
+    status = 200
 
-    def reject_http(*args, **kwargs):
-        raise AssertionError("manual model registration must not make a metadata HTTP request")
+    def upstream(request):
+        assert request.method == "GET"
+        assert request.headers["authorization"] == "Bearer " + fake_key(provider_id)
+        return httpx2.Response(
+            status, stream=BytesStream(b'{"data":[{"id":"returned-by-upstream"}]}')
+        )
 
-    monkeypatch.setattr(openai_compatible, "resolve", reject_http)
-    for provider_id in ("volcengine", "zhipu", "moonshot", "qwen", "qwen-token-plan"):
-        draft = await admin.api.post(
-            BASE + "/channel-drafts/inspect",
-            json={
-                "provider": provider_id,
-                "connection": {"address_mode": "provider_default"},
-                "api_key": fake_key(provider_id),
-                "discover": True,
-            },
-        )
-        assert draft.status_code == 200, draft.text
-        assert draft.json()["ok"] is False
-        assert draft.json()["candidates"] == []
-        assert "手动登记" in draft.json()["message"]
-        created = await admin.api.post(
-            BASE + "/channels",
-            json={
-                "name": "Manual " + provider_id,
-                "provider": provider_id,
-                "connection": {"address_mode": "provider_default"},
-                "api_key": fake_key(provider_id),
-                "models": [{"id": "manually-registered"}],
-            },
-        )
-        assert created.status_code == 200, created.text
-        row = created.json()
-        checked = await admin.api.post(
-            BASE + "/channels/" + row["id"] + "/discover", json={"version": row["version"]}
-        )
-        assert checked.status_code == 200, checked.text
-        assert checked.json()["ok"] is False
-        assert checked.json()["candidates"] == []
-        assert checked.json()["channel"]["models"][0]["id"] == "manually-registered"
-        assert "手动登记" in checked.json()["message"]
+    sent = memory_transport(monkeypatch, upstream)
+    data = {
+        "provider": provider_id,
+        "connection": {"address_mode": "provider_default"},
+        "api_key": fake_key(provider_id),
+    }
+    draft = await admin.api.post(BASE + "/channel-drafts/inspect", json={**data, "discover": True})
+    assert draft.status_code == 200, draft.text
+    assert draft.json()["ok"] is True
+    assert draft.json()["candidates"] == [{"id": "returned-by-upstream"}]
+    created = await historical_channel(
+        admin,
+        monkeypatch,
+        {**data, "name": "Directory test", "models": [{"id": "keep-existing"}]},
+    )
+    assert created.status_code == 200, created.text
+    row = created.json()
+    checked = await admin.api.post(
+        BASE + "/channels/" + row["id"] + "/discover", json={"version": row["version"]}
+    )
+    assert checked.status_code == 200, checked.text
+    assert checked.json()["candidates"] == [{"id": "returned-by-upstream"}]
+    assert checked.json()["channel"]["models"][0]["id"] == "keep-existing"
+    root, prefix, _ = PRESETS[provider_id]
+    assert [url for url, _ in sent] == [root + prefix + "/models"] * 2
+    status = 401
+    failed = await admin.api.post(
+        BASE + "/channels/" + row["id"] + "/discover",
+        json={"version": checked.json()["channel"]["version"]},
+    )
+    assert failed.json()["ok"] is False
+    assert failed.json()["candidates"] == []
+    assert "认证" in failed.json()["message"]
+    assert failed.json()["channel"]["models"][0]["id"] == "keep-existing"
+    assert fake_key(provider_id) not in failed.text
 
 
 async def test_registered_model_hint_uses_only_exact_provider_namespace(env, monkeypatch):
@@ -284,9 +357,10 @@ async def test_registered_model_hint_uses_only_exact_provider_namespace(env, mon
         ("aihubmix", "overlap-fixture", None),
     ]
     for provider_id, upstream_id, expected_reference in cases:
-        response = await admin.api.post(
-            BASE + "/channels",
-            json={
+        response = await historical_channel(
+            admin,
+            monkeypatch,
+            {
                 "name": "Hints " + provider_id,
                 "provider": provider_id,
                 "connection": {"address_mode": "provider_default"},
@@ -306,7 +380,7 @@ async def test_registered_model_hint_uses_only_exact_provider_namespace(env, mon
 
 @pytest.mark.parametrize("provider_id", ["qwen", "qwen-token-plan"])
 async def test_saved_qwen_preset_diagnostic_reaches_existing_sdk_with_default_prefix(
-    env, provider_id
+    env, monkeypatch, provider_id
 ):
     admin = await env.client()
     upstream = FastAPI()
@@ -332,9 +406,10 @@ async def test_saved_qwen_preset_diagnostic_reaches_existing_sdk_with_default_pr
 
     async with listening(upstream) as root:
         env.provider.settings.llm_allowed_private_origins = [root]
-        created = await admin.api.post(
-            BASE + "/channels",
-            json={
+        created = await historical_channel(
+            admin,
+            monkeypatch,
+            {
                 "name": "Qwen local fixture",
                 "provider": provider_id,
                 "connection": {"address_mode": "service_root", "service_root": root},

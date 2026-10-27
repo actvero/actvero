@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import time
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
@@ -29,8 +29,14 @@ logger = logging.getLogger(__name__)
 
 
 class Outbox:
-    def __init__(self, directory: Path, database: Database) -> None:
+    def __init__(
+        self,
+        directory: Path,
+        database: Database,
+        reconcile: Callable[[dict[str, Any]], Awaitable[bool]] | None = None,
+    ) -> None:
         self.directory, self.database = directory, database
+        self.reconcile = reconcile
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         directory.chmod(0o700)
         self.lock = asyncio.Lock()
@@ -107,6 +113,8 @@ class Outbox:
                         attempt.update(
                             status="unknown", uncertain=True, error_code="execution_interrupted"
                         )
+            if self.reconcile and not await self.reconcile(record):
+                return
             async with self.database.sessions() as db:
                 await db.scalar(
                     select(Tenant.id)

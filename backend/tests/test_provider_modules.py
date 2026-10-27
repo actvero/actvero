@@ -152,7 +152,7 @@ async def test_sdk_concurrent_credentials_no_retry_and_no_estimated_usage():
 
 
 @pytest.mark.parametrize("provider_id", ["anthropic", "gemini"])
-async def test_native_directories_preserve_partial_and_auth(provider_id):
+async def test_native_directories_follow_pages_and_preserve_auth(provider_id):
     app = FastAPI()
 
     @app.get("/{path:path}")
@@ -160,15 +160,22 @@ async def test_native_directories_preserve_partial_and_auth(provider_id):
         assert "authorization" not in request.headers
         if provider_id == "anthropic":
             assert path == "v1/models" and request.headers["x-api-key"] == "test-secret"
-            return {"data": [{"id": "claude-test"}], "has_more": True}
+            return {
+                "data": [{"id": "claude-test"}],
+                "has_more": "after_id" not in request.query_params,
+                "last_id": "claude-test",
+            }
         assert path == "v1beta/models" and request.headers["x-goog-api-key"] == "test-secret"
-        return {"models": [{"name": "models/gemini-test"}], "nextPageToken": "next"}
+        return {
+            "models": [{"name": "models/gemini-test"}],
+            "nextPageToken": "" if "pageToken" in request.query_params else "next",
+        }
 
     async with listening(app) as url:
         listing = await PROVIDERS[provider_id].list_models(
             url, "test-secret", 5, Settings(_env_file=None, llm_allowed_private_origins=[url])
         )
-    assert listing.partial and len(listing.models) == 1
+    assert not listing.partial and len(listing.models) == 1
     assert not listing.models[0].id.startswith("models/")
 
 

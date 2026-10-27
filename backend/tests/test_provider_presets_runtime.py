@@ -363,27 +363,14 @@ async def test_directory_policy_before_io(monkeypatch, provider):
             )
         ),
     )
-    if provider == "aihubmix":
-        listing = await PROVIDERS[provider].list_models(
-            PROFILES[provider][0] + PROFILES[provider][1],
-            "directory-key",
-            5,
-            settings(),
-            connection={"address_mode": "provider_default", "resolver_version": 1},
-        )
-        assert [model.id for model in listing.models] == [MODEL]
-        assert sent[0][0] == "https://aihubmix.com/v1/models"
-        assert len(seen) == 1 and seen[0][0] == "GET"
-        assert seen[0][1]["authorization"] == "Bearer directory-key"
-    else:
-        with pytest.raises(HTTPException) as failure:
-            await PROVIDERS[provider].list_models(
-                PROFILES[provider][0] + PROFILES[provider][1],
-                "directory-key",
-                5,
-                settings(),
-                connection={"address_mode": "provider_default", "resolver_version": 1},
-            )
-        assert failure.value.status_code == 422
-        assert "手动登记" in str(failure.value.detail)
-        assert sent == seen == []
+    listing = await PROVIDERS[provider].list_models(
+        PROFILES[provider][0] + PROFILES[provider][1],
+        "directory-key",
+        5,
+        settings(),
+        connection={"address_mode": "provider_default", "resolver_version": 1},
+    )
+    assert [model.id for model in listing.models] == [MODEL]
+    assert sent[0][0] == PROFILES[provider][0] + PROFILES[provider][1] + "/models"
+    assert len(seen) == 1 and seen[0][0] == "GET"
+    assert seen[0][1]["authorization"] == "Bearer directory-key"

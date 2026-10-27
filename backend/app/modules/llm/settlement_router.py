@@ -43,7 +43,7 @@ class WindowView(BaseModel):
 
 
 class QuotaView(BaseModel):
-    status: Literal["active", "unconfigured"]
+    status: Literal["active", "unlimited", "unconfigured"]
     policy: dict[str, Any] | None
     windows: list[WindowView]
 
@@ -216,6 +216,8 @@ async def reconciliation_context(call_id: UUID, request: Request, db: DB) -> Rec
     if linked is None:
         fail(404, "settlement_not_found", "结算记录不存在")
     user, model, call = linked
+    if row.price.get("engine") == "newapi":
+        fail(409, "native_billing_required", "此调用由网关账单结算，请在网关调用记录中重新核对")
     price = TokenPrice.model_validate(row.price)
     return ReconciliationContext(
         settlement=settlement_view(row, user, model, call),
@@ -235,6 +237,8 @@ async def reconciliation_preview(
     actor = await administrator(request, db)
     row = await owned_settlement(db, actor.tenant.id, call_id)
     assert_reconcilable(row, body.version)
+    if row.price.get("engine") == "newapi":
+        fail(409, "native_billing_required", "此调用由网关账单结算，请在网关调用记录中重新核对")
     price = TokenPrice.model_validate(row.price)
     usage = reconciliation.canonical_usage(price, body)
     return reconciliation.preview(row, body, usage)
@@ -248,6 +252,8 @@ async def reconcile(
     row = await owned_settlement(db, actor.tenant.id, call_id)
     if isinstance(body.usage, TaggedUsage) and body.request_id is None:
         fail(422, "request_id_required", "按计量类型核对须提供请求标识")
+    if row.price.get("engine") == "newapi":
+        fail(409, "native_billing_required", "此调用由网关账单结算，请在网关调用记录中重新核对")
     price = TokenPrice.model_validate(row.price)
     usage = reconciliation.canonical_usage(price, body)
     signature = (
@@ -362,7 +368,9 @@ async def account_models(
     page: int = Query(1, ge=1),
 ) -> member_catalog.MemberModelPage:
     actor = await own_access(request, db)
-    return await member_catalog.member_page(db, actor, q=q, operation=operation, page=page)
+    return await member_catalog.member_page(
+        db, actor, q=q, operation=operation, page=page, request=request
+    )
 
 
 @native_router.get("/usage", response_model=SettlementPage)

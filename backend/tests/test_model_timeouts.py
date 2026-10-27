@@ -236,6 +236,32 @@ async def test_explicit_total_limit_still_bounds_continuous_output():
     assert caught.value.code == "upstream_timeout"
 
 
+def test_timeout_deadlines_use_the_event_loop_clock_epoch(monkeypatch):
+    # uvloop on macOS can use an epoch distinct from time.monotonic().
+    loop = asyncio.new_event_loop()
+    clock = loop.time
+    monkeypatch.setattr(loop, "time", lambda: clock() + 400_000)
+
+    async def exercise():
+        budget = Timeouts(1, 0.1, 0.01)
+        async with budget.waiting(first=True):
+            await asyncio.sleep(0.001)
+        assert 0 < budget.remaining() <= 1
+        with pytest.raises(ExecutionTimeout) as caught:
+            async with budget.waiting(first=False):
+                await asyncio.sleep(0.03)
+        assert caught.value.code == "upstream_idle_timeout"
+        with pytest.raises(ExecutionTimeout) as caught:
+            async with Timeouts(1, 0.01, 1).waiting(first=True):
+                await asyncio.sleep(0.03)
+        assert caught.value.code == "upstream_first_response_timeout"
+
+    try:
+        loop.run_until_complete(exercise())
+    finally:
+        loop.close()
+
+
 def test_defaults_and_migration_preserve_explicit_limits():
     policy = RoutingPolicy()
     assert policy.total_timeout_seconds == 1800

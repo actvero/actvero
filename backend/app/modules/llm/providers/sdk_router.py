@@ -62,8 +62,17 @@ class Attempt:
         if error is not None:
             self.trace.note_error(error)
         usage = selected_usage(self.transport.meter)
+        gateway_reference = {}
+        if self.candidate.evidence.get("gateway"):
+            ids = {r.headers.get("X-Oneapi-Request-Id") for r in self.transport.responses}
+            ids.discard(None)
+            if len(ids) == 1:
+                request_id = next(iter(ids))
+                if request_id and len(request_id) <= 128 and request_id.isalnum():
+                    gateway_reference = {"gateway_request_id": request_id}
         return {
             **self.candidate.evidence,
+            **gateway_reference,
             **self.trace.snapshot(),
             "status": "failed" if error else "succeeded",
             "usage": usage,

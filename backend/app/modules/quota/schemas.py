@@ -1,14 +1,12 @@
 from datetime import datetime
 from typing import Annotated, Literal, Self
 from uuid import UUID
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     StringConstraints,
-    field_validator,
     model_validator,
 )
 
@@ -24,40 +22,23 @@ class FixedHours(BaseModel):
     points: Points
 
 
-class CalendarWeek(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    kind: Literal["calendar_week"]
-    points: Points
-    timezone: str = Field(min_length=1, max_length=100)
-    week_start: int = Field(ge=0, le=6, strict=True)
-
-    @field_validator("timezone")
-    @classmethod
-    def valid_timezone(cls, value: str) -> str:
-        try:
-            ZoneInfo(value)
-        except (ZoneInfoNotFoundError, ValueError) as exc:
-            raise ValueError("请选择有效的 IANA 时区") from exc
-        return value
-
-
-QuotaRule = Annotated[FixedHours | CalendarWeek, Field(discriminator="kind")]
+QuotaRule = FixedHours
 
 
 class QuotaPolicyInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
-    priority: int = Field(ge=0, le=1000000, strict=True)
-    member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
-    rules: list[QuotaRule] = Field(min_length=1, max_length=10)
+    is_default: bool = Field(default=False, strict=True)
+    mode: Literal["limited", "unlimited"] = "limited"
+    rules: list[QuotaRule] = Field(default_factory=list, max_length=10)
 
     @model_validator(mode="after")
     def consistent(self) -> Self:
-        if len(set(self.member_ids)) != len(self.member_ids):
-            raise ValueError("成员不能重复")
-        if (self.priority == 0 and self.member_ids) or (self.priority > 0 and not self.member_ids):
-            raise ValueError("默认策略适用全部成员；其他策略至少选择一名成员")
-        keys = [(r.kind, r.hours if isinstance(r, FixedHours) else None) for r in self.rules]
+        if self.mode == "limited" and not self.rules:
+            raise ValueError("周期限额至少配置一条规则")
+        if self.mode == "unlimited" and self.rules:
+            raise ValueError("不限额度不能同时配置周期上限")
+        keys = [r.hours for r in self.rules]
         if len(set(keys)) != len(keys):
             raise ValueError("同一周期只能配置一条额度规则")
         return self
@@ -68,6 +49,9 @@ class QuotaPolicyUpdate(QuotaPolicyInput):
 
 
 class QuotaPolicyView(QuotaPolicyInput):
+    is_default: bool = Field(...)
+    mode: Literal["limited", "unlimited"] = Field(...)
+    rules: list[QuotaRule] = Field(...)
     id: UUID
     archived: bool
     version: int
@@ -92,7 +76,14 @@ class QuotaArchive(BaseModel):
 class PolicyMatch(BaseModel):
     id: UUID
     name: str
-    priority: int
+    mode: Literal["limited", "unlimited"]
+    is_default: bool
+
+
+class QuotaAssignmentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    policy_id: UUID | None
+    version: int = Field(ge=0, strict=True)
 
 
 class MemberQuotaMatch(BaseModel):
@@ -100,7 +91,10 @@ class MemberQuotaMatch(BaseModel):
     name: str
     email: str | None
     role: str
-    matched: list[PolicyMatch]
+    status: Literal["active", "paused"]
+    avatar_url: str | None = None
+    assigned: PolicyMatch | None
+    assignment_version: int
     selected: PolicyMatch | None
     rules: list[QuotaRule]
 

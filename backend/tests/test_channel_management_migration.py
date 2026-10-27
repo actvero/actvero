@@ -119,6 +119,7 @@ async def test_legacy_channel_upgrade_preserves_all_old_columns_targets_and_fing
                 assert saved["manual_enabled"] is True
                 assert saved["automatic_protection"] == {"enabled": True}
                 assert saved["test_defaults"] is None
+                assert saved["snapshot_partial"] is None
                 assert saved["routing_version"] == old["version"]
                 assert saved["connection"] == {
                     "address_mode": "legacy_api_base",

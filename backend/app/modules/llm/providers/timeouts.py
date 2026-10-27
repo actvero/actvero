@@ -1,7 +1,6 @@
 """Independent waits for response progress and a visible overall execution budget."""
 
 import asyncio
-import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -14,17 +13,20 @@ class ExecutionTimeout(TimeoutError):
 
 class Timeouts:
     def __init__(self, total: float, first_response: float, idle: float) -> None:
-        started = time.monotonic()
+        # asyncio.timeout_at expects the event loop's clock. uvloop on macOS
+        # need not share time.monotonic's epoch, even though both are monotonic.
+        self.loop = asyncio.get_running_loop()
+        started = self.loop.time()
         self.deadline = started + total
         self.first_deadline = started + first_response
         self.total, self.first_response, self.idle = total, first_response, idle
 
     def remaining(self) -> float:
-        return max(0.001, self.deadline - time.monotonic())
+        return max(0.001, self.deadline - self.loop.time())
 
     @asynccontextmanager
     async def waiting(self, *, first: bool) -> AsyncIterator[None]:
-        phase_deadline = self.first_deadline if first else time.monotonic() + self.idle
+        phase_deadline = self.first_deadline if first else self.loop.time() + self.idle
         deadline = min(self.deadline, phase_deadline)
         timer = asyncio.timeout_at(deadline)
         try:

@@ -16,6 +16,7 @@ from app.modules.llm.catalog_schemas import (
     ReasoningOption,
     RetrievalOptions,
 )
+from app.modules.llm.chat_media import ChatImageInput
 from app.modules.llm.image_schemas import ImageOptions
 
 
@@ -89,6 +90,9 @@ class PublicChatRoute(ChatRouteLimits):
 
 
 class PublicOperation(BaseModel):
+    image_input: ChatImageInput | None = None
+    capability_source: dict[str, str] | None = None
+    billing_engine: Literal["direct", "newapi"] = "direct"
     chat_policy: ChatPolicy | None = None
     parameter_routes: list[PublicChatRoute] = Field(default_factory=list)
     default_parameters_ready: bool | None = None

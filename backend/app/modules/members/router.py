@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from sqlalchemy import func, or_, select
 
 from app.modules.auth.router import Mutation
@@ -19,6 +19,30 @@ from app.modules.members.service import access, member_view, protect_admin, reco
 from app.modules.users.models import LoginIdentity, User
 
 router = APIRouter(prefix="/api/v1/enterprises/{tenant_id}/members", tags=["members"])
+
+
+@router.get(
+    "/{member_id}/avatar",
+    response_class=Response,
+    responses={
+        200: {"content": {"image/webp": {"schema": {"type": "string", "format": "binary"}}}}
+    },
+    summary="读取组织成员头像，权限与成员资料一致",
+)
+async def avatar(tenant_id: UUID, member_id: UUID, request: Request, db: DB) -> Response:
+    await access(request, db, tenant_id)
+    data = await db.scalar(
+        select(User.avatar_data)
+        .join(Membership, Membership.user_id == User.id)
+        .where(
+            Membership.tenant_id == tenant_id,
+            Membership.id == member_id,
+            Membership.status != "removed",
+        )
+    )
+    if data is None:
+        raise HTTPException(404, "尚未设置头像")
+    return Response(data, media_type="image/webp")
 
 
 @router.post("", response_model=MemberCreated)

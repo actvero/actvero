@@ -522,6 +522,8 @@ async def execute(
                 usage=usage,
                 estimates=attempts[-1]["estimates"] if attempts else {},
             )
+            if config.gateway:
+                record["gateway_billing_deadline"] = time.time() + 60
             await outbox.checkpoint(record)
             await outbox.flush(log.id)
             await invocation.close()

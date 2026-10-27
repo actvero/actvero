@@ -280,7 +280,29 @@ class RoutingPolicy(Input):
     model_revision: str = Field(default="", max_length=200)
 
 
+class GatewayExecution(Input):
+    """Internal publication pointer; routing and actual prices remain in New API."""
+
+    origin_hash: str = Field(min_length=64, max_length=64)
+    capability_mode: Literal["auto", "manual"] = "manual"
+    capability_source: dict[str, str] = Field(default_factory=dict)
+    reserve_usd: str = Field(
+        default="0.01",
+        pattern=r"^(0|[1-9][0-9]{0,5})(\.[0-9]{1,8})?$",
+        deprecated=True,
+        description="Legacy compatibility field; reservations are calculated by New API.",
+    )
+
+    @field_validator("reserve_usd")
+    @classmethod
+    def positive_reserve(cls, value: str) -> str:
+        if Decimal(value) <= 0:
+            raise ValueError("单次预留额度须大于零")
+        return value
+
+
 class OperationParameters(Input):
+    gateway: GatewayExecution | None = None
     chat_policy: ChatPolicy = Field(default_factory=ChatPolicy)
     kind: OperationKind = "chat"
     image: ImageOptions = Field(default_factory=ImageOptions)
@@ -299,17 +321,19 @@ class OperationParameters(Input):
         if self.kind == "transcription":
             if self.routing.mode != "fixed":
                 raise ValueError("语音转文字自动匹配只允许单次调用")
-            if enabled and self.budget_price is None:
+            if enabled and self.budget_price is None and self.gateway is None:
                 raise ValueError("开放转写前请配置每秒积分计价")
         if self.kind == "speech":
             if self.routing.mode != "fixed":
                 raise ValueError("语音合成自动匹配只允许单次调用")
-            if enabled and (not self.speech.voice or self.budget_price is None):
+            if enabled and (
+                not self.speech.voice or (self.budget_price is None and self.gateway is None)
+            ):
                 raise ValueError("开放语音合成前请配置音色和字符计价")
         if self.kind == "image_generation":
             if self.routing.mode != "fixed":
                 raise ValueError("图片生成自动匹配只允许单次调用")
-            if enabled and self.budget_price is None:
+            if enabled and self.budget_price is None and self.gateway is None:
                 raise ValueError("开放图片生成前请配置每张积分计价")
         if enabled and self.routing.mode == "fixed" and (channel_id is None or not upstream_id):
             raise ValueError("启用前请选择调用渠道")

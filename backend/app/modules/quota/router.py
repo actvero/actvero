@@ -8,20 +8,20 @@ from app.modules.account.service import own_access
 from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB, now
 from app.modules.members.models import Membership
-from app.modules.members.service import Access, record
-from app.modules.quota.models import QuotaPolicy
+from app.modules.members.service import Access, member_avatar_url, record
+from app.modules.quota.models import QuotaAssignment, QuotaPolicy
 from app.modules.quota.schemas import (
-    CalendarWeek,
     MemberQuotaMatch,
     PolicyMatch,
     QuotaArchive,
+    QuotaAssignmentInput,
     QuotaMatchPage,
     QuotaPolicyInput,
     QuotaPolicyPage,
     QuotaPolicyUpdate,
     QuotaPolicyView,
 )
-from app.modules.quota.service import matching_policies
+from app.modules.quota.service import configured_policy
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/api/v1/quota", tags=["quota-policies"])
@@ -61,29 +61,11 @@ async def configure(db: DB, actor: Access, row: QuotaPolicy, body: QuotaPolicyIn
             )
         )
     )
-    if any(p.priority == body.priority for p in policies):
-        raise HTTPException(409, "优先级已被其他策略使用")
     if any(p.name == body.name for p in policies):
         raise HTTPException(409, "策略名称已存在")
-    if body.priority > 0 and not any(p.priority == 0 for p in policies):
-        raise HTTPException(409, "请先设置默认策略")
-    if body.member_ids:
-        # Retain previously assigned paused members on edits; they never match until active.
-        existing = set(row.member_ids or [])
-        members = list(
-            await db.scalars(
-                select(Membership).where(
-                    Membership.tenant_id == actor.tenant.id, Membership.id.in_(body.member_ids)
-                )
-            )
-        )
-        if len(members) != len(body.member_ids) or any(
-            m.status == "removed" or (m.status != "active" and str(m.id) not in existing)
-            for m in members
-        ):
-            raise HTTPException(422, "包含不可选成员，请检查成员范围")
-    row.name, row.priority = body.name, body.priority
-    row.member_ids = [str(m) for m in body.member_ids]
+    if body.is_default and any(p.is_default for p in policies):
+        raise HTTPException(409, "组织已存在默认策略")
+    row.name, row.is_default, row.mode = body.name, body.is_default, body.mode
     row.rules = [r.model_dump(mode="json") for r in body.rules]
     row.updated_at = now()
 
@@ -94,6 +76,7 @@ async def listing(
     db: DB,
     q: str = Query(default="", max_length=100),
     state: Literal["current", "archived"] = "current",
+    assignable_only: bool = False,
     page: int = Query(default=1, ge=1),
 ) -> QuotaPolicyPage:
     actor = await administrator(request, db)
@@ -103,29 +86,25 @@ async def listing(
     ]
     if q.strip():
         filters.append(QuotaPolicy.name.icontains(q.strip(), autoescape=True))
+    if assignable_only:
+        filters.append(QuotaPolicy.is_default.is_(False))
     total = await db.scalar(select(func.count()).select_from(QuotaPolicy).where(*filters)) or 0
     rows = await db.scalars(
         select(QuotaPolicy)
         .where(*filters)
-        .order_by(QuotaPolicy.priority.desc(), QuotaPolicy.id)
+        .order_by(QuotaPolicy.is_default.desc(), QuotaPolicy.created_at.desc(), QuotaPolicy.id)
         .offset((page - 1) * 20)
         .limit(20)
     )
     default = await db.scalar(
         select(QuotaPolicy).where(
-            QuotaPolicy.tenant_id == actor.tenant.id, QuotaPolicy.priority == 0
+            QuotaPolicy.tenant_id == actor.tenant.id, QuotaPolicy.is_default.is_(True)
         )
     )
     return QuotaPolicyPage(
         items=[view(r) for r in rows],
         total=total,
         has_default=default is not None,
-        default_timezone=next(
-            (rule.timezone for rule in view(default).rules if isinstance(rule, CalendarWeek)),
-            None,
-        )
-        if default is not None
-        else None,
     )
 
 
@@ -150,7 +129,7 @@ async def update(
     row = await get_policy(db, actor.tenant.id, policy_id, body.version)
     if row.archived:
         raise HTTPException(409, "请先恢复策略")
-    if (row.priority == 0) != (body.priority == 0):
+    if row.is_default != body.is_default:
         raise HTTPException(422, "不能改变默认策略身份")
     await configure(db, actor, row, body)
     row.version += 1
@@ -166,15 +145,31 @@ async def archive(
 ) -> QuotaPolicyView:
     actor = await administrator(request, db, write=True)
     row = await get_policy(db, actor.tenant.id, policy_id, body.version)
-    if row.priority == 0:
+    if row.is_default:
         raise HTTPException(409, "默认策略不能归档")
+    if body.archived and await db.scalar(
+        select(QuotaAssignment.member_id)
+        .join(Membership, Membership.id == QuotaAssignment.member_id)
+        .where(
+            QuotaAssignment.tenant_id == actor.tenant.id,
+            QuotaAssignment.policy_id == row.id,
+            Membership.status != "removed",
+        )
+        .limit(1)
+    ):
+        raise HTTPException(409, "策略仍有分配成员，请先调整成员策略")
     if not body.archived:
         await configure(
             db,
             actor,
             row,
-            QuotaPolicyInput(
-                name=row.name, priority=row.priority, member_ids=row.member_ids, rules=row.rules
+            QuotaPolicyInput.model_validate(
+                {
+                    "name": row.name,
+                    "is_default": row.is_default,
+                    "mode": row.mode,
+                    "rules": row.rules,
+                }
             ),
         )
     row.archived, row.updated_at = body.archived, now()
@@ -199,7 +194,7 @@ async def matches(
     page: int = Query(default=1, ge=1),
 ) -> QuotaMatchPage:
     actor = await administrator(request, db)
-    filters = [Membership.tenant_id == actor.tenant.id, Membership.status == "active"]
+    filters = [Membership.tenant_id == actor.tenant.id, Membership.status.in_(("active", "paused"))]
     if q.strip():
         filters.append(
             or_(
@@ -216,17 +211,94 @@ async def matches(
     ).all()
     result = []
     for member, user in rows:
-        policies = await matching_policies(db, actor.tenant.id, member.id)
-        matched = [PolicyMatch(id=p.id, name=p.name, priority=p.priority) for p in policies]
-        result.append(
-            MemberQuotaMatch(
-                member_id=member.id,
-                name=user.name,
-                email=user.email,
-                role=member.role,
-                matched=matched,
-                selected=matched[0] if matched else None,
-                rules=policies[0].rules if policies else [],
+        result.append(await member_match(db, actor.tenant.id, member, user))
+    return QuotaMatchPage(items=result, total=total)
+
+
+async def member_match(db: DB, tenant_id: UUID, member: Membership, user: User) -> MemberQuotaMatch:
+    selected = await configured_policy(db, tenant_id, member.id)
+    assignment = await db.get(QuotaAssignment, member.id, populate_existing=True)
+    choice = (
+        PolicyMatch.model_validate(
+            {
+                "id": selected.id,
+                "name": selected.name,
+                "mode": selected.mode,
+                "is_default": selected.is_default,
+            }
+        )
+        if selected
+        else None
+    )
+    return MemberQuotaMatch.model_validate(
+        {
+            "member_id": member.id,
+            "name": user.name,
+            "email": user.email,
+            "role": member.role,
+            "status": member.status,
+            "avatar_url": member_avatar_url(member, user),
+            "assigned": choice if assignment and assignment.policy_id else None,
+            "assignment_version": assignment.version if assignment else 0,
+            "selected": choice,
+            "rules": selected.rules if selected else [],
+        }
+    )
+
+
+@router.put("/members/{member_id}/assignment", response_model=MemberQuotaMatch)
+async def assign(
+    member_id: UUID, request: Request, db: DB, body: QuotaAssignmentInput, _: Mutation
+) -> MemberQuotaMatch:
+    actor = await administrator(request, db, write=True)
+    pair = (
+        await db.execute(
+            select(Membership, User)
+            .join(User)
+            .where(
+                Membership.tenant_id == actor.tenant.id,
+                Membership.id == member_id,
+                Membership.status != "removed",
             )
         )
-    return QuotaMatchPage(items=result, total=total)
+    ).one_or_none()
+    if pair is None:
+        raise HTTPException(404, "成员不存在")
+    member, user = pair
+    row = await db.get(QuotaAssignment, member_id, populate_existing=True)
+    if body.version != (row.version if row else 0):
+        raise HTTPException(409, "成员额度策略已被修改，请刷新后重试")
+    policy_id = body.policy_id
+    if policy_id is not None:
+        policy = await db.scalar(
+            select(QuotaPolicy).where(
+                QuotaPolicy.id == policy_id,
+                QuotaPolicy.tenant_id == actor.tenant.id,
+                QuotaPolicy.archived.is_(False),
+            )
+        )
+        if policy is None:
+            raise HTTPException(404, "策略不存在或已归档")
+        if member.status != "active":
+            raise HTTPException(422, "只能向正常成员分配策略")
+        if policy.is_default:
+            policy_id = None
+    previous = str(row.policy_id) if row and row.policy_id else "default"
+    if row is None:
+        row = QuotaAssignment(member_id=member_id, tenant_id=actor.tenant.id, version=1)
+        db.add(row)
+    else:
+        row.version += 1
+    row.policy_id, row.updated_at = policy_id, now()
+    await db.flush()
+    record(
+        db,
+        actor,
+        "quota.member.assign",
+        member_id,
+        user.name,
+        {"before_policy": previous, "after_policy": str(policy_id) if policy_id else "default"},
+    )
+    result = await member_match(db, actor.tenant.id, member, user)
+    await db.commit()
+    return result

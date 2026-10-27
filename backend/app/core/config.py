@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.modules.model_gateway.config import NewApiConnection, NewApiGateway
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -15,6 +17,10 @@ class Settings(BaseSettings):
     llm_public_dns: Literal["system", "cloudflare"] = "system"
     llm_outbox_dir: Path = PROJECT_ROOT / ".local" / "llm-outbox"
     llm_router_redis_url: SecretStr | None = None
+    newapi_connections: list[NewApiConnection] = []
+    newapi_gateway: NewApiGateway | None = None
+    newapi_base_url: str | None = None
+    newapi_management_token: SecretStr | None = None
     mcp_allowed_private_origins: list[str] = []
     mcp_public_dns: Literal["system", "cloudflare"] = "system"
     client_distribution_allowed_private_origins: list[str] = []
@@ -86,6 +92,34 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_origins(self) -> "Settings":
+        from app.core.outbound import origin
+
+        if self.newapi_base_url or self.newapi_management_token:
+            if not (self.newapi_base_url and self.newapi_management_token) or self.newapi_gateway:
+                raise ValueError(
+                    "Configure both New API address and management credential, using one format"
+                )
+            self.newapi_gateway = NewApiGateway(
+                base_url=self.newapi_base_url, management_token=self.newapi_management_token
+            )
+        if self.newapi_gateway:
+            # The deployment operator already trusts this exact fixed gateway origin.
+            gateway_origin = origin(self.newapi_gateway.base_url)
+            if gateway_origin not in self.llm_allowed_private_origins:
+                self.llm_allowed_private_origins = [
+                    *self.llm_allowed_private_origins,
+                    gateway_origin,
+                ]
+        if self.newapi_gateway and self.newapi_connections:
+            raise ValueError(
+                "Shared gateway and legacy organization connections cannot be combined"
+            )
+        if len({c.tenant_id for c in self.newapi_connections}) != len(self.newapi_connections):
+            raise ValueError("Each organization must have one New API connection")
+        if len({origin(c.base_url) for c in self.newapi_connections}) != len(
+            self.newapi_connections
+        ):
+            raise ValueError("New API management instances must not be shared across organizations")
         if (
             self.web_reauthentication_days is not None
             and self.web_reauthentication_days < self.web_recovery_days

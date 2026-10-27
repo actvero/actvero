@@ -492,15 +492,11 @@ async def test_existing_directory_consumer_uses_resolved_legacy_target(
         if provider == "gemini":
             return httpx2.Response(
                 200,
-                stream=JsonStream(
-                    {"models": [{"name": "models/gemini-test"}], "nextPageToken": "next"}
-                ),
+                stream=JsonStream({"models": [{"name": "models/gemini-test"}]}),
             )
         return httpx2.Response(
             200,
-            stream=JsonStream(
-                {"data": [{"id": "test-model"}, {"id": "test-model"}], "has_more": True}
-            ),
+            stream=JsonStream({"data": [{"id": "test-model"}, {"id": "test-model"}]}),
         )
 
     class CapturingPinnedTransport(PinnedTransport):
@@ -521,7 +517,7 @@ async def test_existing_directory_consumer_uses_resolved_legacy_target(
     method, path, headers = calls[0]
     assert (method, path) == ("GET", directory_path)
     assert headers["accept-encoding"] == "identity"
-    assert listing.partial
+    assert not listing.partial
     assert [item.id for item in listing.models] == [
         "gemini-test" if provider == "gemini" else "test-model"
     ]

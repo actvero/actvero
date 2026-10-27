@@ -4,7 +4,7 @@ from typing import Any
 
 from app.modules.llm.providers.openai_compatible import OpenAICompatible
 from app.modules.llm.providers.profiles import PROFILES
-from app.modules.llm.schemas import ProviderId, ProviderView, ReferenceCatalog
+from app.modules.llm.schemas import ProviderId, ProviderView
 
 
 class Preset(OpenAICompatible):
@@ -13,6 +13,8 @@ class Preset(OpenAICompatible):
         info.official_service_root = profile.service_root
         info.default_api_prefix = profile.api_prefix
         info.model_discovery = profile.model_discovery
+        info.available_for_new_channels = profile.available_for_new_channels
+        info.version = max(info.version, 2)
         # Retain the historical SDK-base projection for old clients, while
         # displaying the actual service root/prefix independently in new UI.
         info.default_base_url = profile.service_root + (
@@ -32,6 +34,17 @@ class Anthropic(Preset):
             "anthropic-version": "2023-06-01",
         }
 
+    def first_page(self, url: str) -> dict[str, str | int]:
+        return {"limit": 100}
+
+    def next_page(
+        self, payload: dict[str, Any], params: dict[str, str | int]
+    ) -> dict[str, str | int]:
+        cursor = payload["last_id"]
+        if not isinstance(cursor, str) or not cursor:
+            raise ValueError("Invalid Anthropic cursor")
+        return {"limit": 100, "after_id": cursor}
+
 
 class Gemini(Preset):
     sdk_provider = "gemini"
@@ -46,11 +59,56 @@ class Gemini(Preset):
     def entries(self, payload: dict[str, Any]) -> tuple[list[Any], bool]:
         return payload["models"], bool(payload.get("nextPageToken"))
 
+    def first_page(self, url: str) -> dict[str, str | int]:
+        return {"pageSize": 100}
+
+    def next_page(
+        self, payload: dict[str, Any], params: dict[str, str | int]
+    ) -> dict[str, str | int]:
+        cursor = payload["nextPageToken"]
+        if not isinstance(cursor, str) or not cursor:
+            raise ValueError("Invalid Gemini cursor")
+        return {"pageSize": 100, "pageToken": cursor}
+
     def model_id(self, item: dict[str, Any]) -> str:
         value = item["name"]
         if not isinstance(value, str) or not value.startswith("models/"):
             raise ValueError("Invalid model resource")
         return value.removeprefix("models/")
+
+
+class Bailian(Preset):
+    """DashScope native catalog; custom compatible prefixes retain their protocol."""
+
+    def first_page(self, url: str) -> dict[str, str | int]:
+        return {"page_no": 1, "page_size": 100} if url.endswith("/api/v1/models") else {}
+
+    def entries(self, payload: dict[str, Any]) -> tuple[list[Any], bool]:
+        if "output" not in payload:
+            return super().entries(payload)
+        output = payload["output"]
+        total, page, size = output["total"], output["page_no"], output["page_size"]
+        if (
+            any(type(v) is not int for v in (total, page, size))
+            or min(total, page - 1, size - 1) < 0
+        ):
+            raise ValueError("Invalid DashScope pagination")
+        return output["models"], page * size < total
+
+    def model_id(self, item: dict[str, Any]) -> str:
+        return (
+            super().model_id({"id": item["model"]}) if "model" in item else super().model_id(item)
+        )
+
+    def next_page(
+        self, payload: dict[str, Any], params: dict[str, str | int]
+    ) -> dict[str, str | int] | None:
+        if "output" not in payload:
+            return None
+        output = payload["output"]
+        if not output["models"] or output["page_no"] != params["page_no"]:
+            raise ValueError("Invalid DashScope page")
+        return {"page_no": output["page_no"] + 1, "page_size": 100}
 
 
 ROOT_HELP = "填写服务根地址，不附加 /v1、/v1beta 或具体调用路径。"
@@ -60,7 +118,8 @@ def ordinary_api(
     provider_id: ProviderId, name: str, icon: str, aliases: list[str], help_text: str
 ) -> Preset:
     profile = PROFILES[provider_id]
-    return Preset(
+    adapter = Bailian if provider_id == "aliyun-bailian" else Preset
+    return adapter(
         ProviderView(
             id=provider_id,
             name=name,
@@ -172,7 +231,8 @@ PRESETS = [
         "火山方舟",
         "volcengine",
         ["Ark", "Doubao", "豆包", "火山引擎"],
-        "使用火山方舟普通 API Key；填写已开通的模型 ID 或 ep- 接入点 ID。"
+        "使用火山方舟普通 API Key，点击“从上游获取”读取模型列表。"
+        "首次使用需在方舟控制台开通相应模型。"
         "Agent Plan / Coding Plan 请勿使用此预设。",
     ),
     ordinary_api(
@@ -211,63 +271,39 @@ PRESETS = [
                 "当前接入对话、流式和工具调用，模型需在套餐内。"
                 "Key 归属对应席位，调用范围请按该席位配置。"
             ),
-            model_discovery=False,
+            model_discovery=True,
             balance_query=False,
             member_inference=True,
             member_operations=["chat"],
             test_operations=["chat"],
-            reference_catalog=ReferenceCatalog(
-                models=[
-                    "qwen3.8-max",
-                    "qwen3.8-flash",
-                    "qwen3.7-max",
-                    "qwen3.7-plus",
-                    "qwen3.6-plus",
-                    "qwen3.6-flash",
-                    "deepseek-v4-pro",
-                    "deepseek-v4-pro-0813",
-                    "deepseek-v4-flash",
-                    "deepseek-v4-flash-0731",
-                    "deepseek-v3.2",
-                    "kimi-k2.7-code",
-                    "kimi-k2.6",
-                    "kimi-k2.5",
-                    "glm-5.2",
-                    "glm-5.1",
-                    "glm-5",
-                    "MiniMax-M2.5",
-                ],
-                source_url="https://platform.qianwenai.com/docs/token-plan/team/token-plan-team-overview",
-                checked_at="2026-10-04",
-            ),
         )
     ),
 ]
 
 # Preserve previously shipped product IDs and saved credentials/targets independently.
-# Their catalogs require separate control-plane credentials; register models manually.
+# Model directories are fetched with the credentials of each separate product.
 PRESETS.extend(
     [
         ordinary_api(
             "aliyun-bailian",
-            "阿里百炼 · 普通 API",
+            "阿里云百炼",
             "bailian",
             ["DashScope"],
-            "使用百炼普通 API Key；普通 API 与千问 Token Plan 分开；模型请手动登记。",
+            "使用百炼普通 API Key，模型列表从当前服务地址读取。普通 API 与千问 Token Plan 分开。",
         ),
         ordinary_api(
             "volcengine-agent-plan",
             "火山方舟 Agent Plan",
             "volcengine",
             ["Agent Plan", "Ark"],
-            "使用 Agent Plan 专属 Key 与接入点，不使用普通方舟凭据。模型请手动登记。",
+            "使用 Agent Plan 专属 Key，模型列表从套餐接口读取。",
         ),
         ordinary_api(
             "volcengine-coding-plan",
             "火山方舟 Coding Plan",
             "volcengine",
             ["Coding Plan", "Ark"],
-            "使用 Coding Plan 专属 Key 与模型 ID，不使用普通方舟凭据。模型请手动登记。",
+            "使用 Coding Plan 专属 Key，模型列表从套餐接口读取。",
         ),
     ]
 )
