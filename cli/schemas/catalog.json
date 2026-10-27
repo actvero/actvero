@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "d9d2349a0eaf27889870c3e733bf5c64f556084e99ad5e028436a8ecfa72eded",
+  "source_sha256": "1e78ddaa9dc1f1948e8684c0766d06eab675197d0fe092e16c4c2b509474b067",
   "roots": [
     "ArtifactCreate",
     "ArtifactView",
@@ -698,6 +698,11 @@
           ],
           "title": "Source Commit"
         },
+        "updates_enabled": {
+          "default": true,
+          "title": "Updates Enabled",
+          "type": "boolean"
+        },
         "version": {
           "maxLength": 50,
           "title": "Version",
@@ -774,6 +779,11 @@
         "status": {
           "title": "Status",
           "type": "string"
+        },
+        "updates_enabled": {
+          "default": true,
+          "title": "Updates Enabled",
+          "type": "boolean"
         },
         "version": {
           "title": "Version",

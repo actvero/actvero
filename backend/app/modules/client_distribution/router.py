@@ -90,6 +90,7 @@ async def save_release(
         and row.version == payload.version
         and row.notes == payload.notes
         and dist.channel == payload.channel
+        and dist.updates_enabled == payload.updates_enabled
         and dist.minimum_os == payload.minimum_os
         and (not payload.source_commit or dist.source_commit == payload.source_commit)
     ):
@@ -127,6 +128,7 @@ async def save_release(
         db.add(dist)
     if payload.source_commit:
         dist.source_commit = payload.source_commit
+    dist.updates_enabled = payload.updates_enabled
     dist.minimum_os = {str(k): v for k, v in payload.minimum_os.items()}
     await db.commit()
     return await domain.view(db, ident)
@@ -491,17 +493,18 @@ async def publish_release(
     row.status = "published"
     assets = {(str(a["platform"]), str(a["architecture"])): a for a in row.assets}
     for target in heads:
-        payload_file = next(a for a in files if a.target == target and a.role == "payload")
-        content = domain.manifest(base, row, dist, target, payload_file)
-        head = await db.get(ClientUpdateHead, (dist.channel, target))
-        if head:
-            head.release_id, head.manifest, head.revision = ident, content, head.revision + 1
-        else:
-            db.add(
-                ClientUpdateHead(
-                    channel=dist.channel, target=target, release_id=ident, manifest=content
+        if dist.updates_enabled:
+            payload_file = next(a for a in files if a.target == target and a.role == "payload")
+            content = domain.manifest(base, row, dist, target, payload_file)
+            head = await db.get(ClientUpdateHead, (dist.channel, target))
+            if head:
+                head.release_id, head.manifest, head.revision = ident, content, head.revision + 1
+            else:
+                db.add(
+                    ClientUpdateHead(
+                        channel=dist.channel, target=target, release_id=ident, manifest=content
+                    )
                 )
-            )
         role = "payload" if target.startswith("win-") else "installer"
         installer = next(a for a in files if a.target == target and a.role == role)
         platform, arch = ("windows" if target.startswith("win-") else "macos"), target.split("-")[1]
@@ -510,7 +513,7 @@ async def publish_release(
             "architecture": arch,
             "url": domain.file_url(base, dist.channel, row.version, target, role),
             "filename": installer.filename,
-            "minimum_os": dist.minimum_os[target],
+            "minimum_os": dist.minimum_os.get(target, ""),
             "size_bytes": installer.size_bytes,
             "sha256": installer.sha256,
         }

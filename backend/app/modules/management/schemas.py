@@ -93,6 +93,7 @@ class Metadata(BaseModel):
             "object_storage.write",
             "client_distribution.import_manifest",
             "client_distribution.win_arm64",
+            "client_distribution.download_only",
             "client_distribution.read",
             "client_distribution.write",
             "auth.login",

@@ -8649,6 +8649,11 @@ export interface components {
             notes: string;
             /** Source Commit */
             source_commit?: string | null;
+            /**
+             * Updates Enabled
+             * @default true
+             */
+            updates_enabled: boolean;
             /** Version */
             version: string;
         };
@@ -8685,6 +8690,11 @@ export interface components {
             source_commit?: string | null;
             /** Status */
             status: string;
+            /**
+             * Updates Enabled
+             * @default true
+             */
+            updates_enabled: boolean;
             /** Version */
             version: string;
         };

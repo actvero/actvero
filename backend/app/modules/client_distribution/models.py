@@ -14,6 +14,7 @@ class ClientDistribution(Base):
     release_id: Mapped[UUID] = mapped_column(ForeignKey("client_releases.id"), primary_key=True)
     source_commit: Mapped[str | None] = mapped_column(String(40))
     channel: Mapped[str] = mapped_column(String(20))
+    updates_enabled: Mapped[bool] = mapped_column(default=True)
     minimum_os: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
 
 

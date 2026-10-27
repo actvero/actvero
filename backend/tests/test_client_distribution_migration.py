@@ -84,6 +84,21 @@ async def test_distribution_migration_preserves_downloads_and_indexes(monkeypatc
                 lambda sync: inspect(sync).get_columns("client_distributions")
             )
             assert any(c["name"] == "source_commit" for c in source_columns)
+            await db.execute(
+                text(
+                    "INSERT INTO client_distributions (release_id,channel,minimum_os) "
+                    "VALUES (:id,'latest','{}')"
+                ),
+                {"id": ident},
+            )
+            await db.run_sync(migrate, "119n_download_only_releases")
+            assert (
+                await db.scalar(
+                    text("SELECT updates_enabled FROM client_distributions WHERE release_id=:id"),
+                    {"id": ident},
+                )
+                is True
+            )
             indexes = await db.run_sync(lambda sync: inspect(sync).get_indexes("client_artifacts"))
             assert any(i["column_names"] == ["release_id"] for i in indexes)
             columns = await db.run_sync(
@@ -97,7 +112,7 @@ async def test_distribution_migration_preserves_downloads_and_indexes(monkeypatc
                 )
                 == before
             )
-            await db.run_sync(migrate, "118m_release_provenance")
+            await db.run_sync(migrate, "119n_download_only_releases")
     finally:
         await engine.dispose()
         async with owner.begin() as db:

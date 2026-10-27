@@ -26,6 +26,7 @@ class DistributionSave(Input):
     expected_revision: int = Field(ge=0)
     version: str = Field(max_length=50)
     channel: Channel = "latest"
+    updates_enabled: bool = True
     notes: str = Field(default="", max_length=12000)
     source_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     minimum_os: dict[Target, str] = Field(default_factory=dict)
@@ -115,6 +116,7 @@ class DistributionView(BaseModel):
     id: UUID
     version: str
     channel: Channel
+    updates_enabled: bool = True
     notes: str
     minimum_os: dict[str, str]
     status: str

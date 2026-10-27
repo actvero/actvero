@@ -67,6 +67,7 @@ async def view(db: AsyncSession, ident: UUID) -> DistributionView:
         id=row.id,
         version=row.version,
         channel=distribution.channel if distribution else "latest",
+        updates_enabled=distribution.updates_enabled if distribution else False,
         notes=row.notes,
         minimum_os=distribution.minimum_os if distribution else {},
         source_commit=distribution.source_commit if distribution else None,
@@ -177,9 +178,18 @@ async def validate_targets(
     heads: dict[str, int] = {}
     for target in dict.fromkeys(targets):
         files = {a.role: a for a in all_files if a.target == target}
-        required = {"payload", "blockmap"} | ({"installer"} if target.startswith("mac-") else set())
+        required = (
+            {"payload", "blockmap"} | ({"installer"} if target.startswith("mac-") else set())
+            if dist.updates_enabled
+            else {"installer" if target.startswith("mac-") else "payload"}
+        )
         if not required <= files.keys() or any(files[r].status != "ready" for r in required):
-            raise HTTPException(422, f"{target} 的安装包、更新包或 blockmap 尚未校验完成")
+            raise HTTPException(422, f"{target} 所需的发布文件尚未校验完成")
+        if not dist.updates_enabled:
+            # Zero denotes a download-only target; no update-head revision is reserved.
+            heads[target] = 0
+            selected.extend(files[r] for r in sorted(required))
+            continue
         if not dist.minimum_os.get(target):
             raise HTTPException(422, f"请填写 {target} 的最低系统版本")
         payload = files["payload"]
@@ -201,6 +211,7 @@ async def validate_targets(
                 .join(ClientArtifact, ClientArtifact.release_id == ClientRelease.id)
                 .where(
                     ClientDistribution.channel == dist.channel,
+                    ClientDistribution.updates_enabled.is_(True),
                     ClientArtifact.target == target,
                     ClientArtifact.role == "payload",
                     ClientArtifact.published_at.is_not(None),

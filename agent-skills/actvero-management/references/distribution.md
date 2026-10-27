@@ -4,6 +4,8 @@
 
 ## 操作顺序
 
+仅在网页提供普通安装包时，先确认目标平台提供 `client_distribution.download_only` 能力，再用 `releases save` 保存 `updates_enabled=false` 的版本，用 `artifact-add` 登记实际文件大小和摘要、`upload` 上传、`wait` 等待校验。Mac 使用 installer 角色的 DMG，Windows 使用 payload 角色的 EXE。之后照常 `plan` 和 `publish`，只更新下载目录与推荐，不切换自动更新通道。不要为未签名包伪造 `client-release.json`。
+
 1. `storage list` 读取已有配置。新增或修改用 `storage save <UUID> --file <JSON>`，字段见 `schema show StorageSave`；包含 expected_revision，已有密钥留空保留。保存后用 `storage test <UUID>` 检查。
 2. 从桌面构建输出取得 `client-release.json`，运行 `releases import --dir <产物目录>`，也可用 `--file <JSON>`。结构可用 `example show client-release` 查询，实际清单由构建导出而不是手写摘要。清单含 schema_version=1、version、channel、source_commit、minimum_os、feed_roots 与 artifacts；每个文件提供 target、role、相对 file、size_bytes 和 base64 SHA-512。CLI 在写入前检查摘要和更新源。清单必须包含完整 source_commit，旧清单用新版桌面导出命令重新生成；已有文件却没有源码提交记录的旧草稿使用新版本继续。默认使用平台设置中的默认存储；`--storage <UUID>` 仅用于明确覆盖。不同架构按版本号合并到同一草稿，源码提交和通道必须一致；其他目标已有的系统要求会保留。
 3. 导入默认等待本次目标的校验完成，`--timeout <秒>` 调整上限，`--no-wait` 上传后返回。使用 `releases show <UUID>`、`releases jobs --artifact <UUID>` 回查；`releases wait <版本UUID>` 继续等待全部文件；失败后可 `releases retry <版本UUID>` 重试失败校验，或 `releases verify <artifact UUID>` 重试单个文件。
