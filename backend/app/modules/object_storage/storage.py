@@ -25,6 +25,8 @@ class ObjectStore:
                 connect_timeout=10,
                 read_timeout=45,
                 retries={"total_max_attempts": 1},
+                # Compatible stores may retain AWS's optional trailer encoding as object metadata.
+                request_checksum_calculation="when_required",
                 s3={"addressing_style": "path" if profile.path_style else "virtual"},
             ),
         )
