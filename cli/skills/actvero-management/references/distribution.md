@@ -30,7 +30,9 @@ Windows x64 / ARM64 提供各自 EXE 和 EXE.blockmap；Mac 每个架构提供 D
 
 ## 构建机与维护规则
 
-Windows 和 Mac 由各自构建机完成。桌面源码提供 `pnpm client:build win-x64`、`pnpm client:build win-arm64`、`pnpm client:build mac-arm64`、`pnpm client:build mac-x64`，保留原生签名、公证与依赖检查，成功后生成清单；无需在构建机安装对象存储 SDK 或配置桶密钥。目标平台与更新源必须在构建配置中选择，不能上传后更改安装包内置的地址。具体配置见平台文档的客户端更新发布指南和桌面打包说明。
+Windows 和 Mac 由各自构建机完成。桌面源码提供 `pnpm client:build win-x64`、`pnpm client:build win-arm64`、`pnpm client:build mac-arm64`、`pnpm client:build mac-x64`，复用 Actvero 产品打包配置。默认关闭更新，生成普通未签名安装包与 `release.json`，不要求更新地址或对象存储，也不生成自动更新上传清单；可用 `--check` 检查配置与工具链。平台业务登录与更新源分别配置。
+
+自动更新发布只使用独立签名发布流程生成的合格产物，再通过 `pnpm client:export <产物目录> <目标> --minimum-os <系统要求>` 导出 `client-release.json`；不要把普通 `release.json` 当作更新清单导入。构建机无需配置桶密钥。更新源在更新构建时选择，不能上传后更改安装包内置地址。具体配置见平台客户端更新发布指南和桌面打包说明。
 
 两个构建机应使用同一干净源码提交、相同版本号与更新通道；分别上传各自产物目录，不复制另一台机器的上传会话。所有目标准备完毕再首次发布。Windows ARM64 使用运行 ARM64 Node 的原生 Windows ARM64 构建机，安装、启动和升级须在该架构验收。`win-x64` 和 `win-arm64` 的产物、更新源和通道必须分别维护，不能把 x64 文件改名或改 target 作为 ARM64 发布；服务器须提供 `client_distribution.win_arm64`。
 

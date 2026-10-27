@@ -68,7 +68,9 @@ Web 管理前缀为 `/api/v1/platform/client-distribution`，使用登录 Cookie
 
 在桌面源码仓库中构建，平台仓库不会读取相邻项目。Windows x64 / ARM64 分别在对应架构的 Windows 构建机生成，Mac 构建机生成 Mac ARM64 / x64。Windows ARM64 使用原生 ARM64 Node、Python 和 Python 扩展；构建机也须运行 ARM64 Node，签名与安装验收在 Windows ARM64 环境完成。
 
-先在桌面打包配置（`.env.windows` / `.env.macos`，或既有机器 preset）固定更新源和通道：
+自动更新是可选功能。Actvero 默认产品关闭更新，`pnpm client:build <目标>` 复用产品打包器，无需更新地址、对象存储或发布配置即可构建普通安装包；支持 `--config`、`--profile`、`--out` 和 `--check`。平台登录地址独立配置，远程中台未配置对象存储或未发布版本不影响业务使用。
+
+制作自动更新包时，才在桌面签名发布配置（`.env.windows` / `.env.macos`，或既有机器 preset）固定更新源和通道：
 
 ```dotenv
 DSH_DESKTOP_UPDATE_BASE_URL=https://platform.example.com/api/v1/client-updates/actvero
@@ -86,7 +88,7 @@ pnpm client:build mac-arm64
 pnpm client:build mac-x64
 ```
 
-快捷命令调用原生签名打包，成功后在 `apps/desktop/.desktop-build/targets/<目标>/artifacts/client-release.json` 写出清单。Mac x64 在 Apple 芯片上仍需满足桌面项目的 Rosetta 要求。已有合格产物也可单独运行 `pnpm client:export <产物目录> <目标> --minimum-os <系统要求>`；不覆盖已有导出，过期清单需要先明确移除。
+以上快捷命令使用 `actvero/product.json` 或显式选择的产品配置；默认生成普通未签名安装包和 `release.json`，不会自动生成更新上传清单或发布版本。Mac x64 在 Apple 芯片上仍需满足桌面项目的 Rosetta 要求。只有经独立签名发布流程生成、包含正确更新元数据的合格产物，才可运行 `pnpm client:export <产物目录> <目标> --minimum-os <系统要求>` 生成 `client-release.json`；不覆盖已有导出，过期清单需要先明确移除。
 
 ```sh
 actvero auth login --target platform --server https://platform.example.com
