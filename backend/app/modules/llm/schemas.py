@@ -153,12 +153,21 @@ class DraftInspectionInput(ConnectionInput):
         return self
 
 
+class ModelDirectory(BaseModel):
+    snapshot_id: UUID
+    fetched_at: datetime
+    candidates: list[UpstreamModel]
+    # Older snapshots did not record whether pagination was truncated.
+    partial: bool | None = None
+
+
 class DraftInspectionView(BaseModel):
     ok: bool
     message: str
     checked_at: datetime
     candidates: list[UpstreamModel] = Field(default_factory=list)
     partial: bool = False
+    model_directory: ModelDirectory | None = None
 
 
 class ChannelUpdate(ChannelInput):
@@ -263,6 +272,7 @@ class ChannelView(BaseModel):
 class ChannelDetail(ChannelView):
     models: list[RegisteredModel]
     checks: list[CheckRecord]
+    model_directory: ModelDirectory | None = None
     binding_references: list[ChannelBindingReference] = Field(default_factory=list)
 
 
@@ -343,6 +353,10 @@ class ProviderView(BaseModel):
     name: str
     model_discovery: bool
     balance_query: bool
+    available_for_new_channels: bool = Field(
+        default=True,
+        description="是否允许新增此供应商渠道；停用新增不影响已有渠道的配置与调用",
+    )
     version: int = 1
     category: Literal["vendor", "aggregator", "compatible"] = "compatible"
     icon_key: str = ""

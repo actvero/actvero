@@ -3,11 +3,10 @@
 import hmac
 import re
 from collections.abc import Iterable
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, localcontext
 from typing import Any
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -122,18 +121,28 @@ async def snapshot(
     if not policies:
         return {"status": "unconfigured", "policy": None, "windows": []}
     policy = policies[0]
+    if policy.mode == "unlimited":
+        return {
+            "status": "unlimited",
+            "policy": {"id": str(policy.id), "name": policy.name, "version": policy.version},
+            "windows": [],
+        }
     clock = await db.get(QuotaClock, actor.member.id, populate_existing=True)
     saved = dict(clock.windows) if clock else {}
     stamp = at if at is not None else now()
-    # Weekly windows span at most eight UTC days across timezone/DST changes.
-    horizon = max([192, *[r["hours"] for r in policy.rules if r["kind"] == "fixed_hours"]])
+    horizon = max(r["hours"] for r in policy.rules)
+    earliest = stamp - timedelta(hours=horizon)
+    # A migrated calendar window retains its original boundary until it finishes.
+    for old in saved.values():
+        if old.get("end") and datetime.fromisoformat(old["end"]) > stamp:
+            earliest = min(earliest, datetime.fromisoformat(old["start"]))
     entries = list(
         await db.scalars(
             select(UsageSettlement).where(
                 UsageSettlement.tenant_id == actor.tenant.id,
                 UsageSettlement.member_id == actor.member.id,
                 UsageSettlement.status.in_(("reserved", "review", "settled")),
-                UsageSettlement.created_at >= stamp - timedelta(hours=horizon),
+                UsageSettlement.created_at >= earliest,
             )
         )
     )
@@ -141,37 +150,37 @@ async def snapshot(
     for rule in policy.rules:
         start: datetime | None
         end: datetime | None
-        if rule["kind"] == "calendar_week":
-            local = stamp.astimezone(ZoneInfo(rule["timezone"]))
-            date = local.date() - timedelta(days=(local.weekday() - rule["week_start"]) % 7)
-            start = datetime.combine(date, time(), local.tzinfo)
-            end = start + timedelta(days=7)
-        else:
-            hours = rule["hours"]
-            key = str(hours)
-            old = saved.get(key)
-            start = datetime.fromisoformat(old["start"]) if old else None
-            end = start + timedelta(hours=hours) if start else None
-            previous_end = end
-            if end is not None and end <= stamp:
-                start = end = None
-            if start is None:
-                # Switching away from a duration and back must still include
-                # calls admitted since its last window ended. Normal expiry
-                # cannot resurrect calls belonging to the finished window.
-                recent = [
-                    e.created_at
-                    for e in entries
-                    if stamp - timedelta(hours=hours) < e.created_at <= stamp
-                    and (previous_end is None or e.created_at >= previous_end)
-                ]
-                if recent:
-                    start = min(recent)
-                    end = start + timedelta(hours=hours)
-            if start is None and activate:
-                start, end = stamp, stamp + timedelta(hours=hours)
-            if start is not None and activate:
-                saved[key] = {"start": start.isoformat()}
+        hours = rule["hours"]
+        key = str(hours)
+        old = saved.get(key)
+        start = datetime.fromisoformat(old["start"]) if old else None
+        end = (
+            datetime.fromisoformat(old["end"])
+            if old and old.get("end")
+            else start + timedelta(hours=hours)
+            if start
+            else None
+        )
+        previous_end = end
+        if end is not None and end <= stamp:
+            start = end = None
+        if start is None:
+            # Switching away from a duration and back must still include
+            # calls admitted since its last window ended. Normal expiry
+            # cannot resurrect calls belonging to the finished window.
+            recent = [
+                e.created_at
+                for e in entries
+                if stamp - timedelta(hours=hours) < e.created_at <= stamp
+                and (previous_end is None or e.created_at >= previous_end)
+            ]
+            if recent:
+                start = min(recent)
+                end = start + timedelta(hours=hours)
+        if start is None and activate:
+            start, end = stamp, stamp + timedelta(hours=hours)
+        if start is not None and end is not None and activate:
+            saved[key] = {"start": start.isoformat(), "end": end.isoformat()}
         in_window = [
             e
             for e in entries
@@ -261,20 +270,34 @@ async def reserve(
     idempotency_key: str | None,
     *,
     request_fingerprint: str | None = None,
+    gateway_quote: dict[str, Any] | None = None,
 ) -> None:
     await check_request(db, actor, idempotency_key, request_fingerprint)
     conversion = await current_conversion(db, actor.tenant.id)
-    if conversion is None or config.budget_price is None:
+    if conversion is None or (config.budget_price is None and config.gateway is None):
         fail(409, "pricing_required", "管理员尚未完成积分计价")
-    if config.budget_price.currency != conversion.currency:
+    if config.gateway:
+        currency = "USD"
+        if gateway_quote is None:
+            fail(409, "quota_estimate_required", "尚未取得网关计费预留")
+        price_snapshot = gateway_quote
+    else:
+        assert config.budget_price is not None
+        currency = config.budget_price.currency
+        price_snapshot = config.budget_price.model_dump(mode="json")
+    if currency != conversion.currency:
         fail(409, "currency_mismatch", "模型计价币种与积分换算不一致")
-    amount = reserve_amount(config, body)
+    amount = (
+        Decimal(gateway_quote["amount"])
+        if config.gateway and gateway_quote is not None
+        else reserve_amount(config, body)
+    )
     if config.routing.mode == "auto" and config.routing.fallback and config.routing.retry_uncertain:
         # Opting into uncertain retries must also cover their possible additional consumption.
         amount = points(amount, Decimal(config.routing.max_attempts))
     admitted_at = now()
     state = await snapshot(db, actor, activate=True, at=admitted_at)
-    if state["status"] != "active":
+    if state["status"] not in ("active", "unlimited"):
         fail(409, "quota_policy_required", "管理员尚未配置额度策略")
     needed = points(amount, conversion.points_per_currency)
     for window in state["windows"]:
@@ -295,7 +318,7 @@ async def reserve(
             conversion_id=conversion.id,
             ratio=conversion.points_per_currency,
             reserved_amount=amount,
-            price=config.budget_price.model_dump(mode="json"),
+            price=price_snapshot,
             policy_snapshot=state,
             usage={},
             status="reserved",
@@ -323,6 +346,18 @@ async def complete(
     allowed = ("reserved", "review") if manual or recover_interrupted else ("reserved",)
     if row is None or row.status not in allowed or row.version != expected_version:
         return False
+    if row.price.get("engine") == "newapi":
+        if manual:
+            fail(
+                409,
+                "native_billing_required",
+                "网关调用请使用原始账单重新核对，不能按 Token 估算扣费",
+            )
+        from app.modules.model_gateway import billing
+
+        log = await db.get(ModelCall, call_id, populate_existing=True)
+        billing.complete(row, log, certainly_unused=certainly_unused and not delivered)
+        return True
     price = TokenPrice.model_validate(row.price)
     if manual:
         amount = amount_for(price, usage) if delivered else None

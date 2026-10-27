@@ -6,6 +6,11 @@ services:
     volumes: !override
       - ${ACTVERO_DATA_DIR:?Configure server data directory}/postgres:/var/lib/postgresql/data
     mem_limit: 512m
+  newapi:
+    image: ${COMPOSE_PROJECT_NAME}-newapi:${ACTVERO_RELEASE_ID:-local}
+    volumes: !override
+      - ${ACTVERO_DATA_DIR:?Configure server data directory}/newapi:/data
+    mem_limit: 1024m
   app:
     image: ${COMPOSE_PROJECT_NAME}-app:${ACTVERO_RELEASE_ID:-local}
     environment:

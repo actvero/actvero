@@ -1489,6 +1489,23 @@ export interface paths {
         patch: operations["change_api_v1_enterprises__tenant_id__members__member_id__patch"];
         trace?: never;
     };
+    "/api/v1/enterprises/{tenant_id}/members/{member_id}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取组织成员头像，权限与成员资料一致 */
+        get: operations["avatar_api_v1_enterprises__tenant_id__members__member_id__avatar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/experts": {
         parameters: {
             query?: never;
@@ -1880,7 +1897,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 检查尚未保存的连接，可预览模型；不写入渠道配置 */
+        /** 读取连接的模型目录；连接未变更时缓存到已有渠道，不修改配置 */
         post: operations["inspect_draft_api_v1_llm_channel_drafts_inspect_post"];
         delete?: never;
         options?: never;
@@ -4370,6 +4387,495 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/model-gateway/channel-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Channel Options */
+        get: operations["channel_options_api_v1_model_gateway_channel_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Channels */
+        get: operations["channels_api_v1_model_gateway_channels_get"];
+        put?: never;
+        /** Create Channel */
+        post: operations["create_channel_api_v1_model_gateway_channels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discover */
+        post: operations["discover_api_v1_model_gateway_channels_discover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/{channel_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channel */
+        get: operations["get_channel_api_v1_model_gateway_channels__channel_id__get"];
+        /** Update Channel */
+        put: operations["update_channel_api_v1_model_gateway_channels__channel_id__put"];
+        post?: never;
+        /** Delete Channel */
+        delete: operations["delete_channel_api_v1_model_gateway_channels__channel_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/{channel_id}/directory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Directory */
+        get: operations["directory_api_v1_model_gateway_channels__channel_id__directory_get"];
+        put?: never;
+        /** Refresh Directory */
+        post: operations["refresh_directory_api_v1_model_gateway_channels__channel_id__directory_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/{channel_id}/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Channel Fields */
+        patch: operations["patch_channel_fields_api_v1_model_gateway_channels__channel_id__fields_patch"];
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/{channel_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Channel Status */
+        post: operations["channel_status_api_v1_model_gateway_channels__channel_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/channels/{channel_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Channel */
+        post: operations["test_channel_api_v1_model_gateway_channels__channel_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Logs */
+        get: operations["logs_api_v1_model_gateway_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mappings */
+        get: operations["mappings_api_v1_model_gateway_mappings_get"];
+        /** Update Mapping */
+        put: operations["update_mapping_api_v1_model_gateway_mappings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Models */
+        get: operations["models_api_v1_model_gateway_models_get"];
+        put?: never;
+        /** Create Model */
+        post: operations["create_model_api_v1_model_gateway_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Model */
+        put: operations["update_model_api_v1_model_gateway_models__model_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/models/{model_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Model */
+        post: operations["delete_model_api_v1_model_gateway_models__model_id__delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/native/api/channel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Native Create */
+        post: operations["native_create_api_v1_model_gateway_native_api_channel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/native/api/channel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Native Update */
+        put: operations["native_update_api_v1_model_gateway_native_api_channel__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/native/api/channel/fetch_models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Native Discover */
+        post: operations["native_discover_api_v1_model_gateway_native_api_channel_fetch_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/native/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Native Read */
+        get: operations["native_read_api_v1_model_gateway_native__path__get"];
+        /** Native Model Write */
+        put: operations["model_gateway_native_model_put"];
+        /** Native Model Write */
+        post: operations["model_gateway_native_model_post"];
+        /** Native Model Write */
+        delete: operations["model_gateway_native_model_delete"];
+        options?: never;
+        head?: never;
+        /** Native Model Write */
+        patch: operations["model_gateway_native_model_patch"];
+        trace?: never;
+    };
+    "/api/v1/model-gateway/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prices */
+        get: operations["prices_api_v1_model_gateway_prices_get"];
+        /** Update Prices */
+        put: operations["update_prices_api_v1_model_gateway_prices_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/prices/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Price Preview */
+        post: operations["price_preview_api_v1_model_gateway_prices_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Publication View */
+        get: operations["publication_view_api_v1_model_gateway_publication_get"];
+        /** Save Publication */
+        put: operations["save_publication_api_v1_model_gateway_publication_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/publication/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publication Preview */
+        post: operations["publication_preview_api_v1_model_gateway_publication_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/publication/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publication Statuses */
+        post: operations["publication_statuses_api_v1_model_gateway_publication_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reference */
+        get: operations["reference_api_v1_model_gateway_reference_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/reference/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Reference */
+        post: operations["import_reference_api_v1_model_gateway_reference_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gateway Settlements */
+        get: operations["gateway_settlements_api_v1_model_gateway_settlements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/settlements/{call_id}/recheck": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recheck Settlement */
+        post: operations["recheck_settlement_api_v1_model_gateway_settlements__call_id__recheck_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_model_gateway_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/vendors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Vendors */
+        get: operations["vendors_api_v1_model_gateway_vendors_get"];
+        put?: never;
+        /** Create Vendor */
+        post: operations["create_vendor_api_v1_model_gateway_vendors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization-invitations/activate": {
         parameters: {
             query?: never;
@@ -5541,6 +6047,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quota/members/{member_id}/assignment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Assign */
+        put: operations["assign_api_v1_quota_members__member_id__assignment_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quota/policies": {
         parameters: {
             query?: never;
@@ -6179,20 +6702,6 @@ export interface components {
              */
             revision: string;
         };
-        /** CalendarWeek */
-        CalendarWeek: {
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "calendar_week";
-            /** Points */
-            points: string;
-            /** Timezone */
-            timezone: string;
-            /** Week Start */
-            week_start: number;
-        };
         /** CallAttemptView */
         CallAttemptView: {
             /** Attempt Id */
@@ -6418,6 +6927,7 @@ export interface components {
              * @default 0
              */
             display_order: number;
+            gateway?: components["schemas"]["GatewayExecution"] | null;
             /**
              * Icon
              * @default
@@ -6494,6 +7004,7 @@ export interface components {
              * @default 0
              */
             display_order: number;
+            gateway?: components["schemas"]["GatewayExecution"] | null;
             /**
              * Icon
              * @default
@@ -6566,6 +7077,7 @@ export interface components {
              */
             display_order: number;
             endpoint_summary?: components["schemas"]["EndpointSummary"] | null;
+            gateway?: components["schemas"]["GatewayExecution"] | null;
             /**
              * Icon
              * @default
@@ -6797,6 +7309,7 @@ export interface components {
             manual_enabled: boolean;
             /** Model Count */
             model_count: number;
+            model_directory?: components["schemas"]["ModelDirectory"] | null;
             /** Models */
             models: components["schemas"]["RegisteredModel"][];
             /** Name */
@@ -7360,6 +7873,32 @@ export interface components {
             upstream_id: string;
             /** Version */
             version: number;
+        };
+        /**
+         * ChatImageInput
+         * @description Platform transport bounds, independent of supplier model capacities.
+         */
+        ChatImageInput: {
+            /**
+             * Max Image Bytes
+             * @default 1048576
+             */
+            max_image_bytes: number;
+            /**
+             * Max Images
+             * @default 32
+             */
+            max_images: number;
+            /**
+             * Max Total Bytes
+             * @default 8388608
+             */
+            max_total_bytes: number;
+            /**
+             * Target Pixels
+             * @default 4194304
+             */
+            target_pixels: number;
         };
         /** ChatInput */
         ChatInput: {
@@ -8753,6 +9292,7 @@ export interface components {
             checked_at: string;
             /** Message */
             message: string;
+            model_directory?: components["schemas"]["ModelDirectory"] | null;
             /** Ok */
             ok: boolean;
             /**
@@ -9618,8 +10158,8 @@ export interface components {
             /** Hours */
             hours: number;
             /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
+             * Kind
+             * @constant
              */
             kind: "fixed_hours";
             /** Points */
@@ -9665,6 +10205,313 @@ export interface components {
             };
             /** Strict */
             strict?: boolean | null;
+        };
+        /** GatewayChannelInput */
+        GatewayChannelInput: {
+            /**
+             * Auto Ban
+             * @default 1
+             */
+            auto_ban: number;
+            /**
+             * Base Url
+             * @default
+             */
+            base_url: string;
+            /** Groups */
+            groups?: string[];
+            /** Key */
+            key?: string | null;
+            /** Model Mapping */
+            model_mapping?: {
+                [key: string]: string;
+            };
+            /** Models */
+            models?: string[];
+            /** Name */
+            name: string;
+            /**
+             * Param Override
+             * @default
+             */
+            param_override: string;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /** Revision */
+            revision?: string | null;
+            /**
+             * Status Code Mapping
+             * @default
+             */
+            status_code_mapping: string;
+            /**
+             * Tag
+             * @default
+             */
+            tag: string;
+            /**
+             * Test Model
+             * @default
+             */
+            test_model: string;
+            /** Type */
+            type: number;
+            /**
+             * Weight
+             * @default 1
+             */
+            weight: number;
+        };
+        /** GatewayChannelPatch */
+        GatewayChannelPatch: {
+            /** Models */
+            models?: string[] | null;
+            /** Priority */
+            priority?: number | null;
+            /** Revision */
+            revision?: string | null;
+            /** Weight */
+            weight?: number | null;
+        };
+        /** GatewayChannelStatus */
+        GatewayChannelStatus: {
+            /**
+             * Status
+             * @enum {integer}
+             */
+            status: 1 | 2;
+        };
+        /** GatewayDeleteInput */
+        GatewayDeleteInput: {
+            /**
+             * Remove From Channels
+             * @default false
+             */
+            remove_from_channels: boolean;
+            /**
+             * Remove Pricing
+             * @default false
+             */
+            remove_pricing: boolean;
+        };
+        /** GatewayDirectoryView */
+        GatewayDirectoryView: {
+            /** Fetched At */
+            fetched_at?: string | null;
+            /** Models */
+            models: string[];
+        };
+        /** GatewayDiscoveryInput */
+        GatewayDiscoveryInput: {
+            /** Base Url */
+            base_url: string;
+            /**
+             * Key
+             * Format: password
+             */
+            key: string;
+            /** Type */
+            type: number;
+        };
+        /**
+         * GatewayExecution
+         * @description Internal publication pointer; routing and actual prices remain in New API.
+         */
+        GatewayExecution: {
+            /**
+             * Capability Mode
+             * @default manual
+             * @enum {string}
+             */
+            capability_mode: "auto" | "manual";
+            /** Capability Source */
+            capability_source?: {
+                [key: string]: string;
+            };
+            /** Origin Hash */
+            origin_hash: string;
+            /**
+             * Reserve Usd
+             * @deprecated
+             * @description Legacy compatibility field; reservations are calculated by New API.
+             * @default 0.01
+             */
+            reserve_usd: string;
+        };
+        /** GatewayMappingInput */
+        GatewayMappingInput: {
+            /** Channel Id */
+            channel_id: number;
+            /** Model Name */
+            model_name: string;
+            /**
+             * Remove
+             * @default false
+             */
+            remove: boolean;
+            /** Revision */
+            revision: string;
+            /** Upstream Id */
+            upstream_id: string;
+        };
+        /** GatewayModelInput */
+        GatewayModelInput: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Endpoints
+             * @default
+             */
+            endpoints: string;
+            /**
+             * Icon
+             * @default
+             */
+            icon: string;
+            /** Model Name */
+            model_name: string;
+            /**
+             * Name Rule
+             * @default 0
+             * @enum {integer}
+             */
+            name_rule: 0 | 1 | 2 | 3;
+            /** Revision */
+            revision?: string | null;
+            /**
+             * Status
+             * @default 1
+             * @enum {integer}
+             */
+            status: 0 | 1;
+            /**
+             * Sync Official
+             * @default 1
+             * @enum {integer}
+             */
+            sync_official: 0 | 1;
+            /**
+             * Tags
+             * @default
+             */
+            tags: string;
+            /**
+             * Vendor Id
+             * @default 0
+             */
+            vendor_id: number;
+        };
+        /** GatewayPriceInput */
+        GatewayPriceInput: {
+            /** Expected Version */
+            expected_version: string;
+            /** Model Name */
+            model_name: string;
+            /** Pricing */
+            pricing: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Reset
+             * @default false
+             */
+            reset: boolean;
+        };
+        /** GatewayPricePreview */
+        GatewayPricePreview: {
+            /** Model Name */
+            model_name: string;
+            /** Pricing */
+            pricing: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+        };
+        /** GatewayReferenceImport */
+        GatewayReferenceImport: {
+            /** Selections */
+            selections: components["schemas"]["GatewayReferenceSelection"][];
+            /** Source Version */
+            source_version: string;
+        };
+        /** GatewayReferenceSelection */
+        GatewayReferenceSelection: {
+            /** Create */
+            create: boolean;
+            /** Fields */
+            fields: ("description" | "icon" | "tags" | "vendor" | "endpoints" | "name_rule" | "status")[];
+            /** Model Name */
+            model_name: string;
+            /** Record Version */
+            record_version: string;
+        };
+        /** GatewayResult */
+        GatewayResult: {
+            data?: components["schemas"]["JsonValue"];
+        };
+        /** GatewayStatus */
+        GatewayStatus: {
+            /**
+             * Backend
+             * @enum {string}
+             */
+            backend: "newapi" | "direct";
+            /** Configured */
+            configured: boolean;
+            /**
+             * Connected
+             * @default false
+             */
+            connected: boolean;
+            /** Console Url */
+            console_url?: string | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** GatewayTestInput */
+        GatewayTestInput: {
+            /**
+             * Endpoint Type
+             * @default auto
+             * @enum {string}
+             */
+            endpoint_type: "auto" | "openai" | "openai-response" | "openai-response-compact" | "anthropic" | "gemini" | "jina-rerank" | "image-generation" | "embeddings";
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+        };
+        /** GatewayVendorInput */
+        GatewayVendorInput: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Icon
+             * @default
+             */
+            icon: string;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @default 1
+             * @enum {integer}
+             */
+            status: 0 | 1;
         };
         /** GeneratedAudio */
         GeneratedAudio: {
@@ -11372,7 +12219,17 @@ export interface components {
         };
         /** MemberOperationView */
         MemberOperationView: {
+            /**
+             * Billing Engine
+             * @default direct
+             * @enum {string}
+             */
+            billing_engine: "direct" | "newapi";
             capabilities: components["schemas"]["ModelCapabilities"];
+            /** Capability Source */
+            capability_source?: {
+                [key: string]: string;
+            } | null;
             chat_policy?: components["schemas"]["ChatPolicy"] | null;
             /** Context Window */
             context_window: number | null;
@@ -11380,6 +12237,7 @@ export interface components {
             default_parameters_ready?: boolean | null;
             endpoint: components["schemas"]["MemberEndpointView"];
             image?: components["schemas"]["ImageOptions"] | null;
+            image_input?: components["schemas"]["ChatImageInput"] | null;
             /**
              * Input Modalities
              * @default [
@@ -11442,10 +12300,13 @@ export interface components {
         };
         /** MemberQuotaMatch */
         MemberQuotaMatch: {
+            assigned: components["schemas"]["PolicyMatch"] | null;
+            /** Assignment Version */
+            assignment_version: number;
+            /** Avatar Url */
+            avatar_url?: string | null;
             /** Email */
             email: string | null;
-            /** Matched */
-            matched: components["schemas"]["PolicyMatch"][];
             /**
              * Member Id
              * Format: uuid
@@ -11456,8 +12317,13 @@ export interface components {
             /** Role */
             role: string;
             /** Rules */
-            rules: (components["schemas"]["FixedHours"] | components["schemas"]["CalendarWeek"])[];
+            rules: components["schemas"]["FixedHours"][];
             selected: components["schemas"]["PolicyMatch"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused";
         };
         /** MemberSelectionQuery */
         MemberSelectionQuery: {
@@ -11476,6 +12342,8 @@ export interface components {
         };
         /** MemberView */
         MemberView: {
+            /** Avatar Url */
+            avatar_url?: string | null;
             /** Email */
             email: string | null;
             /**
@@ -11741,6 +12609,23 @@ export interface components {
              */
             vision: "unknown" | "supported" | "unsupported";
         };
+        /** ModelDirectory */
+        ModelDirectory: {
+            /** Candidates */
+            candidates: components["schemas"]["UpstreamModel"][];
+            /**
+             * Fetched At
+             * Format: date-time
+             */
+            fetched_at: string;
+            /** Partial */
+            partial?: boolean | null;
+            /**
+             * Snapshot Id
+             * Format: uuid
+             */
+            snapshot_id: string;
+        };
         /** ModelEndpoints */
         ModelEndpoints: {
             /** Endpoints */
@@ -11800,6 +12685,7 @@ export interface components {
              * @default false
              */
             enabled: boolean;
+            gateway?: components["schemas"]["GatewayExecution"] | null;
             image?: components["schemas"]["ImageOptions"];
             /**
              * Kind
@@ -11837,6 +12723,7 @@ export interface components {
              * @default false
              */
             enabled: boolean;
+            gateway?: components["schemas"]["GatewayExecution"] | null;
             image?: components["schemas"]["ImageOptions"];
             /**
              * Kind
@@ -11926,6 +12813,29 @@ export interface components {
              * @constant
              */
             type: "function";
+        };
+        /** NativeCreateInput */
+        NativeCreateInput: {
+            /** Batch Add Set Key Prefix 2 Name */
+            batch_add_set_key_prefix_2_name?: boolean | null;
+            /** Channel */
+            channel: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "single" | "batch" | "multi_to_single";
+            /** Multi Key Mode */
+            multi_key_mode?: string | null;
+        };
+        /** NativeUpdateInput */
+        NativeUpdateInput: {
+            /** Id */
+            id: number;
+        } & {
+            [key: string]: components["schemas"]["JsonValue"];
         };
         /** OAuthAttemptView */
         OAuthAttemptView: {
@@ -12530,10 +13440,15 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Is Default */
+            is_default: boolean;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "limited" | "unlimited";
             /** Name */
             name: string;
-            /** Priority */
-            priority: number;
         };
         /** PolicySnapshotView */
         PolicySnapshotView: {
@@ -12613,6 +13528,12 @@ export interface components {
              * @default false
              */
             allow_no_auth: boolean;
+            /**
+             * Available For New Channels
+             * @description 是否允许新增此供应商渠道；停用新增不影响已有渠道的配置与调用
+             * @default true
+             */
+            available_for_new_channels: boolean;
             /** Balance Query */
             balance_query: boolean;
             /**
@@ -12731,7 +13652,17 @@ export interface components {
         };
         /** PublicModel */
         PublicModel: {
+            /**
+             * Billing Engine
+             * @default direct
+             * @enum {string}
+             */
+            billing_engine: "direct" | "newapi";
             capabilities: components["schemas"]["ModelCapabilities"];
+            /** Capability Source */
+            capability_source?: {
+                [key: string]: string;
+            } | null;
             chat_policy?: components["schemas"]["ChatPolicy"] | null;
             /**
              * Configuration Version
@@ -12767,6 +13698,7 @@ export interface components {
             /** Id */
             id: string;
             image?: components["schemas"]["ImageOptions"] | null;
+            image_input?: components["schemas"]["ChatImageInput"] | null;
             /**
              * Input Modalities
              * @default [
@@ -12847,13 +13779,24 @@ export interface components {
         };
         /** PublicOperation */
         PublicOperation: {
+            /**
+             * Billing Engine
+             * @default direct
+             * @enum {string}
+             */
+            billing_engine: "direct" | "newapi";
             capabilities: components["schemas"]["ModelCapabilities"];
+            /** Capability Source */
+            capability_source?: {
+                [key: string]: string;
+            } | null;
             chat_policy?: components["schemas"]["ChatPolicy"] | null;
             /** Context Window */
             context_window: number | null;
             /** Default Parameters Ready */
             default_parameters_ready?: boolean | null;
             image?: components["schemas"]["ImageOptions"] | null;
+            image_input?: components["schemas"]["ChatImageInput"] | null;
             /**
              * Input Modalities
              * @default [
@@ -12913,6 +13856,154 @@ export interface components {
             release_date: string;
             /** Version */
             version: string;
+        };
+        /** PublicationCheck */
+        PublicationCheck: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "deployment" | "channels" | "pricing" | "quota" | "parameters" | "members";
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "relay" | "channels" | "pricing" | "conversion" | "parameters" | "members";
+            /** Label */
+            label: string;
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "blocked" | "unknown";
+        };
+        /** PublicationInput */
+        PublicationInput: {
+            /**
+             * Audience
+             * @default administrators
+             */
+            audience: string;
+            capabilities?: components["schemas"]["ModelCapabilities"];
+            /**
+             * Capability Mode
+             * @default auto
+             * @enum {string}
+             */
+            capability_mode: "auto" | "manual";
+            chat_policy?: components["schemas"]["ChatPolicy"];
+            /** Context Window */
+            context_window?: number | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            image?: components["schemas"]["ImageOptions"];
+            /**
+             * Kind
+             * @default chat
+             * @enum {string}
+             */
+            kind: "chat" | "embedding" | "rerank" | "image_generation" | "speech" | "transcription";
+            /** Max Output */
+            max_output?: number | null;
+            /** Member Ids */
+            member_ids?: string[];
+            /** Model Name */
+            model_name: string;
+            /** Name */
+            name: string;
+            /** Reasoning Options */
+            reasoning_options?: (components["schemas"]["ReasoningToggle"] | components["schemas"]["ReasoningEffort"] | components["schemas"]["ReasoningBudget"])[];
+            /**
+             * Reserve Usd
+             * @deprecated
+             * @description Legacy compatibility field; reservations are calculated by New API.
+             * @default 0.01
+             */
+            reserve_usd: string;
+            retrieval?: components["schemas"]["RetrievalOptions"];
+            speech?: components["schemas"]["SpeechOptions"];
+            transcription?: components["schemas"]["TranscriptionOptions"];
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+        };
+        /** PublicationNames */
+        PublicationNames: {
+            /** Models */
+            models: string[];
+        };
+        /** PublicationPreview */
+        PublicationPreview: {
+            /** Access Message */
+            access_message?: string | null;
+            configuration: components["schemas"]["PublicationStatus"];
+            /** Discoverable */
+            discoverable?: boolean | null;
+            /** Member Name */
+            member_name?: string | null;
+            /** Quota Status */
+            quota_status?: ("active" | "unconfigured" | "exhausted") | null;
+            /** Remaining Points */
+            remaining_points?: string | null;
+            /** Resets At */
+            resets_at?: string | null;
+        };
+        /** PublicationPreviewInput */
+        PublicationPreviewInput: {
+            draft: components["schemas"]["PublicationInput"];
+            /** Member Id */
+            member_id?: string | null;
+        };
+        /** PublicationStatus */
+        PublicationStatus: {
+            /** Active Channels */
+            active_channels: number;
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "administrators" | "organization" | "selected";
+            /** Automatic */
+            automatic?: {
+                [key: string]: unknown;
+            };
+            capabilities: components["schemas"]["ModelCapabilities"];
+            chat_policy: components["schemas"]["ChatPolicy"];
+            /** Checks */
+            checks: components["schemas"]["PublicationCheck"][];
+            /** Context Window */
+            context_window?: number | null;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "chat" | "embedding" | "rerank" | "image_generation" | "speech" | "transcription";
+            /** Latest Test At */
+            latest_test_at?: number | null;
+            /** Max Output */
+            max_output?: number | null;
+            /** Member Count */
+            member_count: number;
+            /** Model Name */
+            model_name: string;
+            /** Ready */
+            ready: boolean;
+            /** Reasoning Options */
+            reasoning_options?: (components["schemas"]["ReasoningToggle"] | components["schemas"]["ReasoningEffort"] | components["schemas"]["ReasoningBudget"])[];
+        };
+        /** PublicationStatuses */
+        PublicationStatuses: {
+            /** Items */
+            items: components["schemas"]["PublicationStatus"][];
         };
         /** Publish */
         Publish: {
@@ -12979,6 +14070,13 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** QuotaAssignmentInput */
+        QuotaAssignmentInput: {
+            /** Policy Id */
+            policy_id: string | null;
+            /** Version */
+            version: number;
+        };
         /** QuotaMatchPage */
         QuotaMatchPage: {
             /**
@@ -12994,14 +14092,21 @@ export interface components {
         };
         /** QuotaPolicyInput */
         QuotaPolicyInput: {
-            /** Member Ids */
-            member_ids?: string[];
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+            /**
+             * Mode
+             * @default limited
+             * @enum {string}
+             */
+            mode: "limited" | "unlimited";
             /** Name */
             name: string;
-            /** Priority */
-            priority: number;
             /** Rules */
-            rules: (components["schemas"]["FixedHours"] | components["schemas"]["CalendarWeek"])[];
+            rules?: components["schemas"]["FixedHours"][];
         };
         /** QuotaPolicyPage */
         QuotaPolicyPage: {
@@ -13022,14 +14127,21 @@ export interface components {
         };
         /** QuotaPolicyUpdate */
         QuotaPolicyUpdate: {
-            /** Member Ids */
-            member_ids?: string[];
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+            /**
+             * Mode
+             * @default limited
+             * @enum {string}
+             */
+            mode: "limited" | "unlimited";
             /** Name */
             name: string;
-            /** Priority */
-            priority: number;
             /** Rules */
-            rules: (components["schemas"]["FixedHours"] | components["schemas"]["CalendarWeek"])[];
+            rules?: components["schemas"]["FixedHours"][];
             /** Version */
             version: number;
         };
@@ -13047,14 +14159,17 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /** Member Ids */
-            member_ids?: string[];
+            /** Is Default */
+            is_default: boolean;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "limited" | "unlimited";
             /** Name */
             name: string;
-            /** Priority */
-            priority: number;
             /** Rules */
-            rules: (components["schemas"]["FixedHours"] | components["schemas"]["CalendarWeek"])[];
+            rules: components["schemas"]["FixedHours"][];
             /**
              * Updated At
              * Format: date-time
@@ -13073,7 +14188,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "active" | "unconfigured";
+            status: "active" | "unlimited" | "unconfigured";
             /** Windows */
             windows: components["schemas"]["WindowView"][];
         };
@@ -21042,6 +22157,38 @@ export interface operations {
             };
         };
     };
+    avatar_api_v1_enterprises__tenant_id__members__member_id__avatar_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listing_api_v1_experts_get: {
         parameters: {
             query?: {
@@ -27552,6 +28699,1342 @@ export interface operations {
             };
         };
     };
+    channel_options_api_v1_model_gateway_channel_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+        };
+    };
+    channels_api_v1_model_gateway_channels_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                q?: string;
+                model?: string;
+                group?: string;
+                state?: string;
+                type?: number | null;
+                sort_by?: "id" | "name" | "priority" | "balance" | "response_time" | "test_time";
+                sort_order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_channel_api_v1_model_gateway_channels_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayChannelInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_api_v1_model_gateway_channels_discover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayDiscoveryInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayDirectoryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_api_v1_model_gateway_channels__channel_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_channel_api_v1_model_gateway_channels__channel_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayChannelInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_channel_api_v1_model_gateway_channels__channel_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    directory_api_v1_model_gateway_channels__channel_id__directory_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayDirectoryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_directory_api_v1_model_gateway_channels__channel_id__directory_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayDirectoryView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_channel_fields_api_v1_model_gateway_channels__channel_id__fields_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayChannelPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    channel_status_api_v1_model_gateway_channels__channel_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayChannelStatus"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_channel_api_v1_model_gateway_channels__channel_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayTestInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logs_api_v1_model_gateway_logs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                model_name?: string;
+                request_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mappings_api_v1_model_gateway_mappings_get: {
+        parameters: {
+            query: {
+                model_name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_mapping_api_v1_model_gateway_mappings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayMappingInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    models_api_v1_model_gateway_models_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                q?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_model_api_v1_model_gateway_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayModelInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_model_api_v1_model_gateway_models__model_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayModelInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_api_v1_model_gateway_models__model_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayDeleteInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    native_create_api_v1_model_gateway_native_api_channel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NativeCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    native_update_api_v1_model_gateway_native_api_channel__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NativeUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    native_discover_api_v1_model_gateway_native_api_channel_fetch_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: components["schemas"]["JsonValue"];
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    native_read_api_v1_model_gateway_native__path__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_gateway_native_model_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: components["schemas"]["JsonValue"];
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_gateway_native_model_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: components["schemas"]["JsonValue"];
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_gateway_native_model_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: components["schemas"]["JsonValue"];
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_gateway_native_model_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: components["schemas"]["JsonValue"];
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prices_api_v1_model_gateway_prices_get: {
+        parameters: {
+            query: {
+                model: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_prices_api_v1_model_gateway_prices_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayPriceInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    price_preview_api_v1_model_gateway_prices_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayPricePreview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publication_view_api_v1_model_gateway_publication_get: {
+        parameters: {
+            query: {
+                model: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_publication_api_v1_model_gateway_publication_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publication_preview_api_v1_model_gateway_publication_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publication_statuses_api_v1_model_gateway_publication_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationNames"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationStatuses"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_api_v1_model_gateway_reference_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+        };
+    };
+    import_reference_api_v1_model_gateway_reference_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayReferenceImport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gateway_settlements_api_v1_model_gateway_settlements_get: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recheck_settlement_api_v1_model_gateway_settlements__call_id__recheck_post: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_v1_model_gateway_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayStatus"];
+                };
+            };
+        };
+    };
+    vendors_api_v1_model_gateway_vendors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+        };
+    };
+    create_vendor_api_v1_model_gateway_vendors_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayVendorInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     activate_api_v1_organization_invitations_activate_post: {
         parameters: {
             query?: never;
@@ -29903,11 +32386,47 @@ export interface operations {
             };
         };
     };
+    assign_api_v1_quota_members__member_id__assignment_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuotaAssignmentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberQuotaMatch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listing_api_v1_quota_policies_get: {
         parameters: {
             query?: {
                 q?: string;
                 state?: "current" | "archived";
+                assignable_only?: boolean;
                 page?: number;
             };
             header?: never;

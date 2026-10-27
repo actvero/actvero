@@ -167,6 +167,12 @@ async def projected_view(
 async def configure(
     db: DB, actor: Access, row: CatalogModel, body: CatalogInput
 ) -> dict[UUID, ModelChannel]:
+    if (
+        body.gateway
+        or (row.configuration or {}).get("gateway")
+        or any(o.gateway for o in body.operation_configs())
+    ):
+        raise HTTPException(409, "此模型由模型网关管理，请在模型的成员访问中修改")
     duplicate = await db.scalar(
         select(CatalogModel.id).where(
             CatalogModel.tenant_id == actor.tenant.id,

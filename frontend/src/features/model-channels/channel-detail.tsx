@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Copy, Pencil, RefreshCw } from 'lucide-react'
-import { api, ApiError } from '@/lib/api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Copy, Pencil } from 'lucide-react'
+import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -25,7 +25,6 @@ import {
   ManualBadge,
   type Channel,
   type Detail,
-  type Discovery,
 } from './shared'
 import type { TestOperation } from './test-operations'
 
@@ -54,7 +53,8 @@ export function ChannelDetail({
   onTabChange?: (tab: string) => void
   restoreFocus: () => void
 }) {
-  const { csrf, organization } = useOrganization()
+  const { organization } = useOrganization()
+  const client = useQueryClient()
   const query = useQuery({
     queryKey: ['organization', organization.tenant_id, 'model-channels', id],
     queryFn: ({ signal }) =>
@@ -73,8 +73,6 @@ export function ChannelDetail({
   const [busy, setBusy] = useState(false)
   const [testBusy, setTestBusy] = useState(false)
   const controlsBusy = busy || testBusy
-  const [error, setError] = useState<unknown>(null)
-  const [permissionLost, setPermissionLost] = useState(false)
   const channel = query.data
   const providers = useProviderModules()
   const provider = providers.data?.find((item) => item.id === channel?.provider)
@@ -88,32 +86,13 @@ export function ChannelDetail({
   }
 
   function updated(value: Detail) {
+    client.setQueryData(
+      ['organization', organization.tenant_id, 'model-channels', id],
+      { ...query.data, ...value }
+    )
     changed(value)
     // Mutation responses omit read-only binding and diagnostic projections.
     void query.refetch()
-  }
-  async function check() {
-    if (!channel || !provider?.model_discovery) return
-    setBusy(true)
-    setError(null)
-    try {
-      const result = await api<Discovery>(
-        channelPath(id) + '/check',
-        'POST',
-        { version: channel.version },
-        csrf
-      )
-      updated(result.channel)
-      if (!result.ok) setError(new Error(result.message))
-    } catch (cause) {
-      setError(cause)
-      if (cause instanceof ApiError && cause.status === 403) {
-        setPermissionLost(true)
-        void query.refetch()
-      }
-    } finally {
-      setBusy(false)
-    }
   }
   return (
     <Sheet
@@ -151,10 +130,6 @@ export function ChannelDetail({
               error={query.error}
               retry={() => void query.refetch()}
             />
-          ) : permissionLost ? (
-            <RequestError
-              error={error ?? new Error('管理权限已变化，请返回渠道列表。')}
-            />
           ) : (
             channel && (
               <>
@@ -169,18 +144,7 @@ export function ChannelDetail({
                     )}
                   </div>
                   <div className='flex flex-wrap gap-2'>
-                    {provider?.model_discovery && (
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        disabled={controlsBusy || channel.archived}
-                        onClick={() => void check()}
-                      >
-                        <RefreshCw />
-                        {busy ? '处理中…' : '检查目录'}
-                      </Button>
-                    )}
-                    {copy && (
+                    {copy && provider?.available_for_new_channels !== false && (
                       <Button
                         size='sm'
                         variant='outline'
@@ -222,18 +186,11 @@ export function ChannelDetail({
                     )}
                   </div>
                 </div>
-                {!channel.binding_references?.some(
-                  (reference) =>
-                    !reference.model_archived &&
-                    reference.model_enabled &&
-                    reference.operation_enabled &&
-                    reference.binding_enabled
-                ) && (
+                {provider?.available_for_new_channels === false && (
                   <p className='text-sm text-muted-foreground'>
-                    未关联可调用模型；库存登记不自动开放成员调用。
+                    此供应商预设已停止新增，此渠道仍可编辑和调用。
                   </p>
                 )}
-                {!!error && <RequestError error={error} />}
                 <Tabs value={tab} onValueChange={changeTab} className='min-w-0'>
                   <div className='min-w-0 overflow-x-auto'>
                     <TabsList className='min-w-max'>
@@ -278,7 +235,6 @@ export function ChannelDetail({
                       <ModelInventory
                         channel={channel}
                         modelDiscovery={provider.model_discovery}
-                        hasReferenceCatalog={!!provider.reference_catalog}
                         changed={updated}
                         busy={controlsBusy}
                         setBusy={setBusy}

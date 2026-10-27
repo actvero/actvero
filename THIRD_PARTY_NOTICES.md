@@ -17,3 +17,13 @@ License notices must be retained when redistributing the relevant code or assets
 ## S3 SDK
 
 客户端对象存储使用 Boto3 / Botocore（Amazon Web Services，Apache-2.0）处理签名和 multipart 协议。直接依赖固定为现有锁定环境中的 Boto3 版本；保留依赖包内的许可证和版权信息。
+
+## New API gateway interface
+
+The channel and model management UI includes adapted source from [QuantumNous/new-api v1.0.0-rc.47](https://github.com/QuantumNous/new-api/tree/v1.0.0-rc.47/web/src), copyright QuantumNous and contributors. It is governed by AGPL-3.0-or-later and the upstream additional attribution terms, separately from Actvero’s MIT license. See the bundled [LICENSE](frontend/src/vendor/newapi/LICENSE), [NOTICE](frontend/src/vendor/newapi/NOTICE), and [integration notes](frontend/src/vendor/newapi/README.md).
+
+## Model capability references
+
+The generated model capability snapshot uses [earendil-works/pi](https://github.com/earendil-works/pi), pi-ai 1.1.0, copyright Mario Zechner, and native DeepSeek capability definitions from [deepseek-ai/deepseek-harness dsh-v0.2.1-rc.2](https://github.com/deepseek-ai/deepseek-harness/tree/dsh-v0.2.1-rc.2), copyright DeepSeek. Both are MIT-licensed; full notices accompany the generated data in `backend/app/modules/model_gateway/data/`. These capability references do not supply Actvero prices or upstream inventory.
+
+The native New API organization bridge and billing preflight overlay and reproducible gateway build are in `integrations/newapi/`; redistribution of the combined gateway retains upstream AGPL and attribution requirements.

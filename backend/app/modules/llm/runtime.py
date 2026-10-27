@@ -335,6 +335,10 @@ async def execute(
     if body.model != config.slug or operation is None:
         fail(422, "model_kind_mismatch", "模型标识或用途与调用接口不符")
     config = operation
+    if config.gateway:
+        from app.modules.model_gateway.capabilities import effective
+
+        config = await effective(request, actor.tenant.id, config)
     if not test and not visible(config, actor):
         fail(404, "model_unavailable", "此操作未开放或未获授权")
     fingerprint = None
@@ -390,6 +394,10 @@ async def execute(
     pool = sdk_execution.candidates(
         request, actor.tenant.id, model_id, row.version, config, channels, body, specific
     )
+    if config.gateway:
+        from app.modules.model_gateway.execution import prepare
+
+        await prepare(request, actor.tenant.id, config, pool)
     log = ModelCall(
         id=uuid4(),
         tenant_id=actor.tenant.id,
@@ -414,6 +422,11 @@ async def execute(
     if isinstance(actor, keys.KeyActor):
         actor.key.last_used_at = now()
     if not test:
+        gateway_quote = None
+        if config.gateway:
+            from app.modules.model_gateway.admission import estimate
+
+            gateway_quote = await estimate(request, actor.tenant.id, config, body)
         await settlement.reserve(
             db,
             actor,
@@ -422,6 +435,7 @@ async def execute(
             body,
             request.headers.get("idempotency-key"),
             request_fingerprint=fingerprint,
+            gateway_quote=gateway_quote,
         )
     # The dispatch intent survives a crash immediately after admission commits.
     # The worker never replays a model request; unresolved intents become review.

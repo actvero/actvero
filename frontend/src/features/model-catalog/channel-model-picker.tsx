@@ -23,17 +23,19 @@ export type ChannelModelSource = {
 export function ChannelPicker({
   disabled = false,
   onClear,
+  initialChannel,
   children,
 }: {
   disabled?: boolean
   onClear?: () => void
+  initialChannel?: Schema['ChannelDetail']
   children: (channel: Schema['ChannelDetail']) => ReactNode
 }) {
   const { organization } = useOrganization()
   const [search, setSearch] = useState('')
   const q = useDeferredValue(search)
   const [page, setPage] = useState(1)
-  const [channel, setChannel] = useState('')
+  const [channel, setChannel] = useState(initialChannel?.id ?? '')
   const prefix = ['organization', organization.tenant_id, 'model-channels']
   const params = new URLSearchParams({
     q,
@@ -169,19 +171,46 @@ export function ChannelPicker({
 export function ChannelModelPicker({
   disabled = false,
   onChange,
+  initialChannel,
+  initialUpstream,
+  editChannel,
 }: {
   disabled?: boolean
   onChange: (source: ChannelModelSource | null) => void
+  initialChannel?: Schema['ChannelDetail']
+  initialUpstream?: string
+  editChannel?: (channel: Schema['ChannelDetail']) => void
 }) {
   return (
-    <ChannelPicker disabled={disabled} onClear={() => onChange(null)}>
+    <ChannelPicker
+      initialChannel={initialChannel}
+      disabled={disabled}
+      onClear={() => onChange(null)}
+    >
       {(channel) => (
-        <RegisteredModelPicker
-          key={channel.id + ':' + channel.version}
-          channel={channel}
-          disabled={disabled}
-          onChange={onChange}
-        />
+        <>
+          <RegisteredModelPicker
+            key={channel.id + ':' + channel.version}
+            channel={channel}
+            initialUpstream={
+              channel.id === initialChannel?.id ? initialUpstream : undefined
+            }
+            disabled={disabled}
+            onChange={onChange}
+          />
+          {editChannel && (
+            <Button
+              type='button'
+              variant='outline'
+              disabled={disabled}
+              onClick={() => editChannel(channel)}
+            >
+              {channel.models.length
+                ? '更新此渠道的模型列表'
+                : '为此渠道添加模型'}
+            </Button>
+          )}
+        </>
       )}
     </ChannelPicker>
   )
@@ -190,12 +219,14 @@ function RegisteredModelPicker({
   channel,
   disabled,
   onChange,
+  initialUpstream,
 }: {
   channel: Schema['ChannelDetail']
   disabled: boolean
   onChange: (source: ChannelModelSource | null) => void
+  initialUpstream?: string
 }) {
-  const [upstream, setUpstream] = useState('')
+  const [upstream, setUpstream] = useState(initialUpstream ?? '')
   const [modelSearch, setModelSearch] = useState('')
   return (
     <>

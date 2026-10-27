@@ -33,7 +33,7 @@ async def test_cli_policy_upgrade_and_downgrade_preserve_installation():
                 text("UPDATE installation SET platform_name = 'Preserved' WHERE id = 1")
             )
             before = (await db.execute(text("SELECT to_jsonb(i) FROM installation i"))).scalar_one()
-            await db.run_sync(migrate, "head")
+            await db.run_sync(migrate, "114i_cli_settings")
             after = (await db.execute(text("SELECT to_jsonb(i) FROM installation i"))).scalar_one()
             assert after.pop("management_enabled") is None
             assert after == before

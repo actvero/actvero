@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AccessGate } from '@/features/auth/gate'
-import { ModelChannelsPage } from '@/features/model-channels/page'
+import { GatewayPage } from '@/features/model-gateway/page'
 
 export const Route = createFileRoute('/_authenticated/model-channels')({
   component: () => (
     <AccessGate admin>
-      <ModelChannelsPage />
+      <GatewayPage view='channels' />
     </AccessGate>
   ),
 })

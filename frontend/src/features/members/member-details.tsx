@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { RequestError, LoadingState } from '@/components/request-state'
+import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
 import { roleName, states } from './labels'
 
@@ -140,9 +141,12 @@ export function MemberDetails({
               <>
                 <dl className='grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-6 gap-y-4 text-sm'>
                   <dt className='text-muted-foreground'>姓名</dt>
-                  <dd className='break-words'>
-                    {member.name}
-                    {member.is_self ? '（你）' : ''}
+                  <dd className='flex items-center gap-3'>
+                    <UserAvatar user={member} />
+                    <span className='break-words'>
+                      {member.name}
+                      {member.is_self ? '（你）' : ''}
+                    </span>
                   </dd>
                   <dt className='text-muted-foreground'>邮箱</dt>
                   <dd className='break-all'>{member.email ?? '未设置'}</dd>

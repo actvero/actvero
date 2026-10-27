@@ -43,6 +43,12 @@ function Price({ operation }: { operation: Operation }) {
         {priceReasons[operation.point_price_status] ?? '积分价暂不可用'}
       </p>
     )
+  if (operation.billing_engine === 'newapi')
+    return (
+      <p className='text-sm text-muted-foreground'>
+        按网关实际账单换算积分；用量未确认时保留待核对状态。
+      </p>
+    )
   const rates = Object.entries(operation.point_rates).filter(
     (entry): entry is [string, string] => entry[1] !== null
   )

@@ -48,6 +48,7 @@ import { FilterSelect } from '@/components/filter-select'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
+import { ModelCreate } from '@/features/model-catalog/model-create'
 import { channelPath, healthLabels } from './api'
 import { ChannelDetail } from './channel-detail'
 import { ChannelEditor } from './channel-editor'
@@ -158,6 +159,9 @@ export function ModelChannelsPage() {
   >(null)
   const [batchError, setBatchError] = useState<unknown>(null)
   const [editor, setEditor] = useState<Channel | 'new' | null>(null)
+  const [onboardingChannel, setOnboardingChannel] = useState<Detail | null>(
+    null
+  )
   const [copyFrom, setCopyFrom] = useState<Detail | null>(null)
   const [detail, setDetail] = useState<{ id: string; tab: string } | null>(null)
   const [returnDetail, setReturnDetail] = useState<{
@@ -357,9 +361,13 @@ export function ModelChannelsPage() {
             <DropdownMenuItem onSelect={() => openDetail(channel)}>
               查看详情
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openAction('copy', channel)}>
-              复制为新渠道
-            </DropdownMenuItem>
+            {providers.data?.find(
+              (provider) => provider.id === channel.provider
+            )?.available_for_new_channels !== false && (
+              <DropdownMenuItem onSelect={() => openAction('copy', channel)}>
+                复制为新渠道
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => openAction('archive', channel)}>
               {channel.archived ? '恢复渠道' : '归档渠道'}
@@ -680,9 +688,23 @@ export function ModelChannelsPage() {
             if (editor === 'new') {
               setSearch('')
               setActiveFilters(initialFilters)
+              if (channel.models.length) setOnboardingChannel(channel)
             }
             closeEditor()
             toast.success('渠道已保存')
+          }}
+        />
+      )}
+      {onboardingChannel && (
+        <ModelCreate
+          initialChannel={onboardingChannel}
+          close={() => setOnboardingChannel(null)}
+          saved={() => {
+            setOnboardingChannel(null)
+            void client.invalidateQueries({
+              queryKey: ['organization', organization.tenant_id, 'llm-models'],
+            })
+            toast.success('模型已保存，可在模型管理中查看调用状态')
           }}
         />
       )}

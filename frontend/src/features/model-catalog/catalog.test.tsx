@@ -105,7 +105,7 @@ const model: Model = {
   created_at: '2026-09-24T00:00:00Z',
   updated_at: '2026-09-24T00:00:00Z',
 }
-// Existing form/price assertions count writes separately from the new read-only endpoint view.
+// Read-only endpoint and price previews must not count as model configuration writes.
 function stubFetch(handler: (url: string, init?: RequestInit) => unknown) {
   vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
     if (url.endsWith('/endpoints'))
@@ -118,6 +118,8 @@ function stubFetch(handler: (url: string, init?: RequestInit) => unknown) {
           endpoints: [],
         })
       )
+    if (url.endsWith('/point-prices/preview'))
+      return Promise.resolve(Response.json({ status: 'ready' }))
     return handler(url, init)
   })
 }
@@ -199,7 +201,7 @@ it('creates a model with explicit price currency and atomically saves only on su
   await page.getByLabelText('技术名称').fill('new-model')
   await page.getByRole('tab', { name: '价格配置' }).click()
   await page.getByRole('switch', { name: '配置价格' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect
     .element(page.getByText('请选择币种', { exact: true }).last())
     .toBeVisible()
@@ -213,7 +215,7 @@ it('creates a model with explicit price currency and atomically saves only on su
   await expect
     .element(page.getByLabelText('输入', { exact: true }))
     .toHaveValue('0.002')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(calls).toHaveBeenCalledTimes(1)
 })
@@ -248,7 +250,7 @@ it('preserves prices on conflict and requires explicitly adopting the current se
   await show(<ModelEditor model={model} close={vi.fn()} saved={saved} />)
   await page.getByRole('tab', { name: '价格配置' }).click()
   await page.getByRole('switch', { name: '配置价格' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect
     .element(page.getByText('模型已被修改，请关闭并重新打开配置'))
     .toBeVisible()
@@ -258,7 +260,7 @@ it('preserves prices on conflict and requires explicitly adopting the current se
   await page.getByRole('tab', { name: '基本信息' }).click()
   await expect.element(page.getByLabelText('展示名称')).toHaveValue('统一模型')
   await expect
-    .element(page.getByRole('button', { name: '保存配置' }))
+    .element(page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }))
     .not.toBeInTheDocument()
   expect(count).toBe(1)
   await page.getByRole('button', { name: '加载最新并比较' }).click()
@@ -266,7 +268,7 @@ it('preserves prices on conflict and requires explicitly adopting the current se
     .element(page.getByText('服务器版本 2：', { exact: false }))
     .toBeVisible()
   await page.getByRole('button', { name: '放弃草稿，采用服务器配置' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
 })
 
@@ -313,10 +315,15 @@ it('selects registered channel models and configures independent purchase prices
   await page.getByRole('option', { name: 'CNY', exact: true }).click()
   await page.getByLabelText('输入', { exact: true }).fill('1')
   await page.getByLabelText('输出', { exact: true }).fill('4')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0]).toMatchObject({
     budget_price: null,
+    access: {
+      enabled: false,
+      channel_id: 'channel-a',
+      upstream_id: 'upstream-a',
+    },
     bindings: [
       {
         channel_id: 'channel-a',
@@ -350,7 +357,7 @@ it('shows the invalid purchase-price tab and explains exact estimates without sa
     ],
   }
   await show(<ModelEditor model={invalid} close={vi.fn()} saved={saved} />)
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect
     .element(page.getByRole('combobox', { name: '价格对象' }))
     .toHaveTextContent('采购价格')
@@ -391,7 +398,7 @@ it('keeps the narrow form scrollable and cancels without requests', async () => 
   const scroll = dialog.querySelector('.overflow-y-auto') as HTMLElement
   expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight)
   await expect
-    .element(page.getByRole('button', { name: '保存配置' }))
+    .element(page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }))
     .toBeVisible()
   await page.screenshot({ path: '__screenshots__/model-prices-narrow.png' })
   await page.getByRole('button', { name: '取消', exact: true }).click()
@@ -518,7 +525,7 @@ it('imports public metadata as an unsaved draft and validates editable reasoning
   stubFetch(calls)
   const saved = vi.fn()
   await show(<ModelEditor model={model} close={vi.fn()} saved={saved} />)
-  await page.getByRole('button', { name: '选择公开模型' }).click()
+  await page.getByRole('button', { name: '从公开资料补全' }).click()
   await page
     .getByRole('button', { name: /公开模型样例 public-example/ })
     .click()
@@ -546,12 +553,12 @@ it('imports public metadata as an unsaved draft and validates editable reasoning
   await page.getByLabelText('预算上限（Token）').fill('10')
   await page.getByLabelText('预算下限（Token）').fill('100')
   await page.getByRole('tab', { name: '价格配置' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.element(page.getByText('上限不能小于下限')).toBeVisible()
   expect(saved).not.toHaveBeenCalled()
   await page.getByLabelText('预算下限（Token）').fill('-1')
   await page.getByLabelText('预算上限（Token）').fill('8192')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
 })
 
@@ -629,7 +636,7 @@ it('imports reference prices only into the chosen channel price and clears unsup
     .element(page.getByLabelText('输入', { exact: true }))
     .toHaveValue('3')
   expect(saved).not.toHaveBeenCalled()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
 })
 
@@ -650,7 +657,7 @@ it('shows catalog errors and stale state, fits a narrow screen and cancels witho
   await page.viewport(390, 844)
   const saved = vi.fn()
   await show(<ModelEditor close={vi.fn()} saved={saved} />)
-  await page.getByRole('button', { name: '选择公开模型' }).click()
+  await page.getByRole('button', { name: '从公开资料补全' }).click()
   await expect.element(page.getByText('公开目录暂不可用')).toBeVisible()
   failed = false
   await page.getByRole('button', { name: '重试' }).click()
@@ -706,6 +713,7 @@ it('configures embeddings without chat fields, output pricing or accidental publ
   await page.getByLabelText('展示名称').fill('向量模型')
   await page.getByLabelText('技术名称').fill('team-embed')
   await page.getByRole('tab', { name: '渠道与路由' }).click()
+  await page.getByRole('button', { name: '高级：多个用途与独立开关' }).click()
   await page.getByRole('combobox', { name: '添加接口' }).click()
   await page.getByRole('option', { name: '向量', exact: true }).click()
   await expect.element(page.getByLabelText('默认维度')).toBeVisible()
@@ -725,7 +733,7 @@ it('configures embeddings without chat fields, output pricing or accidental publ
   await expect
     .element(page.getByRole('button', { name: '导入参考价格' }))
     .not.toBeInTheDocument()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
 })
 
@@ -761,7 +769,7 @@ it('changes rerank pricing units exactly and catches access errors in the correc
   await page.getByRole('tab', { name: '调用设置' }).click()
   await page.getByRole('switch', { name: '启用模型' }).click()
   await page.getByRole('tab', { name: '基本信息' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect
     .element(page.getByText('请选择调用渠道', { exact: true }))
     .toBeVisible()
@@ -864,13 +872,13 @@ it('configures automatic routing and validates weights on the routing tab at nar
   await expect
     .element(page.getByRole('switch', { name: /超时／中断/ }))
     .not.toBeChecked()
-  await page.getByRole('button', { name: '配置参数与兼容确认' }).click()
+  await page.getByRole('button', { name: '高级：请求参数与兼容设置' }).click()
   await page.getByLabelText('优先级', { exact: true }).fill('20')
   await page.getByLabelText('权重', { exact: true }).fill('0')
   await page.getByLabelText('确认向量空间').fill('space-v1')
   await page.getByRole('tab', { name: '基本信息' }).click()
-  await page.getByRole('button', { name: '保存配置' }).click()
-  await page.getByRole('button', { name: '配置参数与兼容确认' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
+  await page.getByRole('button', { name: '高级：请求参数与兼容设置' }).click()
   await expect.element(page.getByText('填写 1 至 10000 的整数')).toBeVisible()
   expect(saved).not.toHaveBeenCalled()
   await page.getByLabelText('权重', { exact: true }).fill('50')
@@ -883,7 +891,7 @@ it('configures automatic routing and validates weights on the routing tab at nar
   await expect
     .element(page.getByRole('combobox', { name: '调用渠道' }))
     .not.toBeInTheDocument()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(submitted?.routing).toMatchObject({
     mode: 'auto',
@@ -1049,7 +1057,7 @@ it('keeps operation drafts separate, shares model access and saves new operation
     dialog.element().clientWidth + 1
   )
   await page.screenshot({ path: '__screenshots__/model-operations-narrow.png' })
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(captured[0]).toMatchObject({
     name: '多操作模型',
@@ -1103,6 +1111,7 @@ it.each(['fixed', 'auto'] as const)(
       <ModelEditor model={configuredModel} saved={saved} close={vi.fn()} />
     )
     await page.getByRole('tab', { name: '渠道与路由' }).click()
+    await page.getByRole('button', { name: '高级：超时设置' }).click()
     await expect
       .element(page.getByLabelText('连接超时（秒）'))
       .toHaveValue('10')
@@ -1119,7 +1128,7 @@ it.each(['fixed', 'auto'] as const)(
     await page.getByLabelText('首个响应等待（秒）').fill('300')
     await page.getByLabelText('输出停滞超时（秒）').fill('240')
     await page.getByLabelText('总时长上限（秒）').fill('7200')
-    await page.getByRole('button', { name: '保存配置' }).click()
+    await page.getByRole('button', { name: /^(保存配置|保存草稿)$/ }).click()
     await expect.poll(() => saved.mock.calls.length).toBe(1)
     expect(submitted?.routing).toMatchObject({
       mode,

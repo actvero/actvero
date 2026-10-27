@@ -141,7 +141,41 @@ async function show(initialTab = 'connection') {
   return screen
 }
 
-it('shows pure address targets and keeps directory, diagnostic and health separate', async () => {
+it('keeps retired channels editable while hiding the copy action', async () => {
+  client.setQueryData(
+    ['organization', 'test-org', 'llm-providers'],
+    [
+      {
+        ...provider,
+        available_for_new_channels: false,
+      },
+    ]
+  )
+  const edit = vi.fn()
+  await render(
+    <QueryClientProvider client={client}>
+      <ChannelDetail
+        id={channel.id}
+        initialTab='models'
+        close={vi.fn()}
+        changed={vi.fn()}
+        edit={edit}
+        copy={vi.fn()}
+        restoreFocus={vi.fn()}
+      />
+    </QueryClientProvider>
+  )
+  await expect
+    .element(page.getByText('此供应商预设已停止新增，此渠道仍可编辑和调用。'))
+    .toBeVisible()
+  await expect
+    .element(page.getByRole('button', { name: '复制', exact: true }))
+    .not.toBeInTheDocument()
+  await page.getByRole('button', { name: '编辑', exact: true }).click()
+  expect(edit).toHaveBeenCalledWith(channel)
+})
+
+it('shows one BaseURL without fetching previews and keeps diagnostic history separate', async () => {
   const requests: string[] = []
   vi.stubGlobal(
     'fetch',
@@ -180,8 +214,8 @@ it('shows pure address targets and keeps directory, diagnostic and health separa
   const screen = await show()
   await expect
     .element(
-      screen.getByText('https://proxy.example/proxy/v1/models', {
-        exact: false,
+      screen.getByText('https://proxy.example/proxy/v1', {
+        exact: true,
       })
     )
     .toBeVisible()
@@ -197,7 +231,7 @@ it('shows pure address targets and keeps directory, diagnostic and health separa
     .toBeVisible()
   expect(
     requests.filter((url) => url.endsWith('/channel-addresses/resolve'))
-  ).toHaveLength(1)
+  ).toHaveLength(0)
 })
 
 it('surfaces a removal conflict with linked model instead of hiding the 409', async () => {
@@ -303,10 +337,10 @@ it('disables inventory writes after authorization is lost', async () => {
     })
   )
   const screen = await show('models')
-  await screen.getByRole('button', { name: '发现模型' }).click()
+  await screen.getByRole('button', { name: '从上游获取' }).click()
   await expect.element(screen.getByText('无权管理渠道')).toBeVisible()
   await expect
-    .element(screen.getByRole('button', { name: '发现模型' }))
+    .element(screen.getByRole('button', { name: '从上游获取' }))
     .toBeDisabled()
   await expect
     .element(screen.getByRole('button', { name: '批量导入平台模型' }))
@@ -672,4 +706,34 @@ it('takes an explicit health row to the certification form without sending a req
     .element(screen.getByRole('button', { name: '开始测试', exact: true }))
     .toBeEnabled()
   expect(calls).not.toContain('POST')
+})
+
+it('shares the cached directory across detail tabs without contacting the upstream', async () => {
+  const fetcher = vi.fn(() => {
+    throw new Error('No request expected')
+  })
+  vi.stubGlobal('fetch', fetcher)
+  client.setQueryData(
+    ['organization', 'test-org', 'model-channels', channel.id],
+    {
+      ...channel,
+      model_directory: {
+        snapshot_id: 'cached-snapshot',
+        fetched_at: '2026-10-26T01:00:00Z',
+        candidates: [{ id: 'cached-model' }, { id: 'test-model' }],
+        partial: false,
+      },
+    }
+  )
+  await show('models')
+  await expect
+    .element(page.getByRole('checkbox', { name: 'cached-model' }))
+    .toBeVisible()
+  await expect.element(page.getByText('1 个待登记')).toBeVisible()
+  await page.getByRole('tab', { name: '连接信息' }).click()
+  await page.getByRole('tab', { name: '上游模型（1）' }).click()
+  await expect
+    .element(page.getByRole('checkbox', { name: 'cached-model' }))
+    .toBeVisible()
+  expect(fetcher).not.toHaveBeenCalled()
 })

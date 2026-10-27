@@ -44,7 +44,7 @@ export const providerAvatarPicker: AvatarPresetPicker = {
     },
     {
       id: 'bailian',
-      name: '阿里百炼',
+      name: '阿里云百炼',
       image: bailian,
       keywords: ['Alibaba', 'Qwen', '通义千问', 'DashScope'],
     },

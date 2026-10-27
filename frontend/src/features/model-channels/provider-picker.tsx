@@ -20,6 +20,7 @@ export function ProviderPicker({
   const [category, setCategory] = useState('')
   const filtered = providers.filter(
     (provider) =>
+      provider.available_for_new_channels !== false &&
       (!category || provider.category === category) &&
       [provider.name, provider.id, ...provider.aliases]
         .join(' ')
@@ -55,7 +56,8 @@ export function ProviderPicker({
               <Button
                 key={provider.id}
                 variant='outline'
-                className='h-24 w-full justify-start gap-3 px-5'
+                className='h-24 w-full min-w-0 justify-start gap-3 px-5'
+                aria-label={provider.name}
                 onClick={() => select(provider)}
               >
                 <Avatar>
@@ -64,7 +66,14 @@ export function ProviderPicker({
                     <Network className='size-4' />
                   </AvatarFallback>
                 </Avatar>
-                <span className='truncate'>{provider.name}</span>
+                <span className='flex min-w-0 flex-col items-start gap-1'>
+                  <span className='max-w-full truncate'>{provider.name}</span>
+                  <span className='text-xs font-normal text-muted-foreground'>
+                    {provider.model_discovery
+                      ? '支持从上游获取模型'
+                      : '填写自己的模型 ID'}
+                  </span>
+                </span>
               </Button>
             ))}
           </div>

@@ -3,6 +3,7 @@ import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from html import escape
+from typing import Any
 from uuid import uuid4
 
 import httpx
@@ -55,6 +56,8 @@ from app.modules.mcp.health import monitor, stop
 from app.modules.mcp.router import router as mcp_router
 from app.modules.members.invitations import router as invitations_router
 from app.modules.members.router import router as members_router
+from app.modules.model_gateway.native_router import router as model_gateway_native_router
+from app.modules.model_gateway.router import router as model_gateway_router
 from app.modules.object_storage.router import router as object_storage_router
 from app.modules.platform.brand_limits import BrandUploadLimit
 from app.modules.platform.brand_router import router as branding_router
@@ -79,9 +82,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database = Database(settings)
         application.state.database = database
         application.state.identity_provider = IdentityProvider(settings)
-        from app.modules.llm.accounting_outbox import Outbox
+        from starlette.requests import Request
 
-        application.state.llm_outbox = Outbox(settings.llm_outbox_dir, database)
+        from app.modules.llm.accounting_outbox import Outbox
+        from app.modules.model_gateway.billing import reconcile as reconcile_gateway
+
+        async def reconcile_gateway_record(record: dict[str, Any]) -> bool:
+            return await reconcile_gateway(Request({"type": "http", "app": application}), record)
+
+        application.state.llm_outbox = Outbox(
+            settings.llm_outbox_dir, database, reconcile_gateway_record
+        )
         application.state.llm_gateway = None
         accounting_task = asyncio.create_task(application.state.llm_outbox.run())
         health_task = asyncio.create_task(monitor(application)) if settings.database_url else None
@@ -217,6 +228,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         platform_invitations_router,
         mcp_router,
         llm_router,
+        model_gateway_router,
+        model_gateway_native_router,
         llm_inference_router,
         llm_test_router,
         transcription_router,

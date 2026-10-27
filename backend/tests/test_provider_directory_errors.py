@@ -87,7 +87,7 @@ async def test_directory_transport_error_categories(monkeypatch, kind: str, expe
     [
         (401, "检查 API Key"),
         (403, "检查账号权限"),
-        (404, "手动登记模型"),
+        (404, "接口返回 404"),
         (429, "稍后重试"),
         (503, "HTTP 503"),
     ],

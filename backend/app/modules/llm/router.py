@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -27,6 +26,7 @@ from app.modules.llm.channel_management import (
 from app.modules.llm.diagnostic_schemas import DiagnosticDetail, DiagnosticRequest
 from app.modules.llm.models import ModelChannel, MutationReceipt
 from app.modules.llm.providers import PROVIDERS
+from app.modules.llm.providers.base import ModelListing
 from app.modules.llm.providers.connection import ResolvedConnection, resolve_connection
 from app.modules.llm.schemas import (
     ArchiveInput,
@@ -51,12 +51,14 @@ from app.modules.llm.schemas import (
     DiscoveryView,
     DraftInspectionInput,
     DraftInspectionView,
+    ModelDirectory,
     ModelHint,
     ModelsInput,
     MutationReceiptView,
     ProtectionSettings,
     ProviderView,
     RegisteredModel,
+    UpstreamModel,
     Version,
 )
 from app.modules.mcp.schemas import normalize_icon
@@ -102,6 +104,8 @@ async def channel(
 
 
 def editable(row: ModelChannel) -> None:
+    if (row.routing or {}).get("engine") == "newapi":
+        raise HTTPException(409, "这是受管网关连接，请通过部署配置维护")
     if row.archived:
         raise HTTPException(409, "请先恢复已归档渠道")
 
@@ -134,6 +138,24 @@ def connection_key(
     ):
         raise HTTPException(422, "请填写 API Key；修改地址时须重新提供密钥")
     return str(provider(request).unseal(row.sealed_key)["key"])
+
+
+def directory_view(row: ModelChannel) -> ModelDirectory | None:
+    if row.snapshot_id is None or row.snapshot_at is None:
+        return None
+    return ModelDirectory(
+        snapshot_id=row.snapshot_id,
+        fetched_at=row.snapshot_at,
+        candidates=[UpstreamModel(id=model_id) for model_id in row.snapshot],
+        partial=row.snapshot_partial,
+    )
+
+
+def cache_directory(row: ModelChannel, listing: ModelListing) -> None:
+    row.snapshot_id = uuid4()
+    row.snapshot_at = now()
+    row.snapshot = [model.id for model in listing.models]
+    row.snapshot_partial = listing.partial
 
 
 def view(row: ModelChannel, health_summary: ChannelHealthSummary | None = None) -> ChannelDetail:
@@ -175,6 +197,7 @@ def view(row: ModelChannel, health_summary: ChannelHealthSummary | None = None) 
         last_check=CheckRecord.model_validate(row.checks[0]) if row.checks else None,
         models=[RegisteredModel.model_validate(m) for m in row.models],
         checks=[CheckRecord.model_validate(c) for c in row.checks],
+        model_directory=directory_view(row),
     )
 
 
@@ -234,6 +257,9 @@ async def configure(
             or body.api_key is not None
         )
     )
+    directory_changed = (
+        address_changed or body.auth_mode != row.auth_mode or body.api_key is not None
+    )
     key = connection_key(
         request, body, row if row.provider else None, address_changed=address_changed
     )
@@ -280,9 +306,11 @@ async def configure(
         )
     if changed:
         row.checks = []
-    row.snapshot_id = None
-    row.snapshot_at = None
-    row.snapshot = []
+    if directory_changed:
+        row.snapshot_id = None
+        row.snapshot_at = None
+        row.snapshot = []
+        row.snapshot_partial = None
 
 
 @router.get("/providers", response_model=list[ProviderView], summary="渠道厂商模块及能力")
@@ -316,7 +344,7 @@ async def resolve_addresses(
 @router.post(
     "/channel-drafts/inspect",
     response_model=DraftInspectionView,
-    summary="检查尚未保存的连接，可预览模型；不写入渠道配置",
+    summary="读取连接的模型目录；连接未变更时缓存到已有渠道，不修改配置",
 )
 async def inspect_draft(
     request: Request, db: DB, body: DraftInspectionInput, _csrf: Mutation
@@ -344,6 +372,13 @@ async def inspect_draft(
         row and old_address != execution_address_signature(body.provider, base, connection)
     )
     key = connection_key(request, body, row, address_changed=address_changed)
+    cacheable = bool(
+        row
+        and not address_changed
+        and body.provider == row.provider
+        and body.auth_mode == row.auth_mode
+        and body.api_key is None
+    )
     await db.commit()
     listing = None
     try:
@@ -364,6 +399,8 @@ async def inspect_draft(
     if body.channel_id is not None:
         row = await channel(db, actor, body.channel_id, body.version)
         editable(row)
+    if cacheable and row is not None and listing is not None and body.discover:
+        cache_directory(row, listing)
     record(
         db,
         actor,
@@ -378,6 +415,7 @@ async def inspect_draft(
         checked_at=now(),
         candidates=listing.models if listing is not None and body.discover else [],
         partial=listing.partial if listing is not None else False,
+        model_directory=directory_view(row) if cacheable and row is not None else None,
     )
     await db.commit()
     return result
@@ -487,6 +525,8 @@ async def create(request: Request, db: DB, body: ChannelInput, _csrf: Mutation) 
                 raise HTTPException(409, "渠道创建仍在处理，请稍后查询回执")
             existing = await channel(db, actor, previous.resource_id)
             return view(existing)
+    if not PROVIDERS[body.provider].info.available_for_new_channels:
+        raise HTTPException(422, "此供应商预设已停止新增，请选择其他供应商；已有渠道仍可编辑和调用")
     row = ModelChannel(id=uuid4(), tenant_id=actor.tenant.id)
     await configure(request, db, actor, body, row)
     db.add(row)
@@ -773,9 +813,8 @@ async def inspect(
     row.checks = [check.model_dump(mode="json"), *row.checks[:19]]
     snapshot_id = None
     if discover and listing is not None:
-        snapshot_id = row.snapshot_id = uuid4()
-        row.snapshot = [m.id for m in listing.models]
-        row.snapshot_at = now()
+        cache_directory(row, listing)
+        snapshot_id = row.snapshot_id
     row.version += 1
     record(
         db,
@@ -833,10 +872,9 @@ async def register_models(
     if body.snapshot_id and (
         body.snapshot_id != row.snapshot_id
         or not row.snapshot_at
-        or row.snapshot_at < now() - timedelta(minutes=30)
         or not {m.id for m in body.models}.issubset(row.snapshot)
     ):
-        raise HTTPException(409, "发现预览已失效，请重新发现模型")
+        raise HTTPException(409, "模型列表已更新或连接已变更，请刷新渠道后重新选择")
     existing = {m["id"]: m for m in row.models}
     for model in body.models:
         if model.id not in existing:

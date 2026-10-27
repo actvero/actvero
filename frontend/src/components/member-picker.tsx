@@ -229,7 +229,7 @@ export function MemberPicker({
                     }
                     onCheckedChange={(v) => toggle(m.id, v === true)}
                   />
-                  <UserAvatar user={{ name: m.name, avatar_url: null }} />
+                  <UserAvatar user={m} />
                   <span className='flex min-w-0 flex-1 flex-col gap-1'>
                     <span className='break-words'>{m.name}</span>
                     <span className='text-sm break-all text-muted-foreground'>

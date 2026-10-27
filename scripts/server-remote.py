@@ -38,7 +38,7 @@ def transport_images(images, ssh, docker):
                 process.wait()
 
 
-def prepare_images(commit, temporary, project, ssh):
+def prepare_images(commit, temporary, project, ssh, managed_gateway=False):
     source = Path(temporary) / 'source'
     source.mkdir()
     archive = Path(temporary) / 'source.tar'
@@ -46,18 +46,21 @@ def prepare_images(commit, temporary, project, ssh):
     subprocess.check_call(['tar', '-xf', str(archive), '-C', str(source)])
     release = commit[:12]
     images = []
-    for kind, dockerfile, target in [
-        ('database', 'deploy/Dockerfile.database', None),
-        ('app', 'deploy/Dockerfile', 'app'),
-        ('identity', 'deploy/Dockerfile', 'identity')
-    ]:
+    builds = [
+        ('database', 'deploy/Dockerfile.database', None, '.'),
+        ('app', 'deploy/Dockerfile', 'app', '.'),
+        ('identity', 'deploy/Dockerfile', 'identity', '.')
+    ]
+    if managed_gateway:
+        builds.append(('newapi', 'integrations/newapi/Dockerfile', None, 'integrations/newapi'))
+    for kind, dockerfile, target, context in builds:
         image = 'actvero-release-' + kind + ':' + release
         command = ['docker', 'buildx', 'build', '--platform', 'linux/amd64', '--load',
                    '--label', 'org.opencontainers.image.revision=' + commit,
                    '--file', dockerfile, '--tag', image]
         if target:
             command += ['--target', target]
-        subprocess.check_call(command + ['.'], cwd=str(source))
+        subprocess.check_call(command + [context], cwd=str(source))
         images.append(image)
     for image in [EDGE_IMAGE, MAIL_IMAGE]:
         subprocess.check_call(['docker', 'pull', '--platform', 'linux/amd64', image])
@@ -68,7 +71,7 @@ def prepare_images(commit, temporary, project, ssh):
         raise ValueError('Docker access is unavailable on the server.')
     transport_images(images + [EDGE_IMAGE, MAIL_IMAGE], ssh, docker)
     # Validate the loaded revision/architecture before assigning Compose release names.
-    for kind, image in zip(['database', 'app', 'identity'], images):
+    for (kind, _, _, _), image in zip(builds, images):
         metadata = json.loads(subprocess.check_output(ssh + [docker + ' image inspect ' + shlex.quote(image)]))[0]
         if (metadata['Architecture'] != 'amd64' or
                 metadata['Config']['Labels'].get('org.opencontainers.image.revision') != commit):
@@ -90,13 +93,15 @@ def main():
     if not path or not path.startswith('/') or any(c in path for c in '\n\r'):
         parser.error('Provide the absolute server repository path.')
     ssh = ['ssh', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', args.host]
-    preflight = """import json, platform, runpy, subprocess
+    preflight = """import json, os, platform, re, runpy, subprocess
 from pathlib import Path
 module = runpy.run_path('scripts/server.py', run_name='deployment_preflight')
 values = module['load_env'](Path('.env.server'))
 assert subprocess.check_output(['git', 'branch', '--show-current']).strip() == b'main', 'Server branch must be main'
 assert not subprocess.check_output(['git', 'status', '--porcelain']).strip(), 'Server repository has local changes'
-print(json.dumps({'project': values['COMPOSE_PROJECT_NAME'], 'architecture': platform.machine()}))
+profiles = os.environ.get('COMPOSE_PROFILES', values.get('COMPOSE_PROFILES', ''))
+print(json.dumps({'project': values['COMPOSE_PROJECT_NAME'], 'architecture': platform.machine(),
+                 'managed_gateway': 'gateway' in re.split(r'[,\\s]+', profiles)}))
 """
     metadata = json.loads(subprocess.check_output(ssh + ['cd ' + shlex.quote(path) +
         ' && python3 -c ' + shlex.quote(preflight)]))
@@ -114,7 +119,7 @@ print(json.dumps({'project': values['COMPOSE_PROJECT_NAME'], 'architecture': pla
         if heads != [commit, 'refs/remotes/origin/main']:
             raise ValueError('Fetched main changed while preparing the release; retry.')
         if not args.build_on_server:
-            prepare_images(commit, temporary, project, ssh)
+            prepare_images(commit, temporary, project, ssh, metadata['managed_gateway'])
         checksum = hashlib.sha256(bundle.read_bytes()).hexdigest()
         remote = path + '/.local/incoming-' + uuid.uuid4().hex + '.bundle'
         subprocess.check_call(ssh + ['mkdir -p ' + shlex.quote(path + '/.local')])

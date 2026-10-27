@@ -222,6 +222,8 @@ def resolve_connection(
         base = root + prefix
         directory = base + "/models"
         warnings = ()
+    if provider_id == "aliyun-bailian" and base.endswith("/compatible-mode/v1"):
+        directory = base.removesuffix("/compatible-mode/v1") + "/api/v1/models"
     if not PROFILES[provider_id].model_discovery:
         directory = None
         warnings += ("manual_model_registration",)

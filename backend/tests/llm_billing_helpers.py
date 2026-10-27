@@ -11,9 +11,8 @@ async def billing(admin, points="100", rules=None):
         "/api/v1/quota/policies",
         json={
             "name": "Test quota",
-            "priority": 0,
+            "is_default": True,
             "rules": rules or [{"kind": "fixed_hours", "hours": 5, "points": points}],
-            "member_ids": [],
         },
     )
     assert response.status_code == 200, response.text

@@ -1,10 +1,23 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 @import './theme.css';
 
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  :root {
+    /* Preserve the native New API dialog viewport and safe-area bounds. */
+    --dialog-inset-top: max(1rem, env(safe-area-inset-top, 0px));
+    --dialog-inset-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    --dialog-available-height: calc(
+      100dvh - var(--dialog-inset-top) - var(--dialog-inset-bottom)
+    );
+    --dialog-viewport-center: calc(
+      (100dvh + var(--dialog-inset-top) - var(--dialog-inset-bottom)) / 2
+    );
+  }
+
   * {
     @apply border-border outline-ring/50;
     scrollbar-width: thin;

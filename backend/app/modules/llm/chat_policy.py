@@ -28,6 +28,15 @@ def resolve(body: ChatInput, config: CatalogInput, version: int) -> ChatInput:
         if value is None and rule.default is not None:
             updates[name] = rule.default
     effort = body.reasoning_effort
+    if config.gateway and config.gateway.capability_mode == "auto" and effort is not None:
+        allowed = [
+            value
+            for option in config.reasoning_options
+            if option.type == "effort"
+            for value in option.values
+        ]
+        if effort not in allowed:
+            fail(422, "parameter_not_allowed", "当前模型不支持所选推理档位，请刷新模型目录")
     if not policy.reasoning_adjustable and (
         body.thinking is not None or effort not in (None, policy.default_reasoning_effort)
     ):

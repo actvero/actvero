@@ -63,6 +63,16 @@ class OpenAICompatible:
             raise ValueError("Invalid model ID")
         return value
 
+    def first_page(self, url: str) -> dict[str, str | int]:
+        return {}
+
+    def next_page(
+        self, payload: dict[str, Any], params: dict[str, str | int]
+    ) -> dict[str, str | int] | None:
+        # A generic compatible endpoint has no standard pagination contract.
+        # Native adapters supply their documented cursor/page parameters.
+        return None
+
     async def list_models(
         self,
         base_url: str,
@@ -84,6 +94,10 @@ class OpenAICompatible:
             ),
         )
         headers = self.headers(key)
+        params = self.first_page(directory.directory_url)
+        models: dict[str, UpstreamModel] = {}
+        seen_pages: set[str] = set()
+        total_bytes = 0
         try:
             async with asyncio.timeout(timeout):
                 async with httpx2.AsyncClient(
@@ -92,49 +106,72 @@ class OpenAICompatible:
                     follow_redirects=False,
                     timeout=httpx2.Timeout(timeout, connect=min(10, timeout)),
                 ) as client:
-                    async with client.stream(
-                        directory.directory_method, directory.directory_url, headers=headers
-                    ) as res:
-                        if res.status_code != 200:
-                            messages = {
-                                401: "上游拒绝认证，请检查 API Key",
-                                403: "上游拒绝读取模型目录，请检查账号权限",
-                                404: "上游未提供模型目录，请核对 Base URL 或手动登记模型",
-                                429: "上游请求限流，请稍后重试",
-                            }
-                            raise HTTPException(
-                                502,
-                                messages.get(
-                                    res.status_code, f"模型目录请求失败（HTTP {res.status_code}）"
-                                ),
-                            )
-                        # Enforce the requested identity encoding before decoding; even a
-                        # small compressed chunk could otherwise allocate an enormous body.
-                        if res.headers.get("content-encoding", "identity").lower() != "identity":
-                            raise HTTPException(502, "上游未按请求返回未压缩目录，请手动登记模型")
-                        data = bytearray()
-                        async for chunk in res.aiter_raw():
-                            data.extend(chunk)
-                            if len(data) > 2_000_000:
-                                raise HTTPException(502, "模型目录超过 2 MB，请手动登记模型")
-                        payload = json.loads(data)
-            if not isinstance(payload, dict):
-                raise ValueError("Invalid directory")
-            entries, partial = self.entries(payload)
-            if not isinstance(entries, list):
-                raise ValueError("Invalid directory")
-            if len(entries) > 1000:
-                raise HTTPException(502, "模型目录超过 1000 项，请手动登记所需模型")
-            models: dict[str, UpstreamModel] = {}
-            for item in entries:
-                if not isinstance(item, dict):
-                    raise ValueError("Invalid model")
-                model = UpstreamModel.model_validate({"id": self.model_id(item)})
-                # A misconfigured upstream must not echo our credential into the UI.
-                if key and key in model.id:
-                    raise ValueError("Credential echoed")
-                models[model.id] = model
-            return ModelListing(list(models.values()), partial)
+                    for page in range(10):
+                        signature = json.dumps(params, sort_keys=True)
+                        if signature in seen_pages:
+                            raise ValueError("Repeated directory cursor")
+                        seen_pages.add(signature)
+                        async with client.stream(
+                            directory.directory_method,
+                            directory.directory_url,
+                            headers=headers,
+                            params=params or None,
+                        ) as res:
+                            if res.status_code != 200:
+                                messages = {
+                                    401: "上游拒绝认证，请检查 API Key 是否属于当前供应商及产品",
+                                    403: "上游拒绝读取模型目录，请检查账号权限",
+                                    404: "上游模型目录接口返回 404，请核对渠道地址、产品和接口前缀",
+                                    429: "上游请求限流，请稍后重试",
+                                }
+                                raise HTTPException(
+                                    502,
+                                    messages.get(
+                                        res.status_code,
+                                        f"模型目录请求失败（HTTP {res.status_code}）",
+                                    ),
+                                )
+                            # Bound the whole fetch, including all pages; never decompress
+                            # an arbitrarily large upstream response in memory.
+                            if (
+                                res.headers.get("content-encoding", "identity").lower()
+                                != "identity"
+                            ):
+                                raise HTTPException(502, "上游未按请求返回未压缩目录")
+                            data = bytearray()
+                            async for chunk in res.aiter_raw():
+                                total_bytes += len(chunk)
+                                if total_bytes > 2_000_000:
+                                    raise HTTPException(502, "模型目录超过 2 MB，未完成获取")
+                                data.extend(chunk)
+                            payload = json.loads(data)
+                        if not isinstance(payload, dict):
+                            raise ValueError("Invalid directory")
+                        entries, partial = self.entries(payload)
+                        if not isinstance(entries, list):
+                            raise ValueError("Invalid directory")
+                        for item in entries:
+                            if not isinstance(item, dict):
+                                raise ValueError("Invalid model")
+                            model = UpstreamModel.model_validate({"id": self.model_id(item)})
+                            if key and key in model.id:
+                                raise ValueError("Credential echoed")
+                            models[model.id] = model
+                        if len(models) > 1000:
+                            raise HTTPException(502, "模型目录超过 1000 项，未完成获取")
+                        next_params = self.next_page(payload, params) if partial else None
+                        if not next_params or page == 9 or len(models) == 1000:
+                            return ModelListing(list(models.values()), partial)
+                        # Only bounded query parameters are accepted, never upstream URLs.
+                        if any(
+                            not isinstance(v, (str, int))
+                            or len(str(v)) > 2000
+                            or (key and key in str(v))
+                            for v in next_params.values()
+                        ):
+                            raise ValueError("Invalid directory cursor")
+                        params = next_params
+            raise ValueError("Invalid directory pagination")
         except httpx2.ConnectTimeout as exc:
             raise HTTPException(502, "连接模型目录超时，请检查部署网络、DNS 和上游地址") from exc
         except httpx2.ReadTimeout as exc:

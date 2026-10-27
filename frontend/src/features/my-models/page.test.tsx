@@ -66,6 +66,7 @@ function operation(
     transcription: '/api/llm/v1/audio/transcriptions',
   }[kind]
   return {
+    billing_engine: 'direct',
     kind,
     pricing_status: status === 'ready' ? 'ready' : 'no_price',
     input_modalities: ['text'],
@@ -371,14 +372,18 @@ it('shows no authorization and unconfigured price honestly, and keeps the 390px 
   await expect
     .element(page.getByText('尚未配置成员额度策略', { exact: false }))
     .toBeVisible()
-  await page.screenshot({ path: '__screenshots__/actvero-g6-04-models-390.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-g6-04-models-390.png',
+  })
   await page.getByRole('button', { name: '查看接入示例' }).click()
   const dialog = page.getByRole('dialog', { name: /接入示例/ })
   await expect.element(dialog).toBeVisible()
   await expect
     .poll(() => Number(getComputedStyle(dialog.element()).opacity))
     .toBe(1)
-  await page.screenshot({ path: '__screenshots__/actvero-g6-04-example-390.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-g6-04-example-390.png',
+  })
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
 })
 

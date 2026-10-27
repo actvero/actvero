@@ -10,15 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { newRule, timezones, weekdays, type PolicyValues } from './policy-form'
+import { newRule, type PolicyValues } from './policy-form'
 
 export function RuleFields({ disabled }: { disabled: boolean }) {
   const form = useFormContext<PolicyValues>()
@@ -48,21 +40,18 @@ export function RuleFields({ disabled }: { disabled: boolean }) {
             disabled={
               disabled ||
               fields.length >= 10 ||
-              fields.some((r) => r.kind === 'calendar_week')
+              form.getValues('rules').some((r) => Number(r.hours) === 168)
             }
-            onClick={() => append(newRule('calendar_week'))}
+            onClick={() => append({ ...newRule('fixed_hours'), hours: '168' })}
           >
-            <Plus />
-            周额度
+            <Plus />7 天额度
           </Button>
         </div>
       </div>
       {fields.map((r, i) => (
         <Card key={r.id} density='compact'>
           <CardHeader layout='row'>
-            <CardTitle size='body'>
-              {r.kind === 'fixed_hours' ? '小时额度' : '周额度'}
-            </CardTitle>
+            <CardTitle size='body'>周期额度</CardTitle>
             <Button
               className='ml-auto'
               type='button'
@@ -113,88 +102,9 @@ export function RuleFields({ disabled }: { disabled: boolean }) {
                   </FormItem>
                 )}
               />
-              {r.kind === 'calendar_week' && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name={`rules.${i}.week_start`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>周起始日</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={disabled}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className='w-full'
-                              onBlur={field.onBlur}
-                              ref={field.ref}
-                            >
-                              <SelectValue placeholder='选择周起始日' />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              {weekdays.map((day, n) => (
-                                <SelectItem key={day} value={String(n)}>
-                                  {day}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`rules.${i}.timezone`}
-                    render={({ field }) => (
-                      <FormItem className='sm:col-span-2'>
-                        <FormLabel>时区</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={disabled}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className='w-full'
-                              onBlur={field.onBlur}
-                              ref={field.ref}
-                            >
-                              <SelectValue placeholder='选择时区' />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectGroup>
-                              {[
-                                ...new Set([
-                                  ...timezones,
-                                  ...(field.value ? [field.value] : []),
-                                ]),
-                              ].map((zone) => (
-                                <SelectItem key={zone} value={zone}>
-                                  {zone}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              )}
             </div>
             <p className='text-sm text-muted-foreground'>
-              {r.kind === 'fixed_hours'
-                ? '首次使用起算，到期后下一次使用重新计时。'
-                : '按所选时区，在周起始日 00:00 重置。'}
+              首次使用起算，到期后下一次使用重新计时。7 天为连续 168 小时。
             </p>
           </CardContent>
         </Card>

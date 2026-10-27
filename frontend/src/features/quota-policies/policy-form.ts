@@ -3,7 +3,6 @@ import type { Schema } from '@/lib/api'
 
 export type Policy = Schema['QuotaPolicyView']
 export type QuotaRule = Policy['rules'][number]
-export const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 export const timezones = [
   'Asia/Shanghai',
   'Asia/Hong_Kong',
@@ -31,31 +30,35 @@ const integer = (min: number, max: number) =>
 export const policySchema = z
   .object({
     name: z.string().trim().min(1, '填写策略名称').max(100, '最多 100 字'),
-    priority: integer(0, 1000000),
-    member_ids: z.array(z.string()).max(1000),
+    is_default: z.boolean(),
+    mode: z.enum(['limited', 'unlimited']),
     rules: z
       .array(
         z.object({
-          kind: z.enum(['fixed_hours', 'calendar_week']),
-          points,
+          kind: z.literal('fixed_hours'),
+          points: z.string(),
           hours: z.string(),
-          timezone: z.string(),
-          week_start: z.string(),
         })
       )
-      .min(1, '至少添加一条额度规则')
       .max(10),
   })
   .superRefine((v, ctx) => {
-    if (Number(v.priority) > 0 && !v.member_ids.length)
+    if (v.mode === 'unlimited') return
+    if (!v.rules.length)
       ctx.addIssue({
         code: 'custom',
-        path: ['member_ids'],
-        message: '至少选择一名成员',
+        path: ['rules'],
+        message: '至少添加一条额度规则',
       })
     const seen = new Set<string>()
     v.rules.forEach((r, index) => {
-      const key = r.kind === 'fixed_hours' ? `hours-${Number(r.hours)}` : 'week'
+      if (!points.safeParse(r.points).success)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['rules', index, 'points'],
+          message: '填写非负积分，最多 12 位小数',
+        })
+      const key = `hours-${Number(r.hours)}`
       if (seen.has(key))
         ctx.addIssue({
           code: 'custom',
@@ -72,20 +75,6 @@ export const policySchema = z
           path: ['rules', index, 'hours'],
           message: '填写 1–720 小时',
         })
-      if (r.kind === 'calendar_week') {
-        if (!/^[0-6]$/.test(r.week_start))
-          ctx.addIssue({
-            code: 'custom',
-            path: ['rules', index, 'week_start'],
-            message: '选择周起始日',
-          })
-        if (!r.timezone)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['rules', index, 'timezone'],
-            message: '选择时区',
-          })
-      }
     })
   })
 export type PolicyValues = z.infer<typeof policySchema>
@@ -95,21 +84,17 @@ export const newRule = (
   kind,
   hours: '',
   points: '',
-  timezone: '',
-  week_start: '',
 })
 export function values(policy?: Policy, isDefault = false): PolicyValues {
   return {
     name: policy?.name ?? (isDefault ? '默认' : ''),
-    priority: policy ? String(policy.priority) : isDefault ? '0' : '',
-    member_ids: policy?.member_ids ?? [],
+    is_default: policy?.is_default ?? isDefault,
+    mode: policy?.mode ?? 'limited',
     rules: policy
       ? policy.rules.map((r) => ({
           ...newRule(r.kind),
           points: r.points,
-          ...(r.kind === 'fixed_hours'
-            ? { hours: String(r.hours) }
-            : { timezone: r.timezone, week_start: String(r.week_start) }),
+          hours: String(r.hours),
         }))
       : [newRule('fixed_hours')],
   }
@@ -117,20 +102,18 @@ export function values(policy?: Policy, isDefault = false): PolicyValues {
 export function policyInput(v: PolicyValues): Schema['QuotaPolicyInput'] {
   return {
     name: v.name,
-    priority: Number(v.priority),
-    member_ids: Number(v.priority) === 0 ? [] : v.member_ids,
-    rules: v.rules.map((r) =>
-      r.kind === 'fixed_hours'
-        ? { kind: r.kind, hours: Number(r.hours), points: r.points }
-        : {
+    is_default: v.is_default,
+    mode: v.mode,
+    rules:
+      v.mode === 'unlimited'
+        ? []
+        : v.rules.map((r) => ({
             kind: r.kind,
+            hours: Number(r.hours),
             points: r.points,
-            timezone: r.timezone,
-            week_start: Number(r.week_start),
-          }
-    ),
+          })),
   }
 }
 export function ruleLabel(r: QuotaRule) {
-  return `${r.kind === 'fixed_hours' ? `${r.hours} 小时` : '每周'} · ${r.points} 积分`
+  return `${r.hours} 小时 · ${r.points} 积分`
 }

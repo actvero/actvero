@@ -248,9 +248,11 @@ export function MyUsagePage() {
               <CardHeader>
                 <CardTitle>模型额度</CardTitle>
                 <CardDescription>
-                  {quota.data.status === 'active'
-                    ? `当前策略 · ${String(quota.data.policy?.name ?? '—')}`
-                    : '尚未配置额度策略，请联系管理员。'}
+                  {quota.data.status === 'unlimited'
+                    ? `不限额度 · ${String(quota.data.policy?.name ?? '—')} · 用量与成本仍正常记录`
+                    : quota.data.status === 'active'
+                      ? `当前策略 · ${String(quota.data.policy?.name ?? '—')}`
+                      : '尚未配置额度策略，请联系管理员。'}
                 </CardDescription>
               </CardHeader>
               {quota.data.windows.length > 0 && (

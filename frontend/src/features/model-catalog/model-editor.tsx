@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { api, ApiError } from '@/lib/api'
+import { api, ApiError, type Schema } from '@/lib/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,10 +29,13 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { BindingFields } from './binding-fields'
+import { activationDraft, issueTab } from './model-activation'
 import { ModelEndpointsPanel } from './model-endpoints'
 import { ModelFields } from './model-fields'
 import {
   modelInput,
+  forKind,
+  priceInput,
   kinds,
   operationDrafts,
   operationModel,
@@ -44,6 +47,7 @@ import {
   type Model,
   type ModelValues,
 } from './model-form'
+import { ModelReadiness } from './model-readiness'
 import { PriceFields } from './price-fields'
 import { ReferenceSnapshots } from './reference-snapshots'
 import { AccessFields } from './retrieval-fields'
@@ -170,32 +174,28 @@ function compareDrafts(
 export function ModelEditor({
   model,
   initialValues,
-  initialWithoutOperation = false,
+  independentCreation = false,
   initialNames,
   close,
   saved,
   restoreFocus,
-  onQuickImport,
 }: {
   model?: Model
   initialValues?: ModelValues
-  initialWithoutOperation?: boolean
+  independentCreation?: boolean
   initialNames?: Record<string, string>
   close: () => void
   saved: (model: Model) => void
   restoreFocus?: () => void
-  onQuickImport?: () => void
 }) {
   const { csrf } = useOrganization()
   const [currentModel, setCurrentModel] = useState(model)
   const [drafts, setDrafts] = useState(() =>
-    initialWithoutOperation
-      ? []
-      : initialValues
-        ? [initialValues]
-        : model
-          ? operationDrafts(model)
-          : [values()]
+    initialValues
+      ? [initialValues]
+      : model
+        ? operationDrafts(model)
+        : [values()]
   )
   const initial = drafts[0] ?? { ...values(model), operation_enabled: false }
   const form = useForm<ModelValues>({
@@ -208,9 +208,7 @@ export function ModelEditor({
     control: form.control,
     name: 'operation_enabled',
   })
-  const [draftDirty, setDraftDirty] = useState(
-    !!initialValues && !initialWithoutOperation
-  )
+  const [draftDirty, setDraftDirty] = useState(!!initialValues)
   function changeOperation(kind: OperationKind, add = false) {
     const current = form.getValues()
     if (form.formState.isDirty || add) setDraftDirty(true)
@@ -228,12 +226,26 @@ export function ModelEditor({
     setError(null)
     if (add) setTab('profile')
   }
+  // Keep unsaved parameters for each type while creating one independent model.
+  const creationDrafts = useRef<Partial<Record<OperationKind, ModelValues>>>({})
+  function changeCreationKind(kind: OperationKind) {
+    const current = form.getValues()
+    creationDrafts.current[current.kind] = structuredClone(current)
+    const target = shareModelFields(
+      creationDrafts.current[kind] ?? { ...values(), kind },
+      current
+    )
+    setDrafts([target])
+    form.reset(target)
+    setDraftDirty(true)
+    setPriceTarget('budget_price')
+    setError(null)
+  }
   const [removing, setRemoving] = useState(false)
   const [tab, setTab] = useState('profile')
   const [priceTarget, setPriceTarget] = useState('budget_price')
   const [error, setError] = useState<unknown>(null)
   const [discarding, setDiscarding] = useState(false)
-  const [quickConfirm, setQuickConfirm] = useState(false)
   const [slugConfirm, setSlugConfirm] = useState(false)
   const [conflict, setConflict] = useState(false)
   const [latest, setLatest] = useState<Model | null>(null)
@@ -246,7 +258,9 @@ export function ModelEditor({
         (model?.binding_states ?? []).map((b) => [b.channel_id, b.channel_name])
       )
   )
-  const pending = form.formState.isSubmitting
+  const [activating, setActivating] = useState(false)
+  const [confirmActivation, setConfirmActivation] = useState(false)
+  const pending = form.formState.isSubmitting || activating
   const readOnly = !!currentModel?.archived || forbidden || conflict
   const dirty = form.formState.isDirty || draftDirty
   const comparison = latest
@@ -286,14 +300,22 @@ export function ModelEditor({
     setLatest(null)
     setError(null)
   }
-  async function submit(data: ModelValues, confirmedSlug = false) {
+  async function submit(
+    data: ModelValues,
+    confirmedSlug = false,
+    activate = false
+  ) {
     if (readOnly || conflict) return
     if (currentModel && data.slug !== currentModel.slug && !confirmedSlug) {
       setSlugConfirm(true)
+      setConfirmActivation(activate)
       return
     }
     setError(null)
     try {
+      if (activate) data = activationDraft(data)
+      else if (!currentModel)
+        data = { ...data, access: { ...data.access, enabled: false } }
       const all = drafts.map((d) =>
         d.kind === data.kind ? data : shareModelFields(d, data)
       )
@@ -304,15 +326,7 @@ export function ModelEditor({
           setDraftDirty(true)
           form.reset(draft)
           const path = parsed.error.issues[0].path
-          setTab(
-            path[0] === 'budget_price' || path.includes('price')
-              ? 'prices'
-              : path[0] === 'access'
-                ? 'access'
-                : path[0] === 'bindings' || path[0] === 'routing'
-                  ? 'bindings'
-                  : 'profile'
-          )
+          setTab(issueTab(path))
           setPriceTarget(
             path[0] === 'bindings' && path.includes('price')
               ? `bindings.${String(path[1])}.price`
@@ -323,6 +337,53 @@ export function ModelEditor({
           )
           await form.trigger()
           return
+        }
+      }
+      if (activate) {
+        const active = data.bindings.filter(
+          (binding) =>
+            binding.enabled &&
+            (data.routing.mode === 'auto' ||
+              (binding.channel_id === data.access.channel_id &&
+                binding.upstream_id === data.access.upstream_id))
+        )
+        if (!active.length) {
+          setTab('bindings')
+          throw new Error(
+            '请添加调用来源；自动调度需至少选择一个参与调用的来源。'
+          )
+        }
+        const channels = await Promise.all(
+          [...new Set(active.map((binding) => binding.channel_id))].map((id) =>
+            api<Schema['ChannelDetail']>('/llm/channels/' + id)
+          )
+        )
+        const unavailable = channels.find(
+          (channel) => !channel.manual_enabled || channel.archived
+        )
+        if (unavailable) {
+          setTab('bindings')
+          throw new Error(
+            `渠道“${unavailable.name}”已停用或归档，请在渠道管理中恢复后重试。`
+          )
+        }
+        if (!data.budget_price.enabled) {
+          setTab('prices')
+          throw new Error(
+            '请先配置成员预算价格。未知价格不能按免费处理；如确实免费，请明确填写 0。'
+          )
+        }
+        const pointPrice = await api<Schema['PointPrice']>(
+          '/llm/point-prices/preview',
+          'POST',
+          priceInput(forKind(data.budget_price, data.kind)),
+          csrf
+        )
+        if (pointPrice.status !== 'ready') {
+          setTab('prices')
+          throw new Error(
+            '成员预算价格尚未完成积分换算，请在价格配置中检查币种与组织积分换算。'
+          )
         }
       }
       const result = await api<Model>(
@@ -368,24 +429,16 @@ export function ModelEditor({
       >
         <SheetHeader className='shrink-0 px-4 pr-12 sm:px-6'>
           <SheetTitle className='flex flex-wrap items-center gap-2'>
-            {currentModel ? '编辑模型' : '配置模型'}
+            {currentModel
+              ? '编辑模型'
+              : independentCreation
+                ? '创建模型'
+                : '配置模型'}
             {drafts.length === 1 && (
               <Badge variant='secondary'>{kinds[currentKind]}</Badge>
             )}
           </SheetTitle>
         </SheetHeader>
-        <ConfirmDialog
-          open={quickConfirm}
-          onOpenChange={setQuickConfirm}
-          title='改用渠道快捷创建？'
-          desc='当前未保存的模型资料和接口草稿会丢失。'
-          cancelBtnText='继续编辑'
-          confirmText='改用渠道模型'
-          handleConfirm={() => {
-            setQuickConfirm(false)
-            onQuickImport?.()
-          }}
-        />
         <ConfirmDialog
           open={discarding}
           onOpenChange={setDiscarding}
@@ -408,7 +461,9 @@ export function ModelEditor({
           confirmText='确认更改并保存'
           handleConfirm={() => {
             setSlugConfirm(false)
-            void form.handleSubmit((data) => submit(data, true))()
+            void form.handleSubmit((data) =>
+              submit(data, true, confirmActivation)
+            )()
           }}
         />
         <ConfirmDialog
@@ -451,6 +506,9 @@ export function ModelEditor({
                       errors.vendor ||
                       errors.capabilities ||
                       errors.reasoning ||
+                      errors.chat_policy ||
+                      errors.speech ||
+                      errors.transcription ||
                       errors.icon
                       ? 'profile'
                       : errors.access?.channel_id ||
@@ -554,107 +612,120 @@ export function ModelEditor({
                   </AlertDescription>
                 </Alert>
               )}
-              <div className='mb-6 rounded-lg border p-4'>
-                <div className='flex flex-wrap items-center justify-between gap-3'>
-                  <div>
-                    <h3 className='font-medium'>模型调用接口</h3>
-                    <p className='text-sm text-muted-foreground'>
-                      只列已配置接口。新增接口默认停用，保存后再配置渠道与调用权限。
+              {drafts.length > 0 && !independentCreation && (
+                <ModelReadiness navigate={setTab} />
+              )}
+              {!independentCreation && (
+                <CollapsibleSection
+                  title='高级：多个用途与独立开关'
+                  defaultOpen={!!currentModel || !drafts.length}
+                  className='mb-4'
+                >
+                  <div className='flex flex-wrap items-center justify-between gap-3'>
+                    <div>
+                      <h3 className='font-medium'>模型用途</h3>
+                      <p className='text-sm text-muted-foreground'>
+                        先核对当前用途的参数、来源和价格，再保存草稿或直接启用。对话请求协议沿用渠道配置。
+                      </p>
+                    </div>
+                    {drafts.length < Object.keys(kinds).length && (
+                      <Select
+                        value=''
+                        disabled={pending || readOnly}
+                        onValueChange={(kind) =>
+                          changeOperation(kind as OperationKind, true)
+                        }
+                      >
+                        <SelectTrigger aria-label='添加接口' className='w-40'>
+                          <SelectValue placeholder='添加接口' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {Object.entries(kinds)
+                              .filter(
+                                ([kind]) =>
+                                  !drafts.some((draft) => draft.kind === kind)
+                              )
+                              .map(([kind, label]) => (
+                                <SelectItem key={kind} value={kind}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {drafts.length === 0 ? (
+                    <p className='mt-4 text-sm text-muted-foreground'>
+                      尚未配置调用接口。可先登记模型资料并保存；模型不会开放调用。
                     </p>
-                  </div>
-                  {drafts.length < Object.keys(kinds).length && (
-                    <Select
-                      value=''
-                      disabled={pending || readOnly}
-                      onValueChange={(kind) =>
-                        changeOperation(kind as OperationKind, true)
-                      }
-                    >
-                      <SelectTrigger aria-label='添加接口' className='w-40'>
-                        <SelectValue placeholder='添加接口' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {Object.entries(kinds)
-                            .filter(
-                              ([kind]) =>
-                                !drafts.some((draft) => draft.kind === kind)
-                            )
-                            .map(([kind, label]) => (
-                              <SelectItem key={kind} value={kind}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                {drafts.length === 0 ? (
-                  <p className='mt-4 text-sm text-muted-foreground'>
-                    尚未配置调用接口。可先登记模型资料并保存；模型不会开放调用。
-                  </p>
-                ) : (
-                  <div className='mt-4 flex flex-col gap-2'>
-                    {drafts.map((draft) => {
-                      const active = draft.kind === currentKind
-                      const enabled = active
-                        ? operationEnabled
-                        : draft.operation_enabled
-                      return (
-                        <div
-                          key={draft.kind}
-                          className='flex flex-wrap items-center gap-3 rounded-md border p-3'
-                        >
-                          <span className='min-w-20 font-medium'>
-                            {kinds[draft.kind]}
-                          </span>
-                          <span className='text-sm text-muted-foreground'>
-                            {active
-                              ? currentBindings.length
-                              : draft.bindings.length}{' '}
-                            个来源
-                          </span>
-                          <div className='ml-auto flex items-center gap-2'>
-                            <Switch
-                              aria-label={`启用${kinds[draft.kind]}接口`}
-                              checked={enabled}
-                              disabled={pending || readOnly}
-                              onCheckedChange={(checked) => {
-                                if (active)
-                                  form.setValue('operation_enabled', checked, {
-                                    shouldDirty: true,
-                                  })
-                                else {
-                                  setDrafts((before) =>
-                                    before.map((item) =>
-                                      item.kind === draft.kind
-                                        ? {
-                                            ...item,
-                                            operation_enabled: checked,
-                                          }
-                                        : item
+                  ) : (
+                    <div className='mt-4 flex flex-col gap-2'>
+                      {drafts.map((draft) => {
+                        const active = draft.kind === currentKind
+                        const enabled = active
+                          ? operationEnabled
+                          : draft.operation_enabled
+                        return (
+                          <div
+                            key={draft.kind}
+                            className='flex flex-wrap items-center gap-3 rounded-md border p-3'
+                          >
+                            <span className='min-w-20 font-medium'>
+                              {kinds[draft.kind]}
+                            </span>
+                            <span className='text-sm text-muted-foreground'>
+                              {active
+                                ? currentBindings.length
+                                : draft.bindings.length}{' '}
+                              个来源
+                            </span>
+                            <div className='ml-auto flex items-center gap-2'>
+                              <Switch
+                                aria-label={`启用${kinds[draft.kind]}接口`}
+                                checked={enabled}
+                                disabled={pending || readOnly}
+                                onCheckedChange={(checked) => {
+                                  if (active)
+                                    form.setValue(
+                                      'operation_enabled',
+                                      checked,
+                                      {
+                                        shouldDirty: true,
+                                      }
                                     )
-                                  )
-                                  setDraftDirty(true)
-                                }
-                              }}
-                            />
-                            <Button
-                              type='button'
-                              variant={active ? 'secondary' : 'outline'}
-                              size='sm'
-                              onClick={() => changeOperation(draft.kind)}
-                            >
-                              配置
-                            </Button>
+                                  else {
+                                    setDrafts((before) =>
+                                      before.map((item) =>
+                                        item.kind === draft.kind
+                                          ? {
+                                              ...item,
+                                              operation_enabled: checked,
+                                            }
+                                          : item
+                                      )
+                                    )
+                                    setDraftDirty(true)
+                                  }
+                                }}
+                              />
+                              <Button
+                                type='button'
+                                variant={active ? 'secondary' : 'outline'}
+                                size='sm'
+                                onClick={() => changeOperation(draft.kind)}
+                              >
+                                配置
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CollapsibleSection>
+              )}
 
               <Tabs
                 value={tab}
@@ -674,18 +745,6 @@ export function ModelEditor({
                   </TabsList>
                 </div>
                 <TabsContent value='profile'>
-                  {onQuickImport && (
-                    <Button
-                      type='button'
-                      variant='outline'
-                      className='mb-4'
-                      onClick={() =>
-                        dirty ? setQuickConfirm(true) : onQuickImport()
-                      }
-                    >
-                      从已有渠道快捷创建
-                    </Button>
-                  )}
                   <fieldset disabled={pending || readOnly}>
                     <ModelFields
                       disabled={pending || readOnly}
@@ -693,6 +752,10 @@ export function ModelEditor({
                       operationConfigured={drafts.length > 0}
                       existing={!!currentModel}
                       names={names}
+                      showMetadataSuggestion={!independentCreation}
+                      changeKind={
+                        independentCreation ? changeCreationKind : undefined
+                      }
                     />
                   </fieldset>
                   {drafts.length > 0 && (
@@ -726,7 +789,7 @@ export function ModelEditor({
                       />
                     )}
                   </fieldset>
-                  {drafts.length > 0 && (
+                  {drafts.length > 0 && !independentCreation && (
                     <Button
                       type='button'
                       variant='outline'
@@ -787,9 +850,36 @@ export function ModelEditor({
                   取消
                 </Button>
                 {!readOnly && (
-                  <Button disabled={pending}>
-                    {pending ? '保存中…' : '保存配置'}
-                  </Button>
+                  <>
+                    <Button
+                      variant={independentCreation ? 'default' : 'outline'}
+                      disabled={pending}
+                    >
+                      {pending
+                        ? '保存中…'
+                        : currentModel
+                          ? '保存配置'
+                          : independentCreation
+                            ? '创建模型'
+                            : '保存草稿'}
+                    </Button>
+                    {drafts.length > 0 && !independentCreation && (
+                      <Button
+                        type='button'
+                        disabled={pending}
+                        onClick={async () => {
+                          setActivating(true)
+                          try {
+                            await submit(form.getValues(), false, true)
+                          } finally {
+                            setActivating(false)
+                          }
+                        }}
+                      >
+                        {activating ? '正在校验…' : '保存并启用'}
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </SheetFooter>

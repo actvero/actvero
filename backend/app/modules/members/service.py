@@ -95,12 +95,21 @@ def member_view(member: Membership, user: User, actor: User) -> MemberView:
         id=member.id,
         name=user.name,
         email=user.email,
+        avatar_url=member_avatar_url(member, user),
         role=member.role,
         status=member.status,
         source=member.source,
         version=member.version,
         joined_at=member.joined_at,
         is_self=user.id == actor.id,
+    )
+
+
+def member_avatar_url(member: Membership, user: User) -> str | None:
+    return (
+        f"/api/v1/enterprises/{member.tenant_id}/members/{member.id}/avatar?v={user.avatar_version}"
+        if user.avatar_version
+        else None
     )
 
 

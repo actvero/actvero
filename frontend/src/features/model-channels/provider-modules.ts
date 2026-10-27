@@ -3,14 +3,14 @@ import { api, type Schema } from '@/lib/api'
 import { useOrganization } from '@/features/auth/session'
 import { providerAvatarPicker } from './provider-avatars'
 
-export type ReferenceCatalog = NonNullable<
-  Schema['ProviderView']['reference_catalog']
->
-
 export type ProviderModule = Required<
-  Omit<Schema['ProviderView'], 'reference_catalog'>
+  Omit<
+    Schema['ProviderView'],
+    'reference_catalog' | 'available_for_new_channels'
+  >
 > &
-  Pick<Schema['ProviderView'], 'reference_catalog'>
+  Pick<Schema['ProviderView'], 'reference_catalog'> &
+  Partial<Pick<Schema['ProviderView'], 'available_for_new_channels'>>
 
 export function useProviderModules() {
   const { organization } = useOrganization()

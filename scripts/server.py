@@ -65,6 +65,8 @@ def configure(args):
     for key in ['APP_DB_PASSWORD', 'KEYCLOAK_DB_PASSWORD', 'POSTGRES_ADMIN_PASSWORD',
                 'KEYCLOAK_ADMIN_PASSWORD', 'WEB_CLIENT_SECRET', 'PROVISIONER_CLIENT_SECRET']:
         content = content.replace('__' + key + '__', secrets.token_hex(24))
+    content = content.replace('__NEWAPI_MANAGEMENT_TOKEN__', 'nap_' + secrets.token_hex(32))
+    content = content.replace('__NEWAPI_SESSION_SECRET__', secrets.token_hex(32))
     content = content.replace('__SESSION_ENCRYPTION_KEY__',
                               base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
     overrides = {
@@ -135,10 +137,20 @@ class Server:
         stamp = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S%fZ')
         target = Path(self.values['ACTVERO_BACKUP_DIR']) / stamp
         target.mkdir(parents=True, mode=0o700)
-        stopped = [s for s in ['edge', 'app', 'keycloak'] if s in self.running()]
+        services = ['edge', 'app', 'keycloak'] + (['newapi'] if self.managed_gateway() else [])
+        stopped = [s for s in services if s in self.running()]
         if stopped:
             self.run(['stop'] + stopped)
         self.backup_outbox(target)
+        if self.managed_gateway():
+            containers = self.run(['ps', '--all', '--quiet', 'newapi'], capture=True).stdout.decode().split()
+            if containers:
+                destination = target / 'newapi'
+                self.run(['cp', '-a', 'newapi:/data', str(destination)])
+                for entry in [destination] + list(destination.rglob('*')):
+                    if entry.is_symlink():
+                        raise ValueError('Unexpected gateway backup symlink; backup refused.')
+                    os.chmod(str(entry), 0o700 if entry.is_dir() else 0o600)
         shutil.copy2(str(self.path), str(target / 'environment'))
         os.chmod(str(target / 'environment'), 0o600)
         for db in ['actvero', 'actvero_identity']:
@@ -178,12 +190,19 @@ class Server:
                     manifest['files'][entry.name] = hashlib.sha256(entry.read_bytes()).hexdigest()
         private_write(target / 'llm-outbox-manifest.json', json.dumps(manifest, indent=2) + '\n')
 
+    def managed_gateway(self):
+        profiles = getattr(self, 'environment', {}).get(
+            'COMPOSE_PROFILES', getattr(self, 'values', {}).get('COMPOSE_PROFILES', ''))
+        return 'gateway' in re.split(r'[,\s]+', profiles)
+
     def start(self, no_build=False):
         self.run(['config', '--quiet'])
         if not no_build:
             self.run(['build', 'postgres'])
             self.run(['build', 'app'])
             self.run(['build', 'keycloak'])
+            if self.managed_gateway():
+                self.run(['build', 'newapi'])
         backup = None
         if 'postgres' in self.running():
             backup = self.backup()
@@ -258,7 +277,7 @@ def main():
         elif args.action == 'status':
             server.run(['ps', '--all'])
         elif args.action == 'logs':
-            server.run(['logs', '--follow', '--tail', '80', 'app', 'migrate', 'keycloak', 'edge'])
+            server.run(['logs', '--follow', '--tail', '80', 'app', 'migrate', 'keycloak', 'edge'] + (['newapi'] if server.managed_gateway() else []))
         elif args.action == 'check':
             server.verify()
         elif args.action == 'stop':

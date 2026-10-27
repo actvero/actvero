@@ -72,16 +72,17 @@ const channel: Detail = {
   ],
 }
 const providers: ProviderModule[] = [
-  ['openai', 'OpenAI', 'https://api.openai.com/v1'],
-  ['anthropic', 'Anthropic', 'https://api.anthropic.com'],
-  ['gemini', 'Gemini', 'https://generativelanguage.googleapis.com'],
-  ['openai-compatible', '自定义 OpenAI 兼容', ''],
-].map(([id, name, default_base_url]) => ({
+  ['openai', 'OpenAI', 'https://api.openai.com', '/v1'],
+  ['anthropic', 'Anthropic', 'https://api.anthropic.com', '/v1'],
+  ['gemini', 'Gemini', 'https://generativelanguage.googleapis.com', '/v1beta'],
+  ['openai-compatible', '自定义 OpenAI 兼容', '', '/v1'],
+].map(([id, name, official_service_root, default_api_prefix]) => ({
   id: id as ProviderModule['id'],
   name,
-  default_base_url,
-  official_service_root: default_base_url,
-  default_api_prefix: '',
+  default_base_url:
+    official_service_root + (id === 'openai' ? default_api_prefix : ''),
+  official_service_root,
+  default_api_prefix,
   setup_help: '',
   version: 1,
   category: id === 'openai-compatible' ? 'compatible' : 'vendor',
@@ -130,6 +131,7 @@ async function show(component: ReactNode) {
   const screen = await render(
     <QueryClientProvider client={client}>{component}</QueryClientProvider>
   )
+  await waitForAnimations()
   return { screen, client }
 }
 
@@ -177,7 +179,7 @@ it('creates a channel and archives and restores it through the list controls', a
   await screen.getByRole('button', { name: '添加渠道', exact: true }).click()
   await selectCompatible()
   await page.getByLabelText('渠道名称').fill('新渠道')
-  await page.getByLabelText('API 基础 URL').fill('https://example.test')
+  await page.getByLabelText('BaseURL').fill('https://example.test')
   await page.getByRole('combobox', { name: '身份认证' }).click()
   await page.getByRole('option', { name: '无认证', exact: true }).click()
   await page.getByRole('button', { name: '保存为新渠道' }).click()
@@ -217,7 +219,7 @@ it('shows a real empty state; opening or cancelling configuration makes no upstr
   await expect
     .element(page.getByRole('dialog', { name: '添加渠道' }))
     .toBeVisible()
-  await expect.element(page.getByLabelText('API 基础 URL')).toHaveValue('')
+  await expect.element(page.getByLabelText('BaseURL')).toHaveValue('')
   await Promise.all(
     page
       .getByRole('dialog', { name: '添加渠道' })
@@ -276,7 +278,7 @@ it('requires a replacement credential before saving a changed destination', asyn
   await show(
     <ChannelEditor channel={channel} close={vi.fn()} saved={vi.fn()} />
   )
-  await page.getByLabelText('API 基础 URL').fill('https://different.test/v1')
+  await page.getByLabelText('BaseURL').fill('https://different.test/v1')
   await page.getByRole('button', { name: '保存渠道' }).click()
   await expect
     .element(page.getByText('请填写 API Key；修改地址时需要重新填写'))
@@ -435,6 +437,54 @@ function Inventory() {
   )
 }
 
+it('keeps fetched choices, the search and selection after a failed refresh', async () => {
+  let calls = 0
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => {
+      calls += 1
+      return Response.json({
+        channel: {
+          ...channel,
+          version: channel.version + calls,
+          model_directory: {
+            snapshot_id: 'first-snapshot',
+            fetched_at: '2026-10-26T00:00:00Z',
+            candidates: [{ id: 'upstream-a' }, { id: 'upstream-b' }],
+            partial: false,
+          },
+        },
+        ok: calls === 1,
+        message: calls === 1 ? '读取成功' : '上游拒绝认证',
+        candidates:
+          calls === 1 ? [{ id: 'upstream-a' }, { id: 'upstream-b' }] : [],
+        snapshot_id: calls === 1 ? 'first-snapshot' : null,
+        partial: false,
+      })
+    })
+  )
+  await show(<Inventory />)
+  await page.getByRole('button', { name: '从上游获取' }).click()
+  await page
+    .getByRole('textbox', { name: '搜索上游返回的模型' })
+    .fill('upstream-a')
+  await page.getByRole('checkbox', { name: 'upstream-a' }).click()
+  await page.getByRole('button', { name: '重新获取' }).click()
+  await expect
+    .element(page.getByText('上游拒绝认证', { exact: true }))
+    .toBeVisible()
+  await expect
+    .element(page.getByRole('textbox', { name: '搜索上游返回的模型' }))
+    .toHaveValue('upstream-a')
+  await expect
+    .element(page.getByRole('checkbox', { name: 'upstream-a' }))
+    .toBeChecked()
+  await expect
+    .element(page.getByRole('button', { name: '登记并配置（1）' }))
+    .toBeEnabled()
+  expect(calls).toBe(2)
+})
+
 it('requires selection to register discovered models and retains inventory when refresh fails', async () => {
   let version = 1
   let fail = false
@@ -444,7 +494,17 @@ it('requires selection to register discovered models and retains inventory when 
     expect(body.version).toBe(version)
     version += 1
     value = { ...value, version }
-    if (url.endsWith('/discover'))
+    if (url.endsWith('/discover')) {
+      if (!fail)
+        value = {
+          ...value,
+          model_directory: {
+            snapshot_id: 'snapshot',
+            fetched_at: '2026-10-26T00:00:00Z',
+            candidates: [{ id: 'new-model' }, { id: 'existing-model' }],
+            partial: false,
+          },
+        }
       return Response.json({
         channel: value,
         ok: !fail,
@@ -453,6 +513,7 @@ it('requires selection to register discovered models and retains inventory when 
         snapshot_id: 'snapshot',
         partial: false,
       })
+    }
     expect(body.snapshot_id).toBe('snapshot')
     expect(body.models).toEqual([{ id: 'new-model' }])
     value = {
@@ -471,18 +532,18 @@ it('requires selection to register discovered models and retains inventory when 
   })
   vi.stubGlobal('fetch', fetcher)
   await show(<Inventory />)
-  await page.getByRole('button', { name: '发现模型' }).click()
+  await page.getByRole('button', { name: '从上游获取' }).click()
   await expect
-    .element(page.getByRole('button', { name: '登记选中模型（0）' }))
+    .element(page.getByRole('button', { name: '仅登记（0）' }))
     .toBeDisabled()
   expect(fetcher).toHaveBeenCalledTimes(1)
   await page.getByRole('checkbox', { name: 'new-model' }).click()
-  await page.getByRole('button', { name: '登记选中模型（1）' }).click()
+  await page.getByRole('button', { name: '仅登记（1）' }).click()
   await expect
     .element(page.getByRole('button', { name: '移除 new-model' }))
     .toBeVisible()
   fail = true
-  await page.getByRole('button', { name: '发现模型' }).click()
+  await page.getByRole('button', { name: '重新获取' }).click()
   await expect
     .element(page.getByText('目录读取失败', { exact: true }))
     .toBeVisible()
@@ -558,12 +619,13 @@ it('opens the selected model tab and preserves the page layout on narrow screens
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
 })
 
-it('checks and discovers before creation, then saves only selected and manually entered models in one request', async () => {
+it('fetches a directory once before creation, then saves only selected and manually entered models', async () => {
   const calls: { url: string; body: Record<string, unknown> }[] = []
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     const body = JSON.parse(String(options?.body))
     calls.push({ url, body })
     if (url.endsWith('/channel-drafts/inspect')) {
+      expect(body.discover).toBe(true)
       expect(body.api_key).toBe('draft-fixture-secret')
       expect(body.name).toBeUndefined()
       expect(body.models).toBeUndefined()
@@ -591,14 +653,13 @@ it('checks and discovers before creation, then saves only selected and manually 
   const saved = vi.fn()
   const { client } = await show(<ChannelEditor close={vi.fn()} saved={saved} />)
   await selectCompatible()
-  await page.getByLabelText('API 基础 URL').fill('https://example.test')
+  await page.getByLabelText('BaseURL').fill('https://example.test')
   await page
     .getByLabelText('API Key', { exact: true })
     .fill('draft-fixture-secret')
-  await page.getByRole('button', { name: '检查目录连接', exact: true }).click()
   await expect
-    .element(page.getByText('目录读取成功', { exact: true }))
-    .toBeVisible()
+    .element(page.getByRole('button', { name: '检查目录连接' }))
+    .not.toBeInTheDocument()
   await expect
     .element(page.getByLabelText('渠道名称'))
     .toHaveValue('自定义 OpenAI 兼容')
@@ -617,7 +678,7 @@ it('checks and discovers before creation, then saves only selected and manually 
     .click()
   await page.getByLabelText('渠道名称').fill('新渠道')
   expect(saved).not.toHaveBeenCalled()
-  expect(calls).toHaveLength(2)
+  expect(calls).toHaveLength(1)
   const dialog = page.getByRole('dialog', { name: '添加渠道' })
   await Promise.all(
     dialog
@@ -632,7 +693,7 @@ it('checks and discovers before creation, then saves only selected and manually 
   })
   await page.getByRole('button', { name: '保存为新渠道' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
-  expect(calls).toHaveLength(3)
+  expect(calls).toHaveLength(2)
   expect(client.getMutationCache().getAll()).toHaveLength(0)
   expect(
     JSON.stringify(
@@ -671,14 +732,14 @@ it('preserves selected models on discovery failure and invalidates old discovery
     .getByRole('button', { name: 'selected-model', exact: true })
     .click()
   fail = true
-  await page.getByRole('button', { name: '从上游获取' }).click()
+  await page.getByRole('button', { name: '重新获取' }).click()
   await expect.element(page.getByText('上游拒绝认证')).toBeVisible()
   await expect
     .element(
       page.getByRole('group', { name: '已选模型' }).getByText('selected-model')
     )
     .toBeVisible()
-  await page.getByLabelText('API 基础 URL').fill('https://different.test/v1')
+  await page.getByLabelText('BaseURL').fill('https://different.test/v1')
   await expect.element(page.getByText('上游拒绝认证')).not.toBeInTheDocument()
   await page
     .getByRole('textbox', { name: '搜索或输入模型 ID' })
@@ -693,7 +754,7 @@ it('preserves selected models on discovery failure and invalidates old discovery
       page.getByRole('group', { name: '已选模型' }).getByText('selected-model')
     )
     .toBeVisible()
-  await page.getByRole('button', { name: '检查目录连接', exact: true }).click()
+  await page.getByRole('button', { name: '从上游获取', exact: true }).click()
   await expect
     .element(page.getByText('请填写 API Key；修改地址时需要重新填写'))
     .toBeVisible()
@@ -737,7 +798,7 @@ it('loads complete inventory before editing a list row and preserves it on save'
   expect(requests).toEqual(['GET', 'GET', 'PUT'])
 })
 
-it('allows cancelling an in-flight draft check and aborts the browser request', async () => {
+it('allows cancelling an in-flight directory fetch and aborts the browser request', async () => {
   let signal: AbortSignal | undefined
   vi.stubGlobal(
     'fetch',
@@ -763,9 +824,9 @@ it('allows cancelling an in-flight draft check and aborts the browser request', 
     )
   }
   await show(<Cancellable />)
-  await page.getByRole('button', { name: '检查目录连接', exact: true }).click()
+  await page.getByRole('button', { name: '从上游获取', exact: true }).click()
   await expect
-    .element(page.getByRole('button', { name: '正在检查…' }))
+    .element(page.getByRole('button', { name: '从上游获取' }))
     .toBeDisabled()
   await expect
     .element(page.getByRole('button', { name: '保存渠道' }))
@@ -794,8 +855,8 @@ it('selects provider defaults, filters aliases and clears credentials when switc
     .not.toBeInTheDocument()
   await page.getByRole('button', { name: 'Anthropic', exact: true }).click()
   await expect
-    .element(page.getByLabelText('地址方式'))
-    .toHaveTextContent('官方地址')
+    .element(page.getByLabelText('BaseURL'))
+    .toHaveValue('https://api.anthropic.com/v1')
   await expect
     .element(page.getByText('可配置与测试', { exact: true }))
     .not.toBeInTheDocument()
@@ -824,8 +885,8 @@ it('selects provider defaults, filters aliases and clears credentials when switc
   await page.getByRole('button', { name: 'OpenAI', exact: true }).click()
   await expect.element(page.getByLabelText('渠道名称')).toHaveValue('自用渠道')
   await expect
-    .element(page.getByLabelText('地址方式'))
-    .toHaveTextContent('官方地址')
+    .element(page.getByLabelText('BaseURL'))
+    .toHaveValue('https://api.openai.com/v1')
   await expect
     .element(page.getByLabelText('API Key', { exact: true }))
     .toHaveValue('')

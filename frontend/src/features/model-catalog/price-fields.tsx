@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardAction,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { CollapsibleSection } from '@/components/ui/collapsible'
 import {
   FormControl,
   FormField,
@@ -53,6 +53,7 @@ export function PriceFields({
 }) {
   const form = useFormContext<ModelValues>()
   const bindings = useWatch({ control: form.control, name: 'bindings' })
+  const budget = useWatch({ control: form.control, name: 'budget_price' })
   const targets = [
     { id: 'budget_price', label: '成员预算价格' },
     ...bindings.map((b, i) => ({
@@ -63,6 +64,32 @@ export function PriceFields({
   const selected = targets.find((t) => t.id === target) ?? targets[0]
   return (
     <div className='flex min-w-0 flex-col gap-6'>
+      <div className='grid gap-3 sm:grid-cols-2'>
+        <div className='rounded-lg border p-4'>
+          <p className='font-medium'>成员预算价格 · 对内计费</p>
+          <p className='mt-1 text-sm text-muted-foreground'>
+            决定成员调用扣多少积分。填币种和单价后，按组织的换算比例计算积分。
+          </p>
+          <Button
+            type='button'
+            variant='link'
+            className='h-auto px-0 pt-3'
+            onClick={() => setTarget('budget_price')}
+          >
+            {budget.enabled ? '检查预算价格与积分' : '配置成员预算价格'}
+          </Button>
+        </div>
+        <div className='rounded-lg border p-4'>
+          <p className='font-medium'>渠道采购价格 · 上游成本</p>
+          <p className='mt-1 text-sm text-muted-foreground'>
+            用于统计付给供应商的成本，每个来源单独配置。未填写时费用未知，不视为免费。
+          </p>
+          <p className='mt-3 text-sm'>
+            已配置 {bindings.filter((binding) => binding.price.enabled).length}{' '}
+            / {bindings.length} 个来源
+          </p>
+        </div>
+      </div>
       <div className='flex flex-col gap-2 sm:max-w-xl'>
         <Label htmlFor='price-target'>价格对象</Label>
         <Select
@@ -120,7 +147,9 @@ function PriceEditor({
       <Card>
         <CardHeader>
           <div className='flex flex-wrap items-center gap-3'>
-            <CardTitle>{kind === 'chat' ? 'Token 单价' : '调用单价'}</CardTitle>
+            <CardTitle>
+              {name === 'budget_price' ? '成员预算价格' : '渠道采购价格'}
+            </CardTitle>
             {kind === 'chat' && (
               <ReferencePicker
                 mode='price'
@@ -155,6 +184,13 @@ function PriceEditor({
             />
           </CardAction>
         </CardHeader>
+        {!value.enabled && (
+          <CardContent className='text-sm text-muted-foreground'>
+            {name === 'budget_price'
+              ? '尚未配置。启用模型前，请填写用于扣减成员积分的单价。'
+              : '尚未配置，上游成本将显示为未知。请按此渠道的实际合同或账单填写。'}
+          </CardContent>
+        )}
         {value.enabled && (
           <CardContent className='flex flex-col gap-5'>
             {kind !== 'chat' && kind !== 'speech' && !single && (
@@ -338,9 +374,9 @@ function PriceEditor({
         )}
       </Card>
       {value.enabled && name === 'budget_price' && (
-        <CollapsibleSection title='积分单价'>
+        <div className='rounded-lg border p-4'>
           <PointPricePreview />
-        </CollapsibleSection>
+        </div>
       )}
       {value.enabled && <PriceEstimate name={name} disabled={disabled} />}
     </div>

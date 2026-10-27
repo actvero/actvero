@@ -59,6 +59,27 @@ class ReleaseTests(unittest.TestCase):
                 self.assertEqual(archive[-1], 'a' * 40)
                 self.assertFalse(any(' tag ' in str(entry) for entry in call.call_args_list))
 
+    def test_gateway_profile_transfers_and_verifies_the_gateway_image(self):
+        import json
+        for managed, count in [(False, 3), (True, 4)]:
+            with self.subTest(managed=managed), tempfile.TemporaryDirectory() as temp:
+                commit = 'a' * 40
+                metadata = json.dumps([{'Architecture': 'amd64', 'Config': {
+                    'Labels': {'org.opencontainers.image.revision': commit}}}]).encode()
+                with patch.object(remote.subprocess, 'check_call') as call, \
+                     patch.object(remote.subprocess, 'check_output', side_effect=[b'docker'] + [metadata] * count), \
+                     patch.object(remote, 'transport_images') as transport:
+                    remote.prepare_images(commit, temp, 'actvero-test', ['ssh', 'server'], managed)
+                builds = [entry.args[0] for entry in call.call_args_list
+                          if entry.args[0][:3] == ['docker', 'buildx', 'build']]
+                self.assertEqual(len(builds), count)
+                self.assertEqual(len(transport.call_args.args[0]), count + 2)
+                if managed:
+                    self.assertEqual(builds[-1][-1], 'integrations/newapi')
+                    self.assertIn('integrations/newapi/Dockerfile', builds[-1])
+                    self.assertIn('actvero-release-newapi:' + commit[:12], transport.call_args.args[0])
+                    self.assertTrue(any('actvero-test-newapi:' in str(entry) for entry in call.call_args_list))
+
 
 if __name__ == '__main__':
     unittest.main()

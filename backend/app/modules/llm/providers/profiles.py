@@ -18,6 +18,7 @@ class ProviderProfile:
     operations: tuple[Operation, ...]
     model_discovery: bool = True
     model_namespace: str | None = None
+    available_for_new_channels: bool = True
 
 
 _COMPATIBLE: tuple[Operation, ...] = (
@@ -53,24 +54,50 @@ PROFILES = {
     ),
     "aihubmix": ProviderProfile("https://aihubmix.com", "/v1", ("chat",)),
     "volcengine": ProviderProfile(
-        "https://ark.cn-beijing.volces.com", "/api/v3", ("chat",), False, "volcengine"
+        "https://ark.cn-beijing.volces.com", "/api/v3", ("chat",), True, "volcengine"
     ),
-    "zhipu": ProviderProfile("https://open.bigmodel.cn", "/api/paas/v4", ("chat",), False, "zai"),
-    "moonshot": ProviderProfile("https://api.moonshot.cn", "/v1", ("chat",), False, "moonshot"),
+    "zhipu": ProviderProfile(
+        "https://open.bigmodel.cn",
+        "/api/paas/v4",
+        ("chat",),
+        True,
+        "zai",
+        available_for_new_channels=False,
+    ),
+    "moonshot": ProviderProfile(
+        "https://api.moonshot.cn", "/v1", ("chat",), model_namespace="moonshot"
+    ),
     "qwen": ProviderProfile(
-        "https://maas.qianwenaiapi.com", "/compatible-mode/v1", ("chat",), False, "qwen_ai_platform"
+        "https://maas.qianwenaiapi.com",
+        "/compatible-mode/v1",
+        ("chat",),
+        True,
+        "qwen_ai_platform",
+        available_for_new_channels=False,
     ),
     # Historical products are separate snapshots, never rewritten into Qwen Team Plan.
     "aliyun-bailian": ProviderProfile(
-        "https://dashscope.aliyuncs.com", "/compatible-mode/v1", ("chat",), False
+        "https://dashscope.aliyuncs.com", "/compatible-mode/v1", ("chat",), True
     ),
     "volcengine-agent-plan": ProviderProfile(
-        "https://ark.cn-beijing.volces.com", "/api/plan/v3", ("chat",), False
+        "https://ark.cn-beijing.volces.com",
+        "/api/plan/v3",
+        ("chat",),
+        True,
+        available_for_new_channels=False,
     ),
     "volcengine-coding-plan": ProviderProfile(
-        "https://ark.cn-beijing.volces.com", "/api/coding/v3", ("chat",), False
+        "https://ark.cn-beijing.volces.com",
+        "/api/coding/v3",
+        ("chat",),
+        True,
+        available_for_new_channels=False,
     ),
     "qwen-token-plan": ProviderProfile(
-        "https://token-plan.maas.qianwenaiapi.com", "/compatible-mode/v1", ("chat",), False
+        "https://token-plan.maas.qianwenaiapi.com",
+        "/compatible-mode/v1",
+        ("chat",),
+        True,
+        available_for_new_channels=False,
     ),
 }

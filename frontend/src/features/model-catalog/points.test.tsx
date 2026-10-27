@@ -143,7 +143,6 @@ it('connects model prices to points, refreshes after configuration, and does not
   stubFetch(calls)
   await show(<ModelEditor model={model} close={vi.fn()} saved={saved} />)
   await page.getByRole('tab', { name: '价格配置' }).click()
-  await page.getByRole('button', { name: '积分单价', exact: true }).click()
   await expect
     .element(page.getByText('尚未设置积分换算', { exact: true }))
     .toBeVisible()
@@ -186,7 +185,6 @@ it('shows a currency mismatch instead of a fabricated zero-point price', async (
   )
   await show(<ModelEditor model={model} close={vi.fn()} saved={vi.fn()} />)
   await page.getByRole('tab', { name: '价格配置' }).click()
-  await page.getByRole('button', { name: '积分单价', exact: true }).click()
   await expect
     .element(page.getByText('计价币种不一致，无法换算积分', { exact: true }))
     .toBeVisible()

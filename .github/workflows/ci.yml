@@ -6,6 +6,48 @@ on:
 permissions:
   contents: read
 jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned New API integration
+        run: docker build --tag actvero-newapi:test integrations/newapi
+      - name: Verify bootstrap and organization separation
+        run: |
+          docker run --detach --name actvero-newapi-test --publish 127.0.0.1:5300:3000 \
+            --env ACTVERO_ORGANIZATION_ISOLATION=true \
+            --env ACTVERO_BOOTSTRAP_TOKEN=nap_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --env SESSION_SECRET=isolated-gateway-runtime-test actvero-newapi:test
+          python3 - <<'PY'
+          import json, time
+          from urllib.request import Request, urlopen
+          for attempt in range(60):
+              try:
+                  with urlopen('http://127.0.0.1:5300/api/status', timeout=2) as response:
+                      status = json.load(response)
+                  if status['success'] and status['data']['actvero_organization_isolation']:
+                      break
+              except (OSError, ValueError, KeyError):
+                  pass
+              time.sleep(1)
+          else:
+              raise SystemExit('Gateway did not become ready')
+          identities = []
+          for owner in ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002']:
+              request = Request('http://127.0.0.1:5300/api/actvero/organizations/' + owner + '/connect',
+                                method='POST', headers={'Authorization': 'Bearer nap_' + 'a' * 64})
+              with urlopen(request, timeout=10) as response:
+                  packet = json.load(response)
+              assert packet['success'] is True
+              identities.append(packet['data'])
+          assert identities[0]['namespace'] != identities[1]['namespace']
+          assert identities[0]['relay_key'] != identities[1]['relay_key']
+          assert identities[0]['relay_token_id'] != identities[1]['relay_token_id']
+          print('Gateway image bootstrap and organization separation passed')
+          PY
+      - name: Stop disposable gateway
+        if: always()
+        run: docker rm --force actvero-newapi-test || true
   verify:
     runs-on: ubuntu-latest
     services:
@@ -56,4 +98,5 @@ jobs:
           python3 scripts/test-identity-theme-assets.py
           python3 scripts/test-server.py
           python3 scripts/test-server-remote.py
+          python3 scripts/test-gateway-deployment.py
           node --test scripts/test-identity-account-switch.mjs

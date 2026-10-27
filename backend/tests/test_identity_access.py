@@ -52,6 +52,8 @@ async def env(tmp_path):
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     settings = Settings(
         _env_file=None,
+        app_url="http://127.0.0.1:5194",
+        session_cookie_name=COOKIE,
         llm_outbox_dir=tmp_path / "llm-outbox",
         platform_edition="community",
         database_url=None,

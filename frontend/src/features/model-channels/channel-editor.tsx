@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, PlugZap } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, type Schema } from '@/lib/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +20,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { channelPath } from './api'
+import { channelBaseUrl, connectionForBaseUrl } from './channel-address'
 import {
   ChannelAdvancedFields,
   ChannelConnectionFields,
@@ -32,7 +32,18 @@ import { ProviderPicker } from './provider-picker'
 import type { Channel, Detail } from './shared'
 
 type Inspection = Schema['DraftInspectionView']
-type Resolved = Schema['ResolvedConnection']
+function cachedInspection(channel?: Detail): Inspection | null {
+  const directory = channel?.model_directory
+  return directory
+    ? {
+        ok: true,
+        message: '',
+        checked_at: directory.fetched_at,
+        candidates: directory.candidates,
+        partial: directory.partial ?? false,
+      }
+    : null
+}
 type EditorProps = {
   channel?: Channel
   copyFrom?: Detail
@@ -54,20 +65,11 @@ function valuesFor(
   source?: Detail,
   copy = false
 ): ChannelValues {
-  const mode =
-    source?.connection.address_mode ??
-    (provider.id === 'openai-compatible' ? 'service_root' : 'provider_default')
   return {
     name: copy ? `${source!.name} 副本` : (source?.name ?? provider.name),
     description: source?.description ?? '',
     icon: source?.icon ?? '',
-    address_mode: mode,
-    base_url: source?.connection.legacy_base_url ?? source?.base_url ?? '',
-    service_root: source?.connection.service_root ?? '',
-    custom_prefix:
-      source?.connection.api_prefix !== null &&
-      source?.connection.api_prefix !== undefined,
-    api_prefix: source?.connection.api_prefix ?? '',
+    base_url: channelBaseUrl(provider, source),
     auth_mode: source?.auth_mode ?? 'api_key',
     api_key: '',
     timeout_seconds: source?.timeout_seconds ?? 20,
@@ -80,22 +82,6 @@ function valuesFor(
     test_stream: source?.test_defaults?.stream ?? false,
     models: source?.models.map(({ id }) => id) ?? [],
     manual_models: '',
-  }
-}
-
-function address(values: ChannelValues): Schema['ChannelConnectionSettings'] {
-  return {
-    address_mode: values.address_mode,
-    resolver_version: 1,
-    ...(values.address_mode === 'service_root'
-      ? { service_root: values.service_root.trim() }
-      : {}),
-    ...(values.address_mode === 'legacy_api_base'
-      ? { legacy_base_url: values.base_url.trim() }
-      : {}),
-    ...(values.address_mode !== 'legacy_api_base' && values.custom_prefix
-      ? { api_prefix: values.api_prefix.trim() }
-      : {}),
   }
 }
 
@@ -200,6 +186,16 @@ export function ChannelEditor({
           <div className='p-6'>
             <RequestError error={new Error('此渠道的供应商模块暂不可用')} />
           </div>
+        ) : !channel && provider.available_for_new_channels === false ? (
+          <div className='p-6'>
+            <RequestError
+              error={
+                new Error(
+                  '此供应商预设已停止新增，请返回选择其他供应商。已有渠道仍可编辑和调用。'
+                )
+              }
+            />
+          </div>
         ) : channel && !initial ? (
           query.isError ? (
             <div className='p-6'>
@@ -260,17 +256,15 @@ function ChannelForm({
   draftName: string
   changeProvider?: (name: string) => void
 }) {
-  const { csrf } = useOrganization()
+  const { csrf, organization } = useOrganization()
+  const client = useQueryClient()
   const [current, setCurrent] = useState(channel)
   const [error, setError] = useState<unknown>(null)
   const [inspectionError, setInspectionError] = useState<unknown>(null)
-  const [inspection, setInspection] = useState<Inspection | null>(null)
-  const [preview, setPreview] = useState<Inspection | null>(null)
-  const [addressPreview, setAddressPreview] = useState<Resolved | null>(null)
-  const [previewing, setPreviewing] = useState(false)
-  const [inspecting, setInspecting] = useState<'check' | 'discover' | null>(
-    null
+  const [preview, setPreview] = useState<Inspection | null>(() =>
+    cachedInspection(channel)
   )
+  const [inspecting, setInspecting] = useState(false)
   const [tab, setTab] = useState('connection')
   const [switching, setSwitching] = useState(false)
   const [discarding, setDiscarding] = useState(false)
@@ -293,7 +287,11 @@ function ChannelForm({
   const models = watched.models ?? []
   const manualModels = watched.manual_models ?? ''
   const selectedCount = new Set([...models, ...modelIds(manualModels)]).size
-  const currentAddress = address(form.getValues())
+  const currentAddress = connectionForBaseUrl(
+    form.getValues('base_url'),
+    provider,
+    current ?? copyFrom
+  )
   const needsKey = !!(
     !current?.credential_configured ||
     !current ||
@@ -301,8 +299,7 @@ function ChannelForm({
   )
   const pending =
     form.formState.isSubmitting ||
-    inspecting !== null ||
-    previewing ||
+    inspecting ||
     receiptBusy ||
     receiptUnknown ||
     forbidden
@@ -314,8 +311,7 @@ function ChannelForm({
     registerClose(() => {
       if (form.formState.isSubmitting || receiptUnknown || receiptBusy) return
       activeRequest.current?.abort()
-      setInspecting(null)
-      setPreviewing(false)
+      setInspecting(false)
       if (form.formState.isDirty) setDiscarding(true)
       else close()
     })
@@ -330,10 +326,8 @@ function ChannelForm({
   ])
 
   function invalidateInspection() {
-    setInspection(null)
     setPreview(null)
     setInspectionError(null)
-    setAddressPreview(null)
   }
   function denyIfForbidden(cause: unknown) {
     if (cause instanceof ApiError && cause.status === 403) {
@@ -342,13 +336,18 @@ function ChannelForm({
     }
   }
   function connection(values: ChannelValues) {
+    const target = connectionForBaseUrl(
+      values.base_url,
+      provider,
+      current ?? copyFrom
+    )
     return {
       provider: provider.id,
       base_url:
-        values.address_mode === 'legacy_api_base'
-          ? values.base_url
+        target.address_mode === 'legacy_api_base'
+          ? (target.legacy_base_url ?? '')
           : (current?.base_url ?? ''),
-      connection: address(values),
+      connection: target,
       auth_mode: values.auth_mode,
       api_key:
         values.auth_mode === 'api_key' && values.api_key
@@ -377,57 +376,18 @@ function ChannelForm({
     }
     return true
   }
-  async function resolvePreview() {
-    if (operation.current) return
-    if (!(await form.trigger(['base_url', 'service_root', 'api_prefix']))) {
-      setTab(
-        form.getFieldState('api_prefix').invalid ? 'advanced' : 'connection'
-      )
-      return
-    }
-    setPreviewing(true)
-    setAddressPreview(null)
-    setInspectionError(null)
-    const controller = new AbortController()
-    activeRequest.current = controller
-    try {
-      const result = await api<Resolved>(
-        '/llm/channel-addresses/resolve',
-        'POST',
-        {
-          provider: provider.id,
-          connection: address(form.getValues()),
-          operations: ['chat'],
-          stream: false,
-        } satisfies Schema['ChannelAddressInput'],
-        csrf,
-        controller.signal
-      )
-      if (!controller.signal.aborted) setAddressPreview(result)
-    } catch (cause) {
-      if (!controller.signal.aborted) {
-        denyIfForbidden(cause)
-        setInspectionError(cause)
-      }
-    } finally {
-      if (!controller.signal.aborted) setPreviewing(false)
-    }
-  }
-  async function inspect(discover: boolean) {
+  async function discoverModels() {
     if (operation.current || !provider.model_discovery) return
     if (
       !(await form.trigger([
         'base_url',
-        'service_root',
-        'api_prefix',
         'auth_mode',
         'api_key',
         'timeout_seconds',
       ]))
     ) {
       setTab(
-        form.getFieldState('timeout_seconds').invalid ||
-          form.getFieldState('api_prefix').invalid
+        form.getFieldState('timeout_seconds').invalid
           ? 'advanced'
           : 'connection'
       )
@@ -439,14 +399,14 @@ function ChannelForm({
     const controller = new AbortController()
     activeRequest.current = controller
     setInspectionError(null)
-    setInspecting(discover ? 'discover' : 'check')
+    setInspecting(true)
     try {
       const result = await api<Inspection>(
         '/llm/channel-drafts/inspect',
         'POST',
         {
           ...connection(values),
-          discover,
+          discover: true,
           ...(current
             ? { channel_id: current.id, version: current.version }
             : {}),
@@ -455,20 +415,34 @@ function ChannelForm({
         controller.signal
       )
       if (controller.signal.aborted) return
-      setInspection(result)
       if (!result.ok) {
         setInspectionError(new Error(result.message))
-        if (discover) setPreview(null)
-      } else if (discover) setPreview(result)
+      } else {
+        setPreview(result)
+        if (current && result.model_directory) {
+          client.setQueriesData<Detail>(
+            {
+              queryKey: [
+                'organization',
+                organization.tenant_id,
+                'model-channels',
+                current.id,
+              ],
+            },
+            (previous) =>
+              previous?.version === current.version
+                ? { ...previous, model_directory: result.model_directory }
+                : previous
+          )
+        }
+      }
     } catch (cause) {
       if (!controller.signal.aborted) {
         denyIfForbidden(cause)
-        setInspection(null)
-        if (discover) setPreview(null)
         setInspectionError(cause)
       }
     } finally {
-      if (!controller.signal.aborted) setInspecting(null)
+      if (!controller.signal.aborted) setInspecting(false)
       operation.current = false
     }
   }
@@ -616,6 +590,7 @@ function ChannelForm({
     setLatest(null)
     setError(null)
     invalidateInspection()
+    setPreview(cachedInspection(latest))
   }
 
   return (
@@ -629,7 +604,6 @@ function ChannelForm({
               setTab(
                 errors.name ||
                   errors.base_url ||
-                  errors.service_root ||
                   errors.api_key ||
                   errors.models ||
                   errors.manual_models
@@ -679,67 +653,22 @@ function ChannelForm({
                     pending={pending}
                     needsKey={needsKey}
                     invalidate={invalidateInspection}
-                    preview={() => void resolvePreview()}
-                    previewPending={previewing}
-                    showAdvanced={() => setTab('advanced')}
                   />
-                  {addressPreview && (
-                    <Alert>
-                      <AlertTitle>最终地址预览</AlertTitle>
-                      <AlertDescription>
-                        <div className='flex min-w-0 flex-col gap-2 break-all'>
-                          <span>
-                            {addressPreview.directory_url
-                              ? `目录：${addressPreview.directory_method} ${addressPreview.directory_url}`
-                              : provider.reference_catalog
-                                ? '模型目录：此套餐不提供目录，可搜索参考模型或输入实际模型 ID'
-                                : '模型目录：当前预设暂未接入，请手动登记模型 ID'}
-                          </span>
-                          {addressPreview.operation_targets.map((target) => (
-                            <span key={target.operation}>
-                              {target.operation}：{target.method} {target.url}
-                            </span>
-                          ))}
-                        </div>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {provider.model_discovery && (
-                    <Button
-                      type='button'
-                      variant='outline'
-                      className='self-start'
-                      disabled={pending}
-                      onClick={() => void inspect(false)}
-                    >
-                      <PlugZap />
-                      {inspecting === 'check' ? '正在检查…' : '检查目录连接'}
-                    </Button>
-                  )}
                   {!!inspectionError && (
                     <RequestError error={inspectionError} />
-                  )}
-                  {inspection?.ok && !inspectionError && (
-                    <Alert>
-                      <CheckCircle2 />
-                      <AlertTitle>目录读取成功</AlertTitle>
-                      <AlertDescription>
-                        {inspection.message}；不代表推理或成员权限已就绪。
-                      </AlertDescription>
-                    </Alert>
                   )}
                 </div>
                 <ChannelModelFields
                   modelDiscovery={provider.model_discovery}
-                  referenceCatalog={provider.reference_catalog}
                   candidates={
                     preview?.candidates?.map((model) => model.id) ?? []
                   }
                   discovered={preview !== null}
                   partial={preview?.partial ?? false}
+                  fetchedAt={preview?.checked_at}
                   pending={pending}
-                  discovering={inspecting === 'discover'}
-                  discover={() => void inspect(true)}
+                  discovering={inspecting}
+                  discover={() => void discoverModels()}
                 />
               </fieldset>
             </TabsContent>
@@ -748,7 +677,6 @@ function ChannelForm({
                 <ChannelAdvancedFields
                   provider={provider}
                   pending={pending}
-                  invalidate={invalidateInspection}
                 />
               </fieldset>
             </TabsContent>
@@ -795,11 +723,10 @@ function ChannelForm({
                     <>
                       <p>
                         当前服务器：{latest.name} ·{' '}
-                        {latest.connection.address_mode} ·{' '}
+                        {channelBaseUrl(provider, latest)} ·{' '}
                         {latest.models.length} 个模型；本地草稿：
-                        {form.getValues('name')} ·{' '}
-                        {form.getValues('address_mode')} · {selectedCount}{' '}
-                        个模型。
+                        {form.getValues('name')} · {form.getValues('base_url')}{' '}
+                        · {selectedCount} 个模型。
                       </p>
                       <Button
                         type='button'
@@ -880,8 +807,7 @@ function ChannelForm({
               onClick={() => {
                 if (receiptUnknown) return
                 activeRequest.current?.abort()
-                setInspecting(null)
-                setPreviewing(false)
+                setInspecting(false)
                 if (form.formState.isDirty) setDiscarding(true)
                 else close()
               }}

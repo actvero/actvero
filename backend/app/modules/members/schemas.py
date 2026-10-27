@@ -9,6 +9,7 @@ class MemberView(BaseModel):
     id: UUID
     name: str
     email: str | None
+    avatar_url: str | None = None
     role: str
     status: str
     source: str

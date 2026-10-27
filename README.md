@@ -50,7 +50,9 @@ docker compose up --build -d --wait --wait-timeout 240
 
 打开 **http://127.0.0.1:5194/console**，按页面引导创建组织与首位管理员，然后登录控制台。
 
-启动脚本会生成独立随机凭据并保存在被 Git 忽略的 `.env` 中，已有文件不会被覆盖。首次构建需要下载依赖。应用、PostgreSQL、Keycloak 和开发邮件服务由 Compose 一起启动；数据库迁移服务成功退出属于正常状态。
+启动脚本会生成独立随机凭据并保存在被 Git 忽略的 `.env` 中，已有文件不会被覆盖。首次构建需要下载依赖。应用、PostgreSQL、Keycloak、New API 模型网关和开发邮件服务由 Compose 一起启动；数据库迁移服务成功退出属于正常状态。
+
+模型网关由各组织独立管理渠道、模型和价格，多个组织共用一个网关实例。也可清空 `COMPOSE_PROFILES` 并配置外部网关地址与服务凭据，见 [网关部署说明](integrations/newapi/README.md)。
 
 这套默认配置用于本地体验。公网部署、HTTPS、正式邮件、备份和升级见 [部署说明](docs/DEPLOYMENT.md) 与 [服务器部署](docs/SERVER-DEPLOYMENT.md)。
 

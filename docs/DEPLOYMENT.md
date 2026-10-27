@@ -51,3 +51,7 @@ docker compose exec app alembic current
 迁移失败时保留错误与备份，不清库重试。目标版本由当前源码 `alembic heads` 确定。回退代码不能自动回退数据库，需要兼容代码或已验证的成套恢复。
 
 Realm 模板只导入空身份库，修改模板不会自动更新已有账号和客户端。更换 issuer、回调、客户端秘密或运行拓扑需按相应身份流程处理。
+
+## 模型网关
+
+新配置默认随 Compose 启动兼容 New API，凭据自动初始化，网关数据保存在独立卷中。多个组织共用实例，各自维护渠道、模型和价格。分开部署时清空 `COMPOSE_PROFILES`，设置 `ACTVERO_NEWAPI_BASE_URL` 和 `ACTVERO_NEWAPI_MANAGEMENT_TOKEN`，再启动 Actvero；不会启动或停止外部网关。已有配置不会自动接管原有网关数据。版本、网络设置、旧数据归属及备份步骤见 [网关部署说明](../integrations/newapi/README.md)。

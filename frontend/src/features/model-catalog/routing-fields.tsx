@@ -26,8 +26,10 @@ import { RouteParameterFields } from './route-parameter-fields'
 export function RoutingFields(props: { names: Record<string, string> }) {
   return (
     <>
-      <TimeoutFields />
       <RoutePolicyFields {...props} />
+      <CollapsibleSection title='高级：超时设置'>
+        <TimeoutFields />
+      </CollapsibleSection>
     </>
   )
 }
@@ -90,39 +92,47 @@ function RoutePolicyFields({ names }: { names: Record<string, string> }) {
                       fixedChannel ? `${fixedChannel}|${fixedUpstream}` : ''
                     }
                     onValueChange={(value) => {
-                      const [channel, upstream] = value.split('|')
-                      form.setValue('access.channel_id', channel, {
+                      const selected = bindings.find(
+                        (binding) =>
+                          `${binding.channel_id}|${binding.upstream_id}` ===
+                          value
+                      )
+                      if (!selected) return
+                      form.setValue('access.channel_id', selected.channel_id, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
-                      form.setValue('access.upstream_id', upstream, {
-                        shouldDirty: true,
-                      })
+                      form.setValue(
+                        'access.upstream_id',
+                        selected.upstream_id,
+                        {
+                          shouldDirty: true,
+                        }
+                      )
                     }}
                   >
                     <SelectTrigger id='fixed-channel'>
-                      <SelectValue placeholder='选择已启用的渠道关联' />
+                      <SelectValue placeholder='选择模型来源' />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {bindings
-                          .filter((binding) => binding.enabled)
-                          .map((binding) => (
-                            <SelectItem
-                              key={`${binding.channel_id}|${binding.upstream_id}`}
-                              value={`${binding.channel_id}|${binding.upstream_id}`}
-                            >
-                              {names[binding.channel_id] ?? '渠道'} /{' '}
-                              {binding.upstream_id}
-                            </SelectItem>
-                          ))}
+                        {bindings.map((binding) => (
+                          <SelectItem
+                            key={`${binding.channel_id}|${binding.upstream_id}`}
+                            value={`${binding.channel_id}|${binding.upstream_id}`}
+                          >
+                            {names[binding.channel_id] ?? '渠道'} /{' '}
+                            {binding.upstream_id}
+                            {!binding.enabled && '（待启用）'}
+                          </SelectItem>
+                        ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                   {!bindings.length && (
                     <p className='text-sm text-muted-foreground'>
-                      请先添加渠道关联。
+                      添加下方的模型来源后，首个来源会自动成为固定调用渠道。
                     </p>
                   )}
                 </FormItem>

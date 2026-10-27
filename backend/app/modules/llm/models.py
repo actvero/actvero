@@ -53,6 +53,7 @@ class ModelChannel(Base):
     snapshot: Mapped[list[str]] = mapped_column(JSONB, default=list)
     snapshot_id: Mapped[UUID | None] = mapped_column()
     snapshot_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    snapshot_partial: Mapped[bool | None] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 

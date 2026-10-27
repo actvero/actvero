@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "1e78ddaa9dc1f1948e8684c0766d06eab675197d0fe092e16c4c2b509474b067",
+  "source_sha256": "2bf21588fbacd12c406ed0c83fac0b5f6b14647471fa29cdfa26c045cbdd12ae",
   "roots": [
     "ArtifactCreate",
     "ArtifactView",

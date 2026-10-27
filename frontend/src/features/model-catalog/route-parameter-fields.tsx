@@ -47,7 +47,7 @@ export function RouteParameterFields({ index }: { index: number }) {
       const hint = await api<Schema['ModelHint']>(
         `/llm/channels/${binding.channel_id}/model-hint?${new URLSearchParams({ model_id: binding.upstream_id })}`
       )
-      if (hint.source !== 'litellm' || hint.mode !== 'chat') {
+      if (hint.source === 'unknown' || hint.mode !== 'chat') {
         setNotice('未找到精确匹配资料，请手动填写。')
         return
       }
@@ -92,7 +92,7 @@ export function RouteParameterFields({ index }: { index: number }) {
             disabled={loading}
             onClick={() => void readHint()}
           >
-            {loading ? '读取中…' : '读取 SDK 资料'}
+            {loading ? '读取中…' : '补全已知参数'}
           </Button>
           <span className='text-sm text-muted-foreground'>
             {notice || '留空沿用模型上限。'}
