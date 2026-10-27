@@ -58,6 +58,16 @@ Before changing the upstream version, review `apply.py` anchors, token-scope gua
 
 The backend capability snapshot is generated separately with `node frontend/scripts/export-model-capabilities.mjs`, using the locked pi-ai dependency. It supplies advisory capabilities for real discovered routes and never replaces an upstream model-list response. Deployments do not read a sibling desktop checkout.
 
+### Ark Agent Plan template
+
+The provider picker includes an Ark Agent Plan preset using native Advanced Custom routes. Chat and Anthropic Messages use the plan-specific paths; Responses requests use New API's native Chat conversion. Both creation and editing retain the same native form. Customizing the routes makes the channel an ordinary Advanced Custom connection.
+
+Agent Plan has no data-plane `/models` endpoint, and its control-plane `ListArkAgentPlanModel` requires AK/SK rather than the Plan API key. The exact preset reads the text-model support table in [Ark's public Plan documentation](https://docs.volcengine.com/docs/ark/agent-plan-personal-plan-overview?lang=zh), with a one-hour cache and no credentials sent to the documentation host. The UI labels this as a public directory: it does not prove key-specific availability, enable member access, or include image/video-generation routes. If fetching or parsing fails, discovery reports unavailable instead of returning a built-in inventory. Other suppliers continue using native key-scoped discovery. Saved-channel discovery uses the authorized saved configuration; unsaved edits are applied after saving.
+
+Saving the exact preset initializes unconfigured model prices from the reviewed ordinary Ark API list-price snapshot in `backend/app/modules/model_gateway/ark_prices.json`. This is the organization's member-billing reference, not Agent Plan AFP usage or the supplier's subscription cost. Existing explicit organization prices are preserved. The CNY list prices are normalized to native USD expressions using the gateway's configured `usd_exchange_rate` at import time; the resulting expression and native pricing version retain that conversion. DeepSeek V4.1 Flash uses Ark's Beijing peak/off-peak schedule, while Ark V4 Pro uses its fixed list price. Batch-inference prices are not used.
+
+The snapshot records its source and verification date. Models outside that reviewed snapshot are not initialized; the form flags them for pricing review. Existing native prices may still apply to such models. Saving still succeeds if price import fails; the form reports that pricing needs attention. The preset never assigns zero to an unknown price. The current chat input contract accepts text and images; audio tariffs retained in the source snapshot are not imported as a partially supported audio-cache expression. Cache storage fees are outside request token billing. Changes to published list prices require a reviewed snapshot update and an explicit native price edit for models already configured.
+
 ## License
 
 New API remains subject to [its AGPL license](licenses/LICENSE) and [additional notices](licenses/NOTICE). The overlay is linked into that program and must be distributed with the corresponding source and notices. Actvero's MIT license does not replace these terms.

@@ -54,6 +54,10 @@ import {
   getChannelPluginExtensions,
   LEGACY_TASK_PLUGIN_KEYS,
 } from '../../lib/channel-plugin-extensions'
+import {
+  ARK_AGENT_PLAN_LABEL,
+  ARK_AGENT_PLAN_TEMPLATE,
+} from '../../lib/connection-templates'
 import { ChannelTypeLogo } from '../channel-type-badge'
 
 type ChannelProviderPickerProps = {
@@ -114,6 +118,20 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
       badge?: ChannelProviderPresentation['badge']
       searchText: string
     }> = []
+    if (filter === 'all' || filter === 'builtin' || filter === 'custom') {
+      entries.push({
+        id: `preset:${ARK_AGENT_PLAN_TEMPLATE}`,
+        label: ARK_AGENT_PLAN_LABEL,
+        target: {
+          kind: 'builtin',
+          type: CHANNEL_TYPE_ADVANCED_CUSTOM,
+          preset: ARK_AGENT_PLAN_TEMPLATE,
+        },
+        description:
+          '使用 Agent Plan 专属密钥，自动配置接口并读取火山公开模型目录。按火山普通 API 官方标价计费。',
+        searchText: '火山 方舟 豆包 Agent Plan volcengine ark plan',
+      })
+    }
     for (const option of CHANNEL_TYPE_OPTIONS) {
       if (option.value === CHANNEL_TYPE_TASK_PLUGIN) {
         if (!props.canBindPlugin || (filter !== 'all' && filter !== 'plugin')) {
@@ -204,7 +222,9 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
     props.canBindPlugin && (filter === 'all' || filter === 'plugin')
   let currentProviderId: string | undefined
   if (props.currentProvider?.kind === 'builtin') {
-    currentProviderId = `builtin:${props.currentProvider.type}`
+    currentProviderId = props.currentProvider.preset
+      ? `preset:${props.currentProvider.preset}`
+      : `builtin:${props.currentProvider.type}`
   } else if (props.currentProvider?.kind === 'plugin') {
     currentProviderId = `plugin:${props.currentProvider.key}`
   }
@@ -270,7 +290,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                   data-checked={option.id === currentProviderId}
                   aria-label={
                     option.target.kind === 'builtin'
-                      ? `${option.label} ${t('Built-in')} #${option.target.type}`
+                      ? `${option.label} ${t('Built-in')}${option.target.preset ? '' : ` #${option.target.type}`}`
                       : `${option.label} ${t('Plugin')} ${option.target.key}`
                   }
                   aria-description={
@@ -304,7 +324,9 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                         <ChannelTypeLogo
                           type={
                             option.target.kind === 'builtin'
-                              ? option.target.type
+                              ? option.target.preset
+                                ? 45
+                                : option.target.type
                               : CHANNEL_TYPE_TASK_PLUGIN
                           }
                           size={20}
@@ -380,11 +402,12 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                         {option.plugin.key}
                       </span>
                     )}
-                    {option.target.kind === 'builtin' && (
-                      <span className='text-muted-foreground ml-auto shrink-0 text-[11px] tabular-nums'>
-                        #{option.target.type}
-                      </span>
-                    )}
+                    {option.target.kind === 'builtin' &&
+                      !option.target.preset && (
+                        <span className='text-muted-foreground ml-auto shrink-0 text-[11px] tabular-nums'>
+                          #{option.target.type}
+                        </span>
+                      )}
                     {option.plugin && (
                       <span className='text-muted-foreground ml-auto shrink-0 text-[11px]'>
                         {t('{{count}} models', {

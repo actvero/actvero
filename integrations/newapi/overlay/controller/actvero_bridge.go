@@ -224,7 +224,7 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 				}
 				return TestChannel, nil
 			case kind == "channel" && len(parts) == 4 && parts[2] == "fetch_models" && method == "GET":
-				return FetchModels, nil
+				return FetchUpstreamModels, nil
 			case kind == "channel" && len(parts) == 4 && parts[3] == "status" && method == "POST":
 				return UpdateChannelStatus, nil
 			case kind == "models" && len(parts) == 3 && method == "GET":
@@ -247,7 +247,7 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 	switch {
 	case path == "/api/channel/fetch_models" && method == "POST":
 		delete(body, "channel_id")
-		return FetchUpstreamModels, nil
+		return FetchModels, nil
 	case path == "/api/channel" && (method == "POST" || method == "PUT"):
 		value := body
 		if method == "POST" {

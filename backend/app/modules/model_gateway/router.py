@@ -6,9 +6,9 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from app.modules.auth.service import DB, mutation_session, now
+from app.modules.auth.service import DB, mutation_session, now, provider
 from app.modules.members.service import Access, record
-from app.modules.model_gateway import client, service
+from app.modules.model_gateway import ark_directory, client, service
 from app.modules.model_gateway.access_status import (
     PublicationNames,
     PublicationPreview,
@@ -16,6 +16,7 @@ from app.modules.model_gateway.access_status import (
     PublicationStatuses,
 )
 from app.modules.model_gateway.authorization import administrator
+from app.modules.model_gateway.connection_templates import is_ark_plan_template
 from app.modules.model_gateway.models import GatewayDirectory
 from app.modules.model_gateway.publication import PublicationInput
 from app.modules.model_gateway.schemas import (
@@ -261,8 +262,12 @@ async def directory(request: Request, db: DB, channel_id: int) -> GatewayDirecto
 async def refresh_directory(request: Request, db: DB, channel_id: int) -> GatewayDirectoryView:
     actor = await administrator(request, db, write=True)
     raw = await service.get_channel(request, actor.tenant.id, channel_id)
-    data = await client.call(
-        request, actor.tenant.id, "GET", f"/api/channel/fetch_models/{channel_id}"
+    data = (
+        await ark_directory.directory.get(provider(request).settings)
+        if is_ark_plan_template(raw)
+        else await client.call(
+            request, actor.tenant.id, "GET", f"/api/channel/fetch_models/{channel_id}"
+        )
     )
     view = GatewayDirectoryView(models=data, fetched_at=now())
     if len(view.models) > 5000:

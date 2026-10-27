@@ -1,0 +1,20 @@
+{
+  "source": "https://docs.volcengine.com/docs/ark/model-pricing?lang=zh",
+  "verified_at": "2026-10-28",
+  "source_updated_at": "2026-10-24T11:43:57Z",
+  "currency": "CNY",
+  "unit": "1000000_tokens",
+  "basis": "online_inference_standard",
+  "models": {
+    "doubao-seed-2.1-pro": {"input": "6", "cached_input": "1.2", "output": "30"},
+    "doubao-seed-2.1-lite": {"input": "0.8", "cached_input": "0.16", "audio_input": "12", "cached_audio_input": "2.4", "output": "2.7"},
+    "kimi-k3.1-pro": {"input": "13", "cached_input": "1.3", "output": "68"},
+    "glm-5.3-flash": {"input": "0.8", "cached_input": "0.23", "output": "2.8"},
+    "deepseek-v4-pro": {"input": "9", "cached_input": "0.3", "output": "27"},
+    "deepseek-v4.1-flash": {
+      "input": "1", "cached_input": "0.02", "output": "4",
+      "peak": {"input": "2", "cached_input": "0.04", "output": "8"},
+      "official_name": "deepseek-v4-1-flash"
+    }
+  }
+}

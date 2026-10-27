@@ -191,7 +191,11 @@ export async function getChannelDefaultBaseURLs(): Promise<
  */
 export async function createChannel(
   data: AddChannelRequest
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{
+  success: boolean
+  message?: string
+  pricing?: ChannelTemplatePricing
+}> {
   const res = await api.post('/api/channel', data, channelActionConfig())
   return res.data
 }
@@ -202,13 +206,24 @@ export async function createChannel(
 export async function updateChannel(
   id: number,
   data: Partial<Channel>
-): Promise<{ success: boolean; message?: string; data?: Channel }> {
+): Promise<{
+  success: boolean
+  message?: string
+  data?: Channel
+  pricing?: ChannelTemplatePricing
+}> {
   const res = await api.put(
     '/api/channel/',
     { id, ...data },
     channelActionConfig()
   )
   return res.data
+}
+
+export type ChannelTemplatePricing = {
+  applied: string[]
+  unavailable: string[]
+  pending: boolean
 }
 
 /**

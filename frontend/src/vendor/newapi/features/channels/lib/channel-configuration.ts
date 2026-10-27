@@ -29,7 +29,7 @@ import { channelFormSchema, type ChannelFormValues } from './channel-form'
 import { supportsResponsesWebSocket } from './responses-websocket'
 
 export type ChannelProviderTarget =
-  | { kind: 'builtin'; type: number }
+  | { kind: 'builtin'; type: number; preset?: 'volcengine-agent-plan' }
   | { kind: 'plugin'; key: string }
 
 export type ChannelConfigurationSection =

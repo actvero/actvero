@@ -29,7 +29,7 @@ import { handleServerError } from '@newapi/lib/handle-server-error'
 import { createServerError } from '@newapi/lib/server-error-message'
 import { useAuthStore } from '@newapi/stores/auth-store'
 
-import { createChannel, updateChannel } from '../api'
+import { createChannel, updateChannel, type ChannelTemplatePricing } from '../api'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import {
   transformFormDataToCreatePayload,
@@ -56,6 +56,18 @@ const SENSITIVE_UPDATE_FIELDS = [
   'settings',
   'other',
 ] satisfies (keyof Channel)[]
+
+function reportTemplatePricing(pricing?: ChannelTemplatePricing) {
+  if (pricing?.pending) {
+    toast.warning(
+      '渠道已保存，官方价格暂未导入，请在模型定价中核对后再开放使用。'
+    )
+  } else if (pricing?.unavailable.length) {
+    toast.warning(
+      `渠道已保存，以下模型未匹配已核实的火山官方定价，请在模型定价中核对：${pricing.unavailable.join('、')}`
+    )
+  }
+}
 
 export function useChannelMutateForm(props: UseChannelMutateFormParams) {
   const { t } = useTranslation()
@@ -101,6 +113,7 @@ export function useChannelMutateForm(props: UseChannelMutateFormParams) {
         if (!response.success) {
           throw createServerError(response, t(ERROR_MESSAGES.UPDATE_FAILED))
         }
+        reportTemplatePricing(response.pricing)
         return SUCCESS_MESSAGES.UPDATED
       }
 
@@ -109,6 +122,7 @@ export function useChannelMutateForm(props: UseChannelMutateFormParams) {
       if (!response.success) {
         throw createServerError(response, t(ERROR_MESSAGES.CREATE_FAILED))
       }
+      reportTemplatePricing(response.pricing)
       return SUCCESS_MESSAGES.CREATED
     },
     onSuccess: (messageKey) => {

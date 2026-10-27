@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query'
 import '@/styles/index.css'
 import { waitForAnimations } from '@/test-utils/animations'
+import { ARK_AGENT_PLAN_CONFIG } from '@/vendor/newapi/features/channels/lib/connection-templates'
 import { PriceSyncDialog } from '@/vendor/newapi/features/models/components/dialogs/price-sync-dialog'
 import { SyncWizardDialog } from '@/vendor/newapi/features/models/components/dialogs/sync-wizard-dialog'
 import { ModelMutateDrawer } from '@/vendor/newapi/features/models/components/drawers/model-mutate-drawer'
@@ -232,6 +233,39 @@ afterEach(async () => {
   client?.clear()
   nativeApi.defaults.adapter = nativeAdapter
   vi.unstubAllGlobals()
+})
+it('prefills Agent Plan native routes and labels its supplier public directory', async () => {
+  await page.viewport(1440, 1000)
+  await show(<GatewayChannels />, (url) =>
+    url === '/api/channel/fetch_models' ? ['upstream-agent-model'] : undefined
+  )
+  await page.getByRole('button', { name: '添加渠道', exact: true }).click()
+  await page
+    .getByRole('option', { name: '火山 Agent Plan 内置', exact: true })
+    .click()
+  await expect
+    .element(page.getByRole('textbox', { name: 'API 地址', exact: true }))
+    .toHaveValue('https://ark.cn-beijing.volces.com')
+  await page.getByRole('textbox', { name: /API 密钥/ }).fill('test-plan-key')
+  await page.getByRole('button', { name: '获取公开模型', exact: true }).click()
+  await expect
+    .poll(() =>
+      writes.some((write) => write.url === '/api/channel/fetch_models')
+    )
+    .toBe(true)
+  const discovery = writes.find(
+    (write) => write.url === '/api/channel/fetch_models'
+  )!
+  expect(discovery.body).toMatchObject({
+    type: 58,
+    base_url: 'https://ark.cn-beijing.volces.com',
+    advanced_custom: JSON.stringify(ARK_AGENT_PLAN_CONFIG),
+  })
+  expect(discovery.body).not.toHaveProperty('models')
+  await expect.element(page.getByText(/来自火山公开文本模型目录/)).toBeVisible()
+  await expect
+    .element(page.getByText('upstream-agent-model', { exact: true }).first())
+    .toBeVisible()
 })
 it.each([
   [1440, 900],
