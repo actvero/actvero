@@ -59,16 +59,13 @@ export function PublicLayout({
         <div
           className={cn(
             'mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6 lg:px-8',
-            download && 'h-20 w-full max-w-[1408px] sm:h-24'
+            download && 'w-full'
           )}
         >
           <a
             href='/'
             aria-label={`${brand.name} 首页`}
-            className={cn(
-              'flex items-center gap-2.5 rounded-sm font-manrope text-xl font-bold tracking-tight outline-ring focus-visible:ring-2',
-              download && 'sm:text-3xl'
-            )}
+            className='flex items-center gap-2.5 rounded-sm font-manrope text-xl font-bold tracking-tight outline-ring focus-visible:ring-2'
           >
             <BrandLockup />
           </a>
@@ -145,7 +142,7 @@ export function PublicLayout({
         {children}
       </main>
       {download ? (
-        <footer className='mx-6 border-t py-12 text-center text-sm text-muted-foreground sm:mx-12 lg:mx-24'>
+        <footer className='mx-auto w-full max-w-6xl border-t px-6 py-6 text-center text-xs text-muted-foreground'>
           © {new Date().getFullYear()} {brand.name}
         </footer>
       ) : (

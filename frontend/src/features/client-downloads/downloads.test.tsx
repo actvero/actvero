@@ -111,23 +111,22 @@ it('读取失败可重试，不把失败显示成未发布', async () => {
   fail = false
   await page.getByRole('button', { name: '重试' }).click()
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=x64'
     )
-  await expect.element(page.getByText('EXE · Windows 11')).toBeVisible()
+  await expect
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
+    .toHaveTextContent('下载 EXE')
 })
-it('多个 Mac 架构明确选择，切换同步下载目标；更新日志作为文本渲染', async () => {
+it('各 Mac 架构直接提供准确下载入口，更新日志作为文本渲染', async () => {
   await show(async () =>
     Response.json(catalog([asset('arm64', 'macos'), asset('x64', 'macos')]))
   )
+  expect(page.getByRole('radio').query()).toBeNull()
   await expect
-    .element(page.getByRole('button', { name: '下载 macOS 版' }))
-    .toBeDisabled()
-  await page.getByRole('radio', { name: 'Apple 芯片' }).click()
-  await expect
-    .element(page.getByRole('link', { name: '下载 macOS 版' }))
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=arm64'
@@ -138,9 +137,8 @@ it('多个 Mac 架构明确选择，切换同步下载目标；更新日志作�
     document.querySelector('script:not([src])')?.textContent
   ).not.toContain('unsafe()')
   await page.getByRole('button', { name: 'Close', exact: true }).click()
-  await page.getByRole('radio', { name: 'Intel 芯片' }).click()
   await expect
-    .element(page.getByRole('link', { name: '下载 macOS 版' }))
+    .element(page.getByRole('link', { name: '下载 macOS Intel 芯片' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=x64'
@@ -153,9 +151,8 @@ it('未推荐时不自行选择旧版本，历史版本仍可查看；下架刷�
   let body = { ...catalog(), recommendations: [] }
   const client = await show(async () => Response.json(body))
   await expect
-    .element(page.getByRole('button', { name: '下载 Windows 版' }))
+    .element(page.getByRole('button', { name: 'Windows x64未设置推荐版本' }))
     .toBeDisabled()
-  await expect.element(page.getByText('未设置推荐版本')).toBeVisible()
   await page.getByRole('button', { name: '历史版本', exact: true }).click()
   await expect
     .element(page.getByRole('link', { name: '下载 Windows · x64' }))
@@ -165,14 +162,14 @@ it('未推荐时不自行选择旧版本，历史版本仍可查看；下架刷�
   await expect.element(page.getByText('客户端安装包暂未发布。')).toBeVisible()
   expect(document.querySelector('a[href*="/file?"]')).toBeNull()
 })
-it('390px 保持下载、架构选择、更新说明与校验可读，无横向溢出', async () => {
+it('390px 保持架构下载、更新说明与校验可读，无横向溢出', async () => {
   await page.viewport(390, 844)
   const body = catalog()
   body.items[0].assets[0].filename =
     'actvero-very-long-package-name-for-windows-x64-version-1.2.0.exe'
   await show(async () => Response.json(body))
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toBeInTheDocument()
   await page.getByRole('button', { name: '历史版本', exact: true }).click()
   await page.getByRole('button', { name: '文件信息与校验' }).click()
@@ -197,7 +194,7 @@ it.each([true, false])(
       throw new Error('unexpected ' + url)
     }, true)
     await expect
-      .element(page.getByRole('link', { name: '下载 Windows 版' }))
+      .element(page.getByRole('link', { name: '下载 Windows x64' }))
       .toBeVisible()
     await expect
       .element(page.getByRole('link', { name: '登录', exact: true }))
@@ -231,7 +228,7 @@ it('首页设置读取失败不阻止下载，也不显示已关闭门户的链�
     return Response.json(catalog())
   }, true)
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toBeVisible()
   await expect
     .element(page.getByRole('link', { name: '产品', exact: true }))
@@ -250,7 +247,7 @@ it('首页设置尚未响应时仍能下载，390px菜单也隐藏门户入口',
     return Response.json(catalog())
   })
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toBeInTheDocument()
   finish(Response.json({ portal_enabled: false }))
   await page.getByRole('button', { name: '打开导航' }).click()
@@ -290,7 +287,9 @@ it('品牌、推荐版本和文件元数据从接口读取，刷新后旧下载�
   await expect
     .element(page.getByTestId('download-version'))
     .toHaveTextContent('v3.7.4')
-  await expect.element(page.getByText('PKG · macOS 14')).toBeVisible()
+  await expect
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
+    .toHaveTextContent('下载 PKG')
   expect(page.getByText('v0.1.15', { exact: true }).query()).toBeNull()
   body = catalog([asset('arm64', 'macos')])
   body.items[0].id = 'release-new'
@@ -301,7 +300,7 @@ it('品牌、推荐版本和文件元数据从接口读取，刷新后旧下载�
     .element(page.getByTestId('download-version'))
     .toHaveTextContent('v3.8.0')
   await expect
-    .element(page.getByRole('link', { name: '下载 macOS 版' }))
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-new/file?platform=macos&architecture=arm64'
@@ -328,12 +327,10 @@ it('预览版本不覆盖后台推荐，不同目标版本分别显示', async (
   })
   await show(async () => Response.json(body))
   expect(page.getByTestId('download-version').query()).toBeNull()
-  await expect.element(page.getByText('DMG · v1.2.0 · macOS 14')).toBeVisible()
+  await expect.element(page.getByText('v1.2.0', { exact: true })).toBeVisible()
+  await expect.element(page.getByText('v1.1.0', { exact: true })).toBeVisible()
   await expect
-    .element(page.getByText('EXE · v1.1.0 · Windows 11'))
-    .toBeVisible()
-  await expect
-    .element(page.getByRole('link', { name: '下载 macOS 版' }))
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=arm64'
@@ -347,21 +344,19 @@ it('预览版本不覆盖后台推荐，不同目标版本分别显示', async (
 
 it('Windows ARM64、单一架构和文件信息来自目录，未发布系统不提供假链接', async () => {
   await show(async () => Response.json(catalog([asset('arm64', 'windows')])))
-  await expect
-    .element(page.getByRole('radio', { name: 'ARM64', exact: true }))
-    .toBeChecked()
   expect(
-    page.getByRole('radio', { name: 'x64', exact: true }).query()
+    page.getByRole('link', { name: '下载 Windows x64' }).query()
   ).toBeNull()
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows ARM64' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=arm64'
     )
+  expect(page.getByRole('link', { name: /^下载 macOS/ }).query()).toBeNull()
   await expect
-    .element(page.getByRole('button', { name: '下载 macOS 版' }))
-    .toBeDisabled()
+    .element(page.getByText('暂未发布', { exact: true }))
+    .toBeVisible()
   await page.getByRole('button', { name: '历史版本', exact: true }).click()
   await page.getByRole('button', { name: '文件信息与校验' }).click()
   await expect
@@ -372,19 +367,20 @@ it('Windows ARM64、单一架构和文件信息来自目录，未发布系统不
     .toBeVisible()
 })
 
-it('刷新移除已选择架构时不自动切换 CPU，清除该架构下载链接', async () => {
+it('刷新下架架构时移除其入口，其他架构保留准确的下载链接', async () => {
   let body = catalog([asset('arm64', 'macos'), asset('x64', 'macos')])
   const client = await show(async () => Response.json(body))
-  await page.getByRole('radio', { name: 'Intel 芯片' }).click()
+  await expect
+    .element(page.getByRole('link', { name: '下载 macOS Intel 芯片' }))
+    .toBeVisible()
   body = catalog([asset('arm64', 'macos')])
   await client.invalidateQueries({ queryKey: ['public', 'client-downloads'] })
   await expect
-    .element(page.getByRole('button', { name: '下载 macOS 版' }))
-    .toBeDisabled()
+    .element(page.getByRole('link', { name: '下载 macOS Intel 芯片' }))
+    .not.toBeInTheDocument()
   expect(document.querySelector('a[href*="architecture=x64"]')).toBeNull()
-  await page.getByRole('radio', { name: 'Apple 芯片' }).click()
   await expect
-    .element(page.getByRole('link', { name: '下载 macOS 版' }))
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=arm64'
@@ -405,11 +401,11 @@ it('完全未发布时只有一次空状态，没有示例版本、架构或安�
   ).toBeNull()
 })
 
-it('自动选中的唯一架构被替换后，也需要重新确认 CPU', async () => {
+it('唯一架构被替换后，新入口明确标注 CPU 并移除旧链接', async () => {
   let body = catalog([asset('x64', 'windows')])
   const client = await show(async () => Response.json(body))
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=x64'
@@ -417,14 +413,66 @@ it('自动选中的唯一架构被替换后，也需要重新确认 CPU', async 
   body = catalog([asset('arm64', 'windows')])
   await client.invalidateQueries({ queryKey: ['public', 'client-downloads'] })
   await expect
-    .element(page.getByRole('button', { name: '下载 Windows 版' }))
-    .toBeDisabled()
+    .element(page.getByRole('link', { name: '下载 Windows x64' }))
+    .not.toBeInTheDocument()
   expect(document.querySelector('a[href*="architecture=x64"]')).toBeNull()
-  await page.getByRole('radio', { name: 'ARM64', exact: true }).click()
   await expect
-    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .element(page.getByRole('link', { name: '下载 Windows ARM64' }))
     .toHaveAttribute(
       'href',
       '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=arm64'
     )
+})
+
+it('通用版入口只在后台真实发布时出现', async () => {
+  let body = catalog([asset('arm64', 'macos')])
+  const client = await show(async () => Response.json(body))
+  await expect
+    .element(page.getByRole('link', { name: '下载 macOS Apple 芯片' }))
+    .toBeVisible()
+  expect(
+    page.getByRole('link', { name: '下载 macOS 通用版' }).query()
+  ).toBeNull()
+  body = catalog([asset('universal', 'macos')])
+  await client.invalidateQueries({ queryKey: ['public', 'client-downloads'] })
+  await expect
+    .element(page.getByRole('link', { name: '下载 macOS 通用版' }))
+    .toHaveAttribute(
+      'href',
+      '/api/v1/platform/downloads/release-a/file?platform=macos&architecture=universal'
+    )
+})
+
+it('桌面双平台布局紧凑，所有架构在首屏直接下载', async () => {
+  await page.viewport(1280, 800)
+  await show(async () =>
+    Response.json(
+      catalog([
+        asset('arm64', 'macos'),
+        asset('x64', 'macos'),
+        asset('x64', 'windows'),
+        asset('arm64', 'windows'),
+      ])
+    )
+  )
+  await expect
+    .element(page.getByRole('link', { name: '下载 Windows ARM64' }))
+    .toBeVisible()
+  expect(
+    document.querySelector('header')!.getBoundingClientRect().height
+  ).toBeLessThanOrEqual(66)
+  expect(
+    parseFloat(getComputedStyle(document.querySelector('h1')!).fontSize)
+  ).toBeLessThanOrEqual(32)
+  const cards = [...document.querySelectorAll('main [role="region"]')]
+  expect(cards).toHaveLength(2)
+  for (const card of cards) {
+    expect(card.getBoundingClientRect().height).toBeLessThanOrEqual(240)
+    expect(card.getBoundingClientRect().bottom).toBeLessThan(700)
+  }
+  const links = [...document.querySelectorAll('main a[href*="/file?"]')]
+  expect(links).toHaveLength(4)
+  for (const link of links) {
+    expect(link.getBoundingClientRect().height).toBe(44)
+  }
 })

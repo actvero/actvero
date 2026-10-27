@@ -93,7 +93,7 @@ export const downloadArchitectureLabel = (
   architecture: Asset['architecture']
 ) =>
   platform === 'macos'
-    ? { arm64: 'Apple 芯片', x64: 'Intel 芯片', universal: 'Universal' }[
+    ? { arm64: 'Apple 芯片', x64: 'Intel 芯片', universal: '通用版' }[
         architecture
       ]
     : architectureNames[architecture]
