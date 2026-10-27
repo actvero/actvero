@@ -43,7 +43,9 @@ async function show(component: ReactNode) {
     <QueryClientProvider client={client}>{component}</QueryClientProvider>
   )
   await expect
-    .poll(() => page.getByRole('dialog').element().getBoundingClientRect().right)
+    .poll(
+      () => page.getByRole('dialog').element().getBoundingClientRect().right
+    )
     .toBeLessThanOrEqual(innerWidth + 1)
   return view
 }
@@ -73,6 +75,8 @@ it('keeps a dirty draft across operation switches and asks before closing', asyn
     <ModelEditor initialValues={draft} close={close} saved={vi.fn()} />
   )
   await page.getByRole('tab', { name: '渠道与路由' }).click()
+  if (!(await page.getByRole('combobox', { name: '添加接口' }).query()))
+    await page.getByRole('button', { name: '高级：多个用途与独立开关' }).click()
   await page.getByRole('combobox', { name: '添加接口' }).click()
   await page.getByRole('option', { name: '向量' }).click()
   await page.getByRole('button', { name: '配置', exact: true }).first().click()
@@ -122,13 +126,13 @@ it('allows a new model slug conflict to be corrected without entering version co
   await show(
     <ModelEditor initialValues={draft} close={vi.fn()} saved={saved} />
   )
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.element(page.getByText('技术名称已存在')).toBeVisible()
   await expect
     .element(page.getByRole('button', { name: '加载最新并比较' }))
     .not.toBeInTheDocument()
   await page.getByLabelText('技术名称').fill('available')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(writes).toBe(2)
 })
@@ -165,7 +169,7 @@ it('keeps 409 draft, compares latest version, and never retries the stale PUT', 
   )
   await show(<ModelEditor model={model} close={vi.fn()} saved={vi.fn()} />)
   await page.getByLabelText('展示名称').fill('本地草稿')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect
     .element(page.getByText('服务器配置已变化，草稿仍保留'))
     .toBeVisible()
@@ -194,7 +198,7 @@ it('confirms public slug rename and never writes an archived model', async () =>
   )
   await show(<ModelEditor model={model} close={vi.fn()} saved={vi.fn()} />)
   await page.getByLabelText('技术名称').fill('renamed')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.element(page.getByText('确认更改技术名称？')).toBeVisible()
   expect(writes).toHaveLength(0)
   await page.getByRole('button', { name: '确认更改并保存' }).click()
@@ -217,7 +221,7 @@ it('renders archived model as read-only at narrow width', async () => {
   )
   await expect.element(page.getByText('模型已归档')).toBeVisible()
   await expect
-    .element(page.getByRole('button', { name: '保存配置' }))
+    .element(page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }))
     .not.toBeInTheDocument()
   await expect.element(page.getByLabelText('技术名称')).toBeDisabled()
   await new Promise((resolve) => setTimeout(resolve, 450))
@@ -243,11 +247,11 @@ it('stops further writes after a permission loss', async () => {
   )
   await show(<ModelEditor model={model} close={vi.fn()} saved={vi.fn()} />)
   await page.getByLabelText('展示名称').fill('新名称')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.element(page.getByText('没有编辑权限')).toBeVisible()
   await expect.element(page.getByLabelText('展示名称')).toBeDisabled()
   await expect
-    .element(page.getByRole('button', { name: '保存配置' }))
+    .element(page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }))
     .not.toBeInTheDocument()
   expect(writes).toBe(1)
 })
@@ -299,7 +303,7 @@ it('shows single-hop mapping and preserves binding identity in the save payload'
   await page.screenshot({
     path: '__screenshots__/actvero-g2-02-editor-desktop.png',
   })
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0]).toMatchObject({
     bindings: [{ binding_id: bindingId, upstream_id: 'vendor-model' }],
@@ -372,14 +376,16 @@ it('previews exact channel candidates, requires confirmation, and keeps duplicat
   expect(writes).toHaveLength(0)
   await page.getByRole('button', { name: '确认关联 2 条到草稿' }).click()
   await expect.element(page.getByText('渠道与模型映射 · 2')).toBeVisible()
-  await page.screenshot({ path: '__screenshots__/actvero-me-mapping-desktop.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-me-mapping-desktop.png',
+  })
   await page.getByRole('button', { name: '查找候选' }).click()
   await expect
     .element(
       page.getByRole('checkbox', { name: '选择候选 渠道 A / team-chat' })
     )
     .toBeDisabled()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0].bindings as { enabled: boolean }[]).toHaveLength(2)
   expect(
@@ -430,7 +436,7 @@ it('previews reference changes, confirms overwrite, and preserves an existing pu
     })
   )
   await show(<ModelEditor model={model} close={vi.fn()} saved={vi.fn()} />)
-  await page.getByRole('button', { name: '选择公开模型' }).click()
+  await page.getByRole('button', { name: '从公开资料补全' }).click()
   await page
     .getByRole('button', { name: /参考名称 upstream-reference/ })
     .click()
@@ -445,7 +451,7 @@ it('previews reference changes, confirms overwrite, and preserves an existing pu
   await page.getByRole('button', { name: '确认应用到草稿' }).click()
   await expect.element(page.getByLabelText('展示名称')).toHaveValue('参考名称')
   await expect.element(page.getByLabelText('技术名称')).toHaveValue('team-chat')
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: /^保存配置$|^保存草稿$/ }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0]).toMatchObject({
     name: '参考名称',

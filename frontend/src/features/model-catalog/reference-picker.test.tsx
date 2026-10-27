@@ -259,7 +259,7 @@ it.each(['复杂报价', '预算币种不符', '采购未确认', '套餐渠道'
       }
     )
     await page
-      .getByRole('button', { name: '选择公开模型', exact: true })
+      .getByRole('button', { name: '从公开资料补全', exact: true })
       .click()
     await page
       .getByRole('button', { name: /公开报价模型 priced-model/ })
@@ -309,7 +309,9 @@ it.each(['复杂报价', '预算币种不符', '采购未确认', '套餐渠道'
 
 it('does not offer a metadata escape when no metadata fields were selected', async () => {
   await show({ ...quote, price_importable: false }, 'USD', { mode: 'metadata' })
-  await page.getByRole('button', { name: '选择公开模型', exact: true }).click()
+  await page
+    .getByRole('button', { name: '从公开资料补全', exact: true })
+    .click()
   await page.getByRole('button', { name: /公开报价模型 priced-model/ }).click()
   for (const name of [
     '名称、开发方与图标',

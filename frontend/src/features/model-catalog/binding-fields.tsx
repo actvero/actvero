@@ -151,6 +151,14 @@ export function BindingFields({
     if (!source || sourceDuplicate || fields.length >= 50) return
     remember(source.channel.id, source.channel.name)
     append(newBinding(source.channel.id, source.upstream))
+    if (!form.getValues('access.channel_id')) {
+      form.setValue('access.channel_id', source.channel.id, {
+        shouldDirty: true,
+      })
+      form.setValue('access.upstream_id', source.upstream, {
+        shouldDirty: true,
+      })
+    }
     setSource(null)
     setAdding(false)
   }
@@ -406,7 +414,7 @@ export function BindingFields({
                         })
                       }
                     />
-                    启用渠道
+                    参与此模型调用
                   </label>
                   <Button
                     type='button'
@@ -419,7 +427,7 @@ export function BindingFields({
                     <Trash2 />
                   </Button>
                 </div>
-                <CollapsibleSection title='配置参数与兼容确认'>
+                <CollapsibleSection title='高级：请求参数与兼容设置'>
                   <BindingRoutingFields
                     index={index}
                     dirty={form.formState.isDirty}

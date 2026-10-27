@@ -69,6 +69,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@newapi': path.resolve(__dirname, './src/vendor/newapi'),
     },
   },
   test: {

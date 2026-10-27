@@ -15,6 +15,8 @@ else:
     for name in ("APP_DB_PASSWORD", "KEYCLOAK_DB_PASSWORD", "POSTGRES_ADMIN_PASSWORD",
                  "KEYCLOAK_ADMIN_PASSWORD", "WEB_CLIENT_SECRET", "PROVISIONER_CLIENT_SECRET"):
         content = content.replace("__" + name + "__", secrets.token_hex(24))
+    content = content.replace('__NEWAPI_MANAGEMENT_TOKEN__', 'nap_' + secrets.token_hex(32))
+    content = content.replace('__NEWAPI_SESSION_SECRET__', secrets.token_hex(32))
     content = content.replace("__SESSION_ENCRYPTION_KEY__", base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
     fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w") as handle: handle.write(content)

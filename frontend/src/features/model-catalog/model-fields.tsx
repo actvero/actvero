@@ -7,6 +7,7 @@ import {
   CardTitle,
   CardContent,
 } from '@/components/ui/card'
+import { CollapsibleSection } from '@/components/ui/collapsible'
 import {
   FormControl,
   FormField,
@@ -28,7 +29,13 @@ import { AvatarEditor } from '@/components/avatar-editor'
 import { providerAvatarPicker } from '@/features/model-channels/provider-avatars'
 import { ChatPolicyFields } from './chat-policy-fields'
 import { ImageFields } from './image-fields'
-import { capabilities, type ModelValues } from './model-form'
+import { MetadataSuggestion } from './metadata-suggestion'
+import {
+  capabilities,
+  kinds,
+  type ModelValues,
+  type OperationKind,
+} from './model-form'
 import { ReasoningFields } from './reasoning-fields'
 import { modelIcon } from './reference-models'
 import { ReferencePicker } from './reference-picker'
@@ -42,12 +49,16 @@ export function ModelFields({
   operationConfigured = true,
   existing = false,
   names = {},
+  changeKind,
+  showMetadataSuggestion = true,
 }: {
   disabled: boolean
   showOperation?: boolean
   operationConfigured?: boolean
   existing?: boolean
   names?: Record<string, string>
+  changeKind?: (kind: OperationKind) => void
+  showMetadataSuggestion?: boolean
 }) {
   const form = useFormContext<ModelValues>()
   const draft = useWatch({ control: form.control })
@@ -109,56 +120,93 @@ export function ModelFields({
                     <FormControl>
                       <Input {...field} placeholder='例如：team-chat' />
                     </FormControl>
+                    <p className='text-xs text-muted-foreground'>
+                      客户端调用时使用的模型 ID，可与上游名称不同。
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
           </div>
-          <div className='grid gap-4 sm:grid-cols-2'>
+          {changeKind && (
             <FormField
               control={form.control}
-              name='vendor'
+              name='kind'
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>开发方（可选）</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder='未填写' />
-                  </FormControl>
+                <FormItem className='max-w-xs'>
+                  <FormLabel>模型类型</FormLabel>
+                  <Select
+                    value={field.value}
+                    disabled={disabled}
+                    onValueChange={(kind) => changeKind(kind as OperationKind)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectGroup>
+                        {Object.entries(kinds).map(([kind, label]) => (
+                          <SelectItem key={kind} value={kind}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          )}
+          <CollapsibleSection title='补充资料与显示排序（可选）'>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='vendor'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>开发方（可选）</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder='未填写' />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>说明（可选）</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder='补充模型资料' />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
-              name='description'
+              name='display_order'
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>说明（可选）</FormLabel>
+                <FormItem className='max-w-xs'>
+                  <FormLabel>显示排序</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder='补充模型资料' />
+                    <Input {...field} inputMode='numeric' />
                   </FormControl>
+                  <p className='text-sm text-muted-foreground'>
+                    数值越大，在客户端目录越靠前；不影响渠道调度。
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-          <FormField
-            control={form.control}
-            name='display_order'
-            render={({ field }) => (
-              <FormItem className='max-w-xs'>
-                <FormLabel>显示排序</FormLabel>
-                <FormControl>
-                  <Input {...field} inputMode='numeric' />
-                </FormControl>
-                <p className='text-sm text-muted-foreground'>
-                  数值越大，在客户端目录越靠前；不影响渠道调度。
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          </CollapsibleSection>
         </CardContent>
       </Card>
       {showOperation &&
@@ -178,6 +226,16 @@ export function ModelFields({
               </CardTitle>
             </CardHeader>
             <CardContent className='flex flex-col gap-5'>
+              {showMetadataSuggestion ? (
+                <MetadataSuggestion />
+              ) : (
+                draft.reference && (
+                  <p className='text-xs break-all text-muted-foreground'>
+                    参数来源：models.dev · {draft.reference.provider} /{' '}
+                    {draft.reference.model_id}
+                  </p>
+                )
+              )}
               <div className='grid gap-4 sm:grid-cols-2'>
                 {(
                   [

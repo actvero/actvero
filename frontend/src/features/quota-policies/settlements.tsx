@@ -193,6 +193,8 @@ export function MemberUsage({ memberId }: { memberId: string }) {
         <LoadingState />
       ) : query.isError ? (
         <RequestError error={query.error} retry={() => void query.refetch()} />
+      ) : query.data.status === 'unlimited' ? (
+        <span>不限额度 · 正常记录用量</span>
       ) : query.data.status === 'unconfigured' ? (
         <span className='text-sm text-muted-foreground'>未配置额度</span>
       ) : (

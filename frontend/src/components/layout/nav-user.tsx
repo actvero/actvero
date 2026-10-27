@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronsUpDown, LogOut, UserRound } from 'lucide-react'
+import { ChevronsUpDown, Info, LogOut, UserRound } from 'lucide-react'
 import type { Schema } from '@/lib/api'
 import {
   DropdownMenu,
@@ -17,11 +17,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { OpenSourceNoticesDialog } from '@/components/open-source-notices-dialog'
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import { UserAvatar } from '@/components/user-avatar'
 
 export function NavUser({ user }: { user: Schema['UserView'] }) {
   const [open, setOpen] = useState(false)
+  const [noticesOpen, setNoticesOpen] = useState(false)
   const { isMobile } = useSidebar()
   return (
     <>
@@ -55,6 +57,10 @@ export function NavUser({ user }: { user: Schema['UserView'] }) {
                     个人设置
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setNoticesOpen(true)}>
+                  <Info />
+                  开源声明
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
@@ -68,6 +74,10 @@ export function NavUser({ user }: { user: Schema['UserView'] }) {
         </SidebarMenuItem>
       </SidebarMenu>
       <SignOutDialog open={open} onOpenChange={setOpen} />
+      <OpenSourceNoticesDialog
+        open={noticesOpen}
+        onOpenChange={setNoticesOpen}
+      />
     </>
   )
 }

@@ -40,6 +40,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
+import { ModelCreate } from '@/features/model-catalog/model-create'
 import { ModelEditor } from '@/features/model-catalog/model-editor'
 import type { Model } from '@/features/model-catalog/model-form'
 import { ModelImport } from '@/features/model-catalog/model-import'
@@ -71,22 +72,21 @@ const schema = z.object({
 export function ModelInventory({
   channel,
   modelDiscovery,
-  hasReferenceCatalog = false,
   changed,
   busy,
   setBusy,
 }: {
   channel: Detail
   modelDiscovery: boolean
-  hasReferenceCatalog?: boolean
   changed: (channel: Detail) => void
   busy: boolean
   setBusy: (busy: boolean) => void
 }) {
   const { csrf } = useOrganization()
   const [error, setError] = useState<unknown>(null)
-  const [preview, setPreview] = useState<Discovery | null>(null)
+  const preview = channel.model_directory
   const [selected, setSelected] = useState<string[]>([])
+  const [previewSearch, setPreviewSearch] = useState('')
   const [search, setSearch] = useState('')
   const [source, setSource] = useState('all')
   const [notice, setNotice] = useState('')
@@ -94,6 +94,10 @@ export function ModelInventory({
   const [removeId, setRemoveId] = useState<string | null>(null)
   const [importIds, setImportIds] = useState<string[] | null>(null)
   const [modelEditor, setModelEditor] = useState<Model | null>(null)
+  const [createSource, setCreateSource] = useState<{
+    channel: Detail
+    upstream: string
+  } | null>(null)
   const [permissionLost, setPermissionLost] = useState(false)
   const importTrigger = useRef<HTMLElement | null>(null)
   const editorTrigger = useRef<HTMLElement | null>(null)
@@ -104,6 +108,11 @@ export function ModelInventory({
   const registered = new Set(channel.models.map((model) => model.id))
   const candidates =
     preview?.candidates?.filter((model) => !registered.has(model.id)) ?? []
+  const matches = candidates.filter((model) =>
+    model.id.toLowerCase().includes(previewSearch.trim().toLowerCase())
+  )
+  const allMatchedSelected =
+    matches.length > 0 && matches.every((model) => selected.includes(model.id))
   const disabled = busy || channel.archived || permissionLost
   const bindingReferences = channel.binding_references ?? []
   const visible = channel.models.filter(
@@ -150,7 +159,6 @@ export function ModelInventory({
     setBusy(true)
     setError(null)
     setNotice('')
-    setPreview(null)
     try {
       const result = await api<Discovery>(
         channelPath(channel.id) + '/discover',
@@ -163,8 +171,11 @@ export function ModelInventory({
         setError(new Error(result.message))
         return
       }
-      setPreview(result)
-      setSelected([])
+      setSelected((previous) =>
+        previous.filter((id) =>
+          result.candidates?.some((model) => model.id === id)
+        )
+      )
     } catch (e) {
       setError(e)
       if (e instanceof ApiError && e.status === 403) setPermissionLost(true)
@@ -175,32 +186,40 @@ export function ModelInventory({
   async function save(
     modelIds: string[],
     snapshot?: string | null,
-    remove = false
+    remove = false,
+    configure = false
   ) {
     setBusy(true)
     setError(null)
     setNotice('')
     try {
-      changed(
-        await api<Detail>(
-          channelPath(channel.id) + '/models',
-          remove ? 'DELETE' : 'POST',
-          {
-            version: channel.version,
-            models: modelIds.map((id) => ({ id })),
-            snapshot_id: snapshot,
-          },
-          csrf
-        )
+      const updated = await api<Detail>(
+        channelPath(channel.id) + '/models',
+        remove ? 'DELETE' : 'POST',
+        {
+          version: channel.version,
+          models: modelIds.map((id) => ({ id })),
+          snapshot_id: snapshot,
+        },
+        csrf
       )
+      changed(updated)
       setSelected([])
       setRegisteredSelection((previous) =>
         previous.filter((id) => !modelIds.includes(id))
       )
       setRemoveId(null)
-      setPreview(null)
       form.reset()
       setNotice(remove ? '已移除模型登记' : '模型已登记，可继续添加')
+      if (configure) {
+        if (modelIds.length === 1) {
+          importTrigger.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null
+          setCreateSource({ channel: updated, upstream: modelIds[0] })
+        } else importModels(modelIds)
+      }
     } catch (e) {
       setError(e)
       if (e instanceof ApiError && e.status === 403) setPermissionLost(true)
@@ -222,7 +241,7 @@ export function ModelInventory({
               onClick={() => void discover()}
             >
               <Download />
-              {busy ? '处理中…' : '发现模型'}
+              {busy ? '正在获取…' : preview ? '重新获取' : '从上游获取'}
             </Button>
           )}
           <Button
@@ -240,19 +259,10 @@ export function ModelInventory({
           </Button>
         </div>
       </div>
-      <p className='text-sm text-muted-foreground'>
-        登记只更新此渠道的上游库存；平台模型、成员权限、价格和绑定需在导入后单独配置。
-      </p>
       {!modelDiscovery && (
         <Alert>
-          <AlertTitle>
-            {hasReferenceCatalog
-              ? '此套餐不提供模型目录'
-              : '此预设暂未接入模型目录'}
-          </AlertTitle>
-          <AlertDescription>
-            请使用实际模型 ID 手动登记；登记不会发起模型测试。
-          </AlertDescription>
+          <AlertTitle>需要提供模型 ID</AlertTitle>
+          <AlertDescription>请手动填写模型 ID。</AlertDescription>
         </Alert>
       )}
       {!!error && <RequestError error={error} />}
@@ -290,29 +300,30 @@ export function ModelInventory({
       {preview && (
         <div className='flex min-w-0 flex-col gap-3 rounded-md border p-4'>
           <div className='flex flex-wrap items-center justify-between gap-2'>
-            <p className='font-medium'>发现预览</p>
+            <p className='font-medium'>上游返回的模型</p>
             <Badge variant='secondary'>{candidates.length} 个待登记</Badge>
           </div>
+          <p className='text-xs text-muted-foreground'>
+            更新于 {dateTime(preview.fetched_at)}
+          </p>
           {preview.partial && (
             <Alert>
-              <AlertTitle>上游只返回了部分目录</AlertTitle>
+              <AlertTitle>已获取部分目录</AlertTitle>
               <AlertDescription>
-                可登记当前结果，其余模型请手动添加。
-              </AlertDescription>
-            </Alert>
-          )}
-          {preview.channel.version !== channel.version && (
-            <Alert>
-              <AlertTitle>渠道版本已变化</AlertTitle>
-              <AlertDescription>
-                请重新发现，再登记当前目录结果。
+                目录还有更多结果，当前结果已保留。可缩小上游目录范围后重新获取。
               </AlertDescription>
             </Alert>
           )}
           {candidates.length ? (
             <>
+              <Input
+                aria-label='搜索上游返回的模型'
+                placeholder='搜索模型 ID'
+                value={previewSearch}
+                onChange={(event) => setPreviewSearch(event.target.value)}
+              />
               <div className='max-h-60 overflow-y-auto'>
-                {candidates.map((model) => (
+                {matches.map((model) => (
                   <SelectionRow key={model.id}>
                     <Checkbox
                       disabled={disabled}
@@ -330,6 +341,11 @@ export function ModelInventory({
                     </span>
                   </SelectionRow>
                 ))}
+                {!matches.length && (
+                  <p className='p-3 text-sm text-muted-foreground'>
+                    没有匹配的模型
+                  </p>
+                )}
               </div>
               <div className='flex flex-wrap items-center justify-between gap-2'>
                 <Button
@@ -337,27 +353,42 @@ export function ModelInventory({
                   size='sm'
                   disabled={disabled}
                   onClick={() =>
-                    setSelected(
-                      selected.length === candidates.length
-                        ? []
-                        : candidates.map((m) => m.id)
+                    setSelected((previous) =>
+                      allMatchedSelected
+                        ? previous.filter(
+                            (id) => !matches.some((model) => model.id === id)
+                          )
+                        : [
+                            ...new Set([
+                              ...previous,
+                              ...matches.map((model) => model.id),
+                            ]),
+                          ]
                     )
                   }
                 >
-                  {selected.length === candidates.length
+                  {allMatchedSelected
                     ? '取消全选'
-                    : '选择全部'}
+                    : previewSearch
+                      ? '全选匹配结果'
+                      : '选择全部'}
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={disabled || selected.length === 0}
+                  onClick={() => void save(selected, preview.snapshot_id)}
+                >
+                  仅登记（{selected.length}）
                 </Button>
                 <Button
                   size='sm'
-                  disabled={
-                    disabled ||
-                    selected.length === 0 ||
-                    preview.channel.version !== channel.version
+                  disabled={disabled || selected.length === 0}
+                  onClick={() =>
+                    void save(selected, preview.snapshot_id, false, true)
                   }
-                  onClick={() => void save(selected, preview.snapshot_id)}
                 >
-                  登记选中模型（{selected.length}）
+                  登记并配置（{selected.length}）
                 </Button>
               </div>
             </>
@@ -368,15 +399,6 @@ export function ModelInventory({
                 : '上游返回了空目录，你也可以手动登记模型。'}
             </p>
           )}
-          <Button
-            type='button'
-            variant='ghost'
-            size='sm'
-            className='self-end'
-            onClick={() => setPreview(null)}
-          >
-            取消预览
-          </Button>
         </div>
       )}
       {!channel.archived && (
@@ -384,7 +406,11 @@ export function ModelInventory({
           <Form {...form}>
             <form
               className='flex flex-col gap-3'
-              onSubmit={form.handleSubmit((values) => save(ids(values.models)))}
+              onSubmit={(event) =>
+                void form.handleSubmit((values) => save(ids(values.models)))(
+                  event
+                )
+              }
             >
               <FormField
                 control={form.control}
@@ -676,6 +702,18 @@ export function ModelInventory({
             editorTrigger.current = importTrigger.current
             setImportIds(null)
             setModelEditor(model)
+          }}
+        />
+      )}
+      {createSource && (
+        <ModelCreate
+          initialChannel={createSource.channel}
+          initialUpstream={createSource.upstream}
+          close={() => setCreateSource(null)}
+          restoreFocus={restoreImportFocus}
+          saved={() => {
+            setCreateSource(null)
+            void refresh()
           }}
         />
       )}

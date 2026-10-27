@@ -24,7 +24,7 @@ import { useOrganization } from '@/features/auth/session'
 import { PointConversionButton } from '@/features/model-catalog/point-conversion'
 import { MemberMatches } from './member-matches'
 import { PolicyEditor } from './policy-editor'
-import { ruleLabel, weekdays, type Policy } from './policy-form'
+import { ruleLabel, type Policy } from './policy-form'
 import { Settlements } from './settlements'
 
 export function QuotaPoliciesPage() {
@@ -109,21 +109,18 @@ export function QuotaPoliciesPage() {
           >
             <span className='truncate'>{p.name}</span>
           </Button>
-          {p.priority === 0 && <Badge variant='secondary'>默认兜底</Badge>}
+          {p.is_default && <Badge variant='secondary'>组织默认</Badge>}
           {p.archived && <Badge variant='outline'>已归档</Badge>}
         </div>
       ),
     },
-    { accessorKey: 'priority', header: '优先级', meta: { className: 'w-24' } },
     {
       id: 'members',
-      header: '适用成员',
+      header: '额度方式',
       meta: { className: 'w-32' },
       cell: ({ row: { original: p } }) => (
         <span className='whitespace-nowrap'>
-          {p.priority === 0
-            ? '全部成员'
-            : `指定 ${p.member_ids?.length ?? 0} 人`}
+          {p.mode === 'unlimited' ? '不限额度' : '周期限额'}
         </span>
       ),
     },
@@ -132,11 +129,13 @@ export function QuotaPoliciesPage() {
       header: '周期额度',
       cell: ({ row: { original: p } }) => (
         <div className='flex min-w-48 flex-col gap-2 py-2'>
-          {p.rules.map((r, i) => (
-            <span key={i} className='tabular-nums'>
-              {ruleLabel(r)}
-            </span>
-          ))}
+          {p.mode === 'unlimited'
+            ? '—'
+            : p.rules.map((r, i) => (
+                <span key={i} className='tabular-nums'>
+                  {ruleLabel(r)}
+                </span>
+              ))}
         </div>
       ),
     },
@@ -145,13 +144,11 @@ export function QuotaPoliciesPage() {
       header: '重置规则',
       cell: ({ row: { original: p } }) => (
         <div className='flex min-w-48 flex-col gap-2 text-sm text-muted-foreground'>
-          {p.rules.map((r, i) => (
-            <span key={i}>
-              {r.kind === 'fixed_hours'
-                ? '首次使用起算，到期恢复'
-                : `${weekdays[r.week_start]} 00:00 · ${r.timezone}`}
-            </span>
-          ))}
+          {p.mode === 'unlimited'
+            ? '无周期上限'
+            : p.rules.map((_, i) => (
+                <span key={i}>首次使用起算，到期后下次使用重新计时</span>
+              ))}
         </div>
       ),
     },
@@ -181,7 +178,7 @@ export function QuotaPoliciesPage() {
                   编辑
                 </DropdownMenuItem>
               )}
-              {p.priority > 0 && (
+              {!p.is_default && (
                 <DropdownMenuItem
                   onSelect={() => {
                     remember()
@@ -222,7 +219,7 @@ export function QuotaPoliciesPage() {
       <Tabs defaultValue='policies' className='min-w-0 gap-4'>
         <TabsList>
           <TabsTrigger value='policies'>策略</TabsTrigger>
-          <TabsTrigger value='members'>成员匹配</TabsTrigger>
+          <TabsTrigger value='members'>成员分配</TabsTrigger>
           <TabsTrigger value='settlements'>结算记录</TabsTrigger>
         </TabsList>
         <TabsContent value='policies' className='flex min-w-0 flex-col gap-4'>
@@ -298,7 +295,7 @@ export function QuotaPoliciesPage() {
           policy={typeof editor === 'object' ? editor : undefined}
           isDefault={
             editor === 'default' ||
-            (typeof editor === 'object' && editor.priority === 0)
+            (typeof editor === 'object' && editor.is_default)
           }
           close={() => setEditor(null)}
           saved={() => {

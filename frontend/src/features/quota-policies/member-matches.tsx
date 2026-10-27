@@ -10,6 +10,7 @@ import { ServerTable } from '@/components/data-table/server-table'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
+import { AssignmentButton } from './assignment-dialog'
 import { MemberUsage } from './settlements'
 
 type MemberMatch = Schema['MemberQuotaMatch']
@@ -19,13 +20,14 @@ const columns: ColumnDef<MemberMatch>[] = [
     header: '成员',
     cell: ({ row: { original: m } }) => (
       <div className='flex min-w-40 items-center gap-3'>
-        <UserAvatar user={{ name: m.name, avatar_url: null }} />
+        <UserAvatar user={m} />
         <div className='flex flex-col gap-1'>
           <span>{m.name}</span>
           <span className='text-sm text-muted-foreground'>{m.email}</span>
           {m.role === 'administrator' && (
             <Badge variant='outline'>管理员</Badge>
           )}
+          {m.status === 'paused' && <Badge variant='outline'>已暂停</Badge>}
         </div>
       </div>
     ),
@@ -37,31 +39,41 @@ const columns: ColumnDef<MemberMatch>[] = [
       m.selected ? (
         <div className='flex min-w-28 flex-col items-start gap-1'>
           <span>{m.selected.name}</span>
-          <Badge variant='secondary'>优先级 {m.selected.priority}</Badge>
+          <Badge variant='secondary'>
+            {m.assigned ? '指定策略' : '继承默认'}
+          </Badge>
         </div>
       ) : (
         '未配置'
       ),
   },
   {
-    id: 'matched',
-    header: '其他命中',
-    cell: ({ row: { original: m } }) => (
-      <div className='flex min-w-24 flex-wrap gap-1'>
-        {m.matched.slice(1).map((p) => (
-          <Badge key={p.id} variant='outline'>
-            {p.name}
-          </Badge>
-        ))}
-        {m.matched.length <= 1 && '—'}
-      </div>
-    ),
+    id: 'mode',
+    header: '额度方式',
+    cell: ({ row }) =>
+      row.original.selected?.mode === 'unlimited'
+        ? '不限额度'
+        : row.original.selected
+          ? '周期限额'
+          : '—',
   },
   {
     id: 'usage',
     header: '剩余额度',
     meta: { className: 'w-80 whitespace-normal' },
-    cell: ({ row }) => <MemberUsage memberId={row.original.member_id} />,
+    cell: ({ row }) =>
+      row.original.status === 'paused' ? (
+        <span className='text-muted-foreground'>成员已暂停调用</span>
+      ) : (
+        <MemberUsage memberId={row.original.member_id} />
+      ),
+  },
+  {
+    id: 'actions',
+    header: '操作',
+    cell: ({ row }) => (
+      <AssignmentButton key={row.original.member_id} member={row.original} />
+    ),
   },
 ]
 export function MemberMatches() {
@@ -125,7 +137,7 @@ export function MemberMatches() {
           total={query.data.total}
           page={page}
           onPage={setPage}
-          empty='没有匹配的有效成员'
+          empty='没有匹配的成员'
         />
       )}
     </div>

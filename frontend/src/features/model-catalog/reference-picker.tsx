@@ -54,7 +54,7 @@ export function ReferencePicker(props: PickerProps) {
           size='sm'
           disabled={props.disabled}
         >
-          {props.mode === 'metadata' ? '选择公开模型' : '导入参考价格'}
+          {props.mode === 'metadata' ? '从公开资料补全' : '导入参考价格'}
         </Button>
       </DialogTrigger>
       {open && <PickerContent {...props} close={() => setOpen(false)} />}

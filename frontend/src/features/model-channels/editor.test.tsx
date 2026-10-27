@@ -120,7 +120,9 @@ async function show(component: ReactNode) {
     <QueryClientProvider client={client}>{component}</QueryClientProvider>
   )
   await expect
-    .poll(() => page.getByRole('dialog').element().getBoundingClientRect().right)
+    .poll(
+      () => page.getByRole('dialog').element().getBoundingClientRect().right
+    )
     .toBeLessThanOrEqual(innerWidth + 1)
   return view
 }
@@ -129,28 +131,13 @@ function failure(status: number, message: string, references?: unknown[]) {
   return Response.json({ error: { message, references } }, { status })
 }
 
-it('uses official address resolution without sending the old provider base or a key', async () => {
+it('prefills one editable BaseURL and saves the provider default without an address preview', async () => {
   const calls: { url: string; body: Record<string, unknown> }[] = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, options?: RequestInit) => {
-      const body = JSON.parse(String(options?.body)) as Record<string, unknown>
+      const body = JSON.parse(String(options?.body))
       calls.push({ url, body })
-      if (url.endsWith('/channel-addresses/resolve'))
-        return Response.json({
-          address_mode: 'provider_default',
-          resolver_version: 1,
-          directory_method: 'GET',
-          directory_url: 'https://api.openai.com/v1/models',
-          operation_targets: [
-            {
-              operation: 'chat',
-              method: 'POST',
-              url: 'https://api.openai.com/v1/chat/completions',
-            },
-          ],
-          warnings: [],
-        })
       return Response.json({
         ...legacy,
         ...body,
@@ -164,50 +151,93 @@ it('uses official address resolution without sending the old provider base or a 
   await show(<ChannelEditor close={vi.fn()} saved={saved} />)
   await page.getByRole('button', { name: 'OpenAI', exact: true }).click()
   await expect
-    .element(page.getByLabelText('地址方式'))
-    .toHaveTextContent('官方地址')
-  await page.getByLabelText('地址方式').click()
+    .element(page.getByLabelText('BaseURL'))
+    .toHaveValue('https://api.openai.com/v1')
+  await expect.element(page.getByLabelText('地址方式')).not.toBeInTheDocument()
   await expect
-    .element(page.getByRole('option', { name: '官方地址', exact: true }))
-    .toBeVisible()
-  await expect
-    .element(page.getByRole('option', { name: '自定义地址', exact: true }))
-    .toBeVisible()
-  await expect
-    .element(page.getByRole('option', { name: '保留旧地址方式' }))
+    .element(page.getByRole('button', { name: '预览最终地址' }))
     .not.toBeInTheDocument()
-  await page.getByRole('option', { name: '官方地址', exact: true }).click()
-  await page.getByRole('button', { name: '预览最终地址' }).click()
-  await expect
-    .element(page.getByText('目录：GET https://api.openai.com/v1/models'))
-    .toBeVisible()
-  await page.screenshot({
-    path: '__screenshots__/actvero-g1-03-editor-desktop.png',
-  })
-  expect(calls[0].body).toEqual(
-    expect.objectContaining({
-      provider: 'openai',
-      connection: expect.objectContaining({ address_mode: 'provider_default' }),
-    })
-  )
-  expect(JSON.stringify(calls[0].body)).not.toContain('api_key')
-  expect(JSON.stringify(calls[0].body)).not.toContain(
-    'https://api.openai.com/v1'
-  )
+  await expect.element(page.getByText('接入说明')).not.toBeInTheDocument()
+  expect(calls).toHaveLength(0)
   await page.getByLabelText('API Key', { exact: true }).fill('fake-secret')
   await page.getByRole('button', { name: '保存为新渠道' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
-  expect(calls[1].body).toEqual(
-    expect.objectContaining({
-      base_url: '',
-      request_id: expect.any(String),
-      manual_enabled: true,
-      automatic_protection: { enabled: true },
-    })
-  )
+  expect(calls).toHaveLength(1)
+  expect(calls[0].url).toContain('/llm/channels')
+  expect(calls[0].body).toMatchObject({
+    base_url: '',
+    provider: 'openai',
+    connection: { address_mode: 'provider_default', resolver_version: 1 },
+    request_id: expect.any(String),
+    manual_enabled: true,
+    automatic_protection: { enabled: true },
+  })
 })
 
-it('shows saved compatibility connections as custom addresses without changing targets or credentials', async () => {
+it.each([
+  'https://proxy.test/gateway/v1',
+  'https://proxy.test',
+  'https://proxy.test/v2/',
+])('uses the exact custom BaseURL %s for discovery and save', async (base) => {
+  const calls: { url: string; body: Record<string, unknown> }[] = []
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, options?: RequestInit) => {
+      const body = JSON.parse(String(options?.body))
+      calls.push({ url, body })
+      if (url.endsWith('/channel-drafts/inspect'))
+        return Response.json({
+          ok: true,
+          message: '读取成功',
+          candidates: [{ id: 'model-x' }],
+          partial: false,
+        })
+      return Response.json({ ...legacy, id: 'new-channel', version: 1 })
+    })
+  )
+  const saved = vi.fn()
+  await show(<ChannelEditor close={vi.fn()} saved={saved} />)
+  await page.getByRole('button', { name: 'OpenAI', exact: true }).click()
+  await page.getByLabelText('BaseURL').fill(base)
+  await page.getByLabelText('API Key', { exact: true }).fill('fake-secret')
+  await page.getByRole('button', { name: '从上游获取', exact: true }).click()
+  await expect
+    .element(page.getByRole('button', { name: 'model-x', exact: true }))
+    .toBeVisible()
+  await page.getByRole('button', { name: '保存为新渠道' }).click()
+  await expect.poll(() => saved.mock.calls.length).toBe(1)
+  expect(calls).toHaveLength(2)
+  expect(calls[0].body.connection).toEqual(calls[1].body.connection)
+  expect(calls[0].body.connection).toEqual({
+    address_mode: 'service_root',
+    service_root: 'https://proxy.test',
+    api_prefix: new URL(base).pathname.replace(/\/+$/, ''),
+    resolver_version: 1,
+  })
+})
+
+it.each([
+  'https://user:password@proxy.test/v1',
+  'https://proxy.test/v1?key=fake',
+  'https:proxy.test/v1',
+])('rejects an invalid BaseURL %s before discovery or saving', async (base) => {
+  const fetcher = vi.fn()
+  vi.stubGlobal('fetch', fetcher)
+  await show(<ChannelEditor close={vi.fn()} saved={vi.fn()} />)
+  await page.getByRole('button', { name: 'OpenAI', exact: true }).click()
+  await page.getByLabelText('BaseURL').fill(base)
+  await page.getByLabelText('API Key', { exact: true }).fill('fake-key')
+  await page.getByRole('button', { name: '从上游获取', exact: true }).click()
+  await expect
+    .element(
+      page.getByText('请输入不含账号、查询参数或片段的完整 HTTP(S) 地址')
+    )
+    .toBeVisible()
+  await page.getByRole('button', { name: '保存为新渠道' }).click()
+  expect(fetcher).not.toHaveBeenCalled()
+})
+
+it('shows saved compatibility connections without changing targets or credentials', async () => {
   const saved = vi.fn()
   const fetcher = vi.fn(async (_url: string, options?: RequestInit) => {
     const body = JSON.parse(String(options?.body))
@@ -219,22 +249,9 @@ it('shows saved compatibility connections as custom addresses without changing t
   vi.stubGlobal('fetch', fetcher)
   await show(<ChannelEditor channel={legacy} close={vi.fn()} saved={saved} />)
   await expect
-    .element(page.getByLabelText('API 基础 URL'))
+    .element(page.getByLabelText('BaseURL'))
     .toHaveValue(legacy.base_url)
-  await expect
-    .element(page.getByLabelText('地址方式'))
-    .toHaveTextContent('自定义地址')
-  await expect
-    .element(page.getByText('旧地址方式', { exact: true }))
-    .not.toBeInTheDocument()
-  await page.getByLabelText('地址方式').click()
-  await expect
-    .element(page.getByRole('option', { name: '官方地址', exact: true }))
-    .not.toBeInTheDocument()
-  await expect
-    .element(page.getByRole('option', { name: '保留旧地址方式' }))
-    .not.toBeInTheDocument()
-  await page.getByRole('option', { name: '自定义地址', exact: true }).click()
+  await expect.element(page.getByLabelText('地址方式')).not.toBeInTheDocument()
   await page.getByLabelText('渠道名称').fill('新的渠道名称')
   await page.getByRole('button', { name: '保存渠道' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
@@ -264,13 +281,9 @@ it('preserves an explicit empty prefix on edit and requires no replacement key f
   vi.stubGlobal('fetch', fetcher)
   await show(<ChannelEditor channel={source} close={vi.fn()} saved={vi.fn()} />)
   await page.getByLabelText('渠道名称').fill('只改名称')
-  await page.getByRole('tab', { name: '高级设置' }).click()
   await expect
-    .element(page.getByRole('switch', { name: '自定义接口前缀' }))
-    .toBeChecked()
-  await expect
-    .element(page.getByRole('textbox', { name: '接口前缀', exact: true }))
-    .toHaveValue('')
+    .element(page.getByLabelText('BaseURL'))
+    .toHaveValue('https://proxy.test')
   await page.getByRole('button', { name: '保存渠道' }).click()
   await expect.poll(() => fetcher.mock.calls.length).toBe(1)
 })
@@ -354,14 +367,14 @@ it('recovers a completed create receipt after a 5xx response without reposting',
   expect(posts).toBe(1)
 })
 
-it('clears a draft key and blocks writes when address preview loses admin permission', async () => {
+it('clears a draft key and blocks writes when directory fetching loses admin permission', async () => {
   const fetcher = vi.fn(async () => failure(403, '仅管理员可操作'))
   vi.stubGlobal('fetch', fetcher)
   await show(
     <ChannelEditor copyFrom={legacy} close={vi.fn()} saved={vi.fn()} />
   )
   await page.getByLabelText('API Key', { exact: true }).fill('new-fake-key')
-  await page.getByRole('button', { name: '预览最终地址' }).click()
+  await page.getByRole('button', { name: '从上游获取' }).click()
   await expect.element(page.getByText('管理权限已变化')).toBeVisible()
   await expect
     .element(page.getByLabelText('API Key', { exact: true }))
@@ -463,7 +476,7 @@ it('shows a dirty-exit confirmation and keeps advanced fields within a 390px she
   body.scrollTop = body.scrollHeight
   await expect
     .element(page.getByRole('textbox', { name: '接口前缀', exact: true }))
-    .toBeVisible()
+    .not.toBeInTheDocument()
   await page.screenshot({
     path: '__screenshots__/actvero-g1-03-editor-narrow-bottom.png',
   })
@@ -495,4 +508,112 @@ it('saves a Chat stream default as configuration without starting diagnostics', 
     endpoint: 'chat_completions',
     stream: true,
   })
+})
+
+it('restores the server directory after closing and reopening with a fresh query client', async () => {
+  const directory = {
+    snapshot_id: 'cached-snapshot',
+    fetched_at: '2026-10-26T01:00:00Z',
+    candidates: [{ id: 'cached-model' }],
+    partial: true,
+  }
+  const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+    expect(options?.method ?? 'GET').toBe('GET')
+    expect(url).toContain('/llm/channels/legacy-channel')
+    return Response.json({ ...legacy, model_directory: directory })
+  })
+  vi.stubGlobal('fetch', fetcher)
+  // The list row intentionally has no detail fields. Every mount reads from
+  // the server, just as a full browser reload with an empty query cache does.
+  const { models: _models, checks: _checks, ...listRow } = legacy
+  for (let mount = 0; mount < 2; mount += 1) {
+    await show(
+      <ChannelEditor channel={listRow} close={vi.fn()} saved={vi.fn()} />
+    )
+    await expect
+      .element(page.getByRole('button', { name: 'cached-model', exact: true }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('button', { name: '重新获取' }))
+      .toBeVisible()
+    await expect.element(page.getByText('上游只返回了部分目录')).toBeVisible()
+    await page.getByRole('tab', { name: '高级设置' }).click()
+    await page.getByRole('tab', { name: '连接与模型' }).click()
+    await expect
+      .element(page.getByRole('button', { name: 'cached-model', exact: true }))
+      .toBeVisible()
+    if (mount === 1)
+      await page.screenshot({
+        path: '__screenshots__/channel-cached-directory.png',
+      })
+    await cleanup()
+  }
+  expect(fetcher).toHaveBeenCalledTimes(2)
+})
+
+it('retains cached choices on refresh failure and clears them when credentials change', async () => {
+  const directory = {
+    snapshot_id: 'cached-snapshot',
+    fetched_at: '2026-10-26T01:00:00Z',
+    candidates: [{ id: 'cached-model' }],
+    partial: false,
+  }
+  const fetcher = vi.fn(async () =>
+    Response.json({
+      ok: false,
+      message: '上游暂时不可用',
+      checked_at: '2026-10-26T02:00:00Z',
+      candidates: [],
+      partial: false,
+      model_directory: directory,
+    })
+  )
+  vi.stubGlobal('fetch', fetcher)
+  const cachedChannel: Detail = { ...legacy, model_directory: directory }
+  await show(
+    <ChannelEditor channel={cachedChannel} close={vi.fn()} saved={vi.fn()} />
+  )
+  await page.getByRole('button', { name: 'cached-model', exact: true }).click()
+  await page.getByRole('button', { name: '重新获取' }).click()
+  await expect.element(page.getByText('上游暂时不可用')).toBeVisible()
+  await expect
+    .element(page.getByRole('button', { name: 'cached-model', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true')
+  await page.getByLabelText('API Key', { exact: true }).fill('new-fixture-key')
+  await expect
+    .element(page.getByRole('button', { name: '从上游获取' }))
+    .toBeVisible()
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
+
+it('does not copy a source channel directory into a different credential scope', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => {
+      throw new Error('No request expected')
+    })
+  )
+  await show(
+    <ChannelEditor
+      copyFrom={{
+        ...legacy,
+        model_directory: {
+          snapshot_id: 'source-snapshot',
+          fetched_at: '2026-10-26T01:00:00Z',
+          candidates: [{ id: 'private-source-model' }],
+          partial: false,
+        },
+      }}
+      close={vi.fn()}
+      saved={vi.fn()}
+    />
+  )
+  await expect
+    .element(
+      page.getByRole('button', { name: 'private-source-model', exact: true })
+    )
+    .not.toBeInTheDocument()
+  await expect
+    .element(page.getByRole('button', { name: '从上游获取' }))
+    .toBeVisible()
 })

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
-import { Plus, RefreshCw, X } from 'lucide-react'
+import { Check, Plus, RefreshCw, X } from 'lucide-react'
+import { dateTime } from '@/lib/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,23 +18,22 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { modelIds, validModelId, type ChannelValues } from './channel-form'
-import type { ReferenceCatalog } from './provider-modules'
 
 export function ChannelModelFields({
   modelDiscovery,
-  referenceCatalog,
   candidates,
   discovered,
   partial,
+  fetchedAt,
   pending,
   discovering,
   discover,
 }: {
   modelDiscovery: boolean
-  referenceCatalog?: ReferenceCatalog | null
   candidates: string[]
   discovered: boolean
   partial: boolean
+  fetchedAt?: string
   pending: boolean
   discovering: boolean
   discover: () => void
@@ -43,26 +43,19 @@ export function ChannelModelFields({
   const [query, setQuery] = useState('')
   const [queryError, setQueryError] = useState('')
   const [batchOpen, setBatchOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(100)
   const term = query.trim()
-  const choices = [
-    ...new Set([...candidates, ...(referenceCatalog?.models ?? [])]),
-  ]
-  const matches = term
-    ? choices
-        .filter(
-          (id) =>
-            id.toLowerCase().includes(term.toLowerCase()) &&
-            !selected.includes(id)
-        )
-        .slice(0, 20)
-    : []
+  const choices = [...new Set(candidates)]
+  const matches = choices.filter((id) =>
+    id.toLowerCase().includes(term.toLowerCase())
+  )
   const exactMatch = choices.includes(term)
   const customAvailable = !!term && !exactMatch && !selected.includes(term)
 
   function change(ids: string[]) {
     form.setValue('models', ids, { shouldDirty: true, shouldValidate: true })
   }
-  function add(id: string) {
+  function add(id: string, clearSearch = true) {
     if (selected.includes(id)) return
     if (!validModelId(id)) {
       setQueryError('模型 ID 最多 200 个字符，支持字母、数字和 . _ : / @ + -')
@@ -73,7 +66,7 @@ export function ChannelModelFields({
       return
     }
     change([...selected, id])
-    setQuery('')
+    if (clearSearch) setQuery('')
     setQueryError('')
   }
   async function addBatch() {
@@ -95,18 +88,39 @@ export function ChannelModelFields({
   return (
     <Card className='min-w-0'>
       <CardHeader>
-        <CardTitle>上游模型库存</CardTitle>
+        <CardTitle>选择上游模型</CardTitle>
       </CardHeader>
       <CardContent className='flex min-w-0 flex-col gap-4'>
-        <p className='text-sm text-muted-foreground'>
-          登记库存不会创建平台模型、定价或开放成员调用；保存配置后才会登记。
-        </p>
-        {!modelDiscovery && !referenceCatalog && (
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <p role='status' className='text-sm text-muted-foreground'>
+            {discovering
+              ? '正在获取上游列表…'
+              : discovered
+                ? `上游返回 ${candidates.length} 个模型 · 已选 ${selected.length} 个`
+                : `已选 ${selected.length} 个模型`}
+          </p>
+          {modelDiscovery && (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              disabled={pending || discovering}
+              onClick={discover}
+            >
+              <RefreshCw className={discovering ? 'animate-spin' : ''} />
+              {discovered ? '重新获取' : '从上游获取'}
+            </Button>
+          )}
+        </div>
+        {fetchedAt && (
+          <p className='text-xs text-muted-foreground'>
+            更新于 {dateTime(fetchedAt)}
+          </p>
+        )}
+        {!modelDiscovery && (
           <Alert>
-            <AlertTitle>此预设暂未接入模型目录</AlertTitle>
-            <AlertDescription>
-              可输入实际模型 ID；保存渠道不会尝试读取目录或发起模型测试。
-            </AlertDescription>
+            <AlertTitle>需要提供模型 ID</AlertTitle>
+            <AlertDescription>请手动填写模型 ID。</AlertDescription>
           </Alert>
         )}
         <FormField
@@ -122,6 +136,7 @@ export function ChannelModelFields({
                   value={query}
                   onChange={(event) => {
                     setQuery(event.target.value)
+                    setVisibleCount(100)
                     setQueryError('')
                   }}
                   onKeyDown={(event) => {
@@ -146,30 +161,64 @@ export function ChannelModelFields({
                   {queryError}
                 </p>
               )}
-              {term && (
+              {(choices.length > 0 || term) && (
                 <div
                   role='group'
                   aria-label='模型搜索结果'
-                  className='flex max-h-56 flex-col overflow-y-auto rounded-md border p-1'
+                  className='flex max-h-80 flex-col overflow-y-auto rounded-md border p-1'
                 >
-                  {matches.map((id) => (
+                  {!!matches.length && (
+                    <div className='flex items-center justify-between gap-2 border-b p-2'>
+                      <span className='text-xs text-muted-foreground'>
+                        匹配 {matches.length} 个
+                      </span>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        disabled={pending}
+                        onClick={() => {
+                          const next = [...new Set([...selected, ...matches])]
+                          if (next.length > 1000)
+                            setQueryError(
+                              '每个渠道最多登记 1000 个模型，请缩小搜索范围'
+                            )
+                          else change(next)
+                        }}
+                      >
+                        全选匹配结果
+                      </Button>
+                    </div>
+                  )}
+                  {matches.slice(0, visibleCount).map((id) => (
                     <Button
                       key={id}
                       type='button'
                       variant='ghost'
                       className='h-auto min-h-9 min-w-0 justify-start text-left font-mono break-all whitespace-normal'
                       disabled={pending}
-                      onClick={() => add(id)}
+                      aria-pressed={selected.includes(id)}
+                      onClick={() =>
+                        selected.includes(id)
+                          ? change(selected.filter((item) => item !== id))
+                          : add(id, false)
+                      }
                     >
+                      <span className='flex size-4 shrink-0 items-center justify-center rounded-sm border'>
+                        {selected.includes(id) && <Check className='size-3' />}
+                      </span>
                       {id}
-                      {referenceCatalog?.models.includes(id) &&
-                        !candidates.includes(id) && (
-                          <span className='ms-auto shrink-0 text-xs text-muted-foreground'>
-                            参考
-                          </span>
-                        )}
                     </Button>
                   ))}
+                  {matches.length > visibleCount && (
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      onClick={() => setVisibleCount((count) => count + 100)}
+                    >
+                      显示更多模型
+                    </Button>
+                  )}
                   {customAvailable && (
                     <Button
                       type='button'
@@ -192,11 +241,6 @@ export function ChannelModelFields({
                     </p>
                   )}
                 </div>
-              )}
-              {!!referenceCatalog?.models.length && (
-                <p className='text-xs text-muted-foreground'>
-                  参考候选仅供查找，未验证当前密钥权限。
-                </p>
               )}
               <FormMessage />
             </FormItem>
@@ -251,18 +295,6 @@ export function ChannelModelFields({
           </p>
         )}
         <div className='flex flex-wrap items-center gap-2'>
-          {modelDiscovery && (
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              disabled={pending}
-              onClick={discover}
-            >
-              <RefreshCw />
-              {discovering ? '正在获取…' : '从上游获取'}
-            </Button>
-          )}
           <CollapsibleSection
             title='批量粘贴模型 ID'
             open={batchOpen || !!form.formState.errors.manual_models}

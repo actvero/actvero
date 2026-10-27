@@ -4,6 +4,7 @@ import { waitForAnimations } from '@/test-utils/animations'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
+import { ChannelModelCreate } from './channel-model-create'
 import { ModelCreate } from './model-create'
 
 vi.mock('@/features/auth/session', () => ({
@@ -12,6 +13,7 @@ vi.mock('@/features/auth/session', () => ({
 const channel = {
   id: 'channel',
   version: 1,
+  provider: 'openai',
   name: '已配置渠道',
   models: [
     { id: 'text-embedding-3-small' },
@@ -22,12 +24,14 @@ const channel = {
 const alternate = {
   id: 'alternate',
   version: 1,
+  provider: 'openai',
   name: '其他渠道',
   models: [{ id: 'custom-model' }],
 }
 const empty = {
   id: 'empty',
   version: 1,
+  provider: 'openai',
   name: '空库存渠道',
   models: [],
 }
@@ -39,6 +43,8 @@ async function show(imageAvailable = false) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/point-prices/preview'))
+        return Response.json({ status: 'missing_conversion' })
       if (init?.method === 'POST') {
         const body = JSON.parse(String(init.body))
         writes.push(body)
@@ -78,12 +84,11 @@ async function show(imageAvailable = false) {
     close = vi.fn()
   await render(
     <QueryClientProvider client={client}>
-      <ModelCreate close={close} saved={saved} />
+      <ChannelModelCreate close={close} saved={saved} />
     </QueryClientProvider>
   )
   await expect.element(page.getByRole('dialog')).toBeVisible()
   await waitForAnimations()
-  await page.getByRole('button', { name: '从已有渠道快捷创建' }).click()
   await expect
     .element(page.getByRole('dialog', { name: '添加模型', exact: true }))
     .toBeVisible()
@@ -98,11 +103,7 @@ async function select(name: string) {
 }
 async function expectDialogFits() {
   const dialog = page.getByRole('dialog').element()
-  await Promise.all(
-    dialog
-      .getAnimations({ subtree: true })
-      .map((animation) => animation.finished)
-  )
+  await waitForAnimations()
   const bounds = dialog.getBoundingClientRect()
   expect(bounds.left).toBeGreaterThanOrEqual(0)
   expect(bounds.right).toBeLessThanOrEqual(window.innerWidth + 1)
@@ -116,7 +117,7 @@ afterEach(async () => {
   await page.viewport(1280, 900)
 })
 
-it('registers metadata without source or operation, then saves a closed draft', async () => {
+it('creates a manual model without a channel and keeps it closed', async () => {
   await page.viewport(1440, 900)
   writes.length = 0
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -137,15 +138,16 @@ it('registers metadata without source or operation, then saves a closed draft', 
       <ModelCreate close={vi.fn()} saved={saved} />
     </QueryClientProvider>
   )
+  await page.getByRole('button', { name: '手动创建', exact: true }).click()
   await expect
-    .element(
-      page.getByText(
-        '尚未配置调用接口。可先登记模型资料并保存；模型不会开放调用。'
-      )
-    )
-    .toBeVisible()
+    .element(page.getByRole('combobox', { name: '模型类型' }))
+    .toHaveTextContent('对话')
+  await expect
+    .element(page.getByRole('combobox', { name: '添加接口' }))
+    .not.toBeInTheDocument()
   await page.getByLabelText('展示名称').fill('团队草稿')
   await page.getByLabelText('技术名称').fill('team-draft')
+  await page.getByRole('button', { name: '补充资料与显示排序（可选）' }).click()
   await page.getByLabelText('显示排序').fill('25')
   expect(window.innerWidth).toBe(1440)
   await expectDialogFits()
@@ -160,14 +162,16 @@ it('registers metadata without source or operation, then saves a closed draft', 
   })
   await page.getByRole('tab', { name: '价格配置' }).click()
   await expect.element(page.getByText('已保存参考报价（0）')).toBeVisible()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: '创建模型' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(writes[0]).toMatchObject({
     name: '团队草稿',
     slug: 'team-draft',
     display_order: 25,
     access: { enabled: false },
-    operations: [],
+    operations: [
+      { kind: 'chat', enabled: false, bindings: [], budget_price: null },
+    ],
   })
 })
 
@@ -194,7 +198,7 @@ it('configures an image source with explicit per-image price and keeps client ac
     .element(page.getByRole('combobox', { name: '录入单位' }))
     .toHaveTextContent('每张')
   await expectDialogFits()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: '保存草稿' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(writes[0]).toMatchObject({
     access: { enabled: false },
@@ -224,7 +228,7 @@ it('starts from a registered model and saves one closed interface with its bindi
   const { saved } = await show()
   await select('text-embedding-3-small')
   await expect
-    .element(page.getByRole('combobox', { name: '接口类型' }))
+    .element(page.getByRole('combobox', { name: '模型用途' }))
     .toHaveTextContent('向量')
   expect(writes).toHaveLength(0)
   await expectDialogFits()
@@ -237,6 +241,7 @@ it('starts from a registered model and saves one closed interface with its bindi
   await expect
     .element(page.getByRole('combobox', { name: '配置接口' }))
     .not.toBeInTheDocument()
+  await page.getByRole('button', { name: '高级：多个用途与独立开关' }).click()
   await expect
     .element(page.getByRole('combobox', { name: '添加接口' }))
     .toBeInTheDocument()
@@ -249,7 +254,7 @@ it('starts from a registered model and saves one closed interface with its bindi
   await expect
     .element(page.getByRole('switch', { name: '启用模型' }))
     .not.toBeChecked()
-  await page.getByRole('button', { name: '保存配置' }).click()
+  await page.getByRole('button', { name: '保存草稿' }).click()
   await expect.poll(() => saved.mock.calls.length).toBe(1)
   expect(writes[0]).toMatchObject({
     slug: 'text-embedding-3-small',
@@ -280,14 +285,14 @@ it('requires an explicit interface for unknown models and clears it on source ch
   await expect
     .element(
       page.getByText(
-        '未识别接口类型，请按上游模型资料选择；不会自动开放调用或配置价格。'
+        '暂未识别用途，请按任务选择：对话、文本向量、重排、图片或语音。对话协议沿用渠道配置。'
       )
     )
     .toBeVisible()
   await expect
     .element(page.getByRole('button', { name: '下一步' }))
     .toBeDisabled()
-  await page.getByRole('combobox', { name: '接口类型' }).click()
+  await page.getByRole('combobox', { name: '模型用途' }).click()
   await page.getByRole('option', { name: '重排', exact: true }).click()
   await expect
     .element(page.getByRole('button', { name: '下一步' }))
@@ -356,8 +361,8 @@ it('drops the previous source and SDK type when changing channels, and explains 
     .toBeDisabled()
   await select('custom-model')
   await expect
-    .element(page.getByRole('combobox', { name: '接口类型' }))
-    .toHaveTextContent('选择模型支持的接口')
+    .element(page.getByRole('combobox', { name: '模型用途' }))
+    .toHaveTextContent('选择模型要完成的任务')
   await expect
     .element(page.getByRole('button', { name: '下一步' }))
     .toBeDisabled()

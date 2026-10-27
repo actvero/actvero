@@ -13,6 +13,7 @@ import { ServerTable } from '@/components/data-table/server-table'
 import { FilterSelect } from '@/components/filter-select'
 import { PageShell } from '@/components/layout/page-shell'
 import { RequestError, LoadingState } from '@/components/request-state'
+import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
 import { AddMemberDialog } from './add-member-dialog'
 import { InviteDialog, InvitationAction } from './invitation-dialog'
@@ -71,17 +72,20 @@ export function MembersPage() {
       accessorKey: 'name',
       header: '成员',
       cell: ({ row }) => (
-        <Button
-          variant='link'
-          size='sm'
-          onClick={() => setSelected(row.original.id)}
-          className='max-w-60 justify-start px-0'
-        >
-          <span className='truncate'>
-            {row.original.name}
-            {row.original.is_self ? '（你）' : ''}
-          </span>
-        </Button>
+        <div className='flex items-center gap-3'>
+          <UserAvatar user={row.original} />
+          <Button
+            variant='link'
+            size='sm'
+            onClick={() => setSelected(row.original.id)}
+            className='max-w-60 justify-start px-0'
+          >
+            <span className='truncate'>
+              {row.original.name}
+              {row.original.is_self ? '（你）' : ''}
+            </span>
+          </Button>
+        </div>
       ),
     },
     {

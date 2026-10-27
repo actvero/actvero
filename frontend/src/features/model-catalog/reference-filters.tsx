@@ -148,14 +148,16 @@ export function ReferenceFilterBar({
         </Button>
       </div>
       <div className='flex flex-wrap items-center gap-x-5 gap-y-2'>
-        <Label className='flex items-center gap-2'>
-          <Checkbox
-            checked={prioritize}
-            disabled={!preferred}
-            onCheckedChange={(v) => setPrioritize(v === true)}
-          />
-          当前渠道优先
-        </Label>
+        {!!preferred && (
+          <Label className='flex items-center gap-2'>
+            <Checkbox
+              checked={prioritize}
+              disabled={!preferred}
+              onCheckedChange={(v) => setPrioritize(v === true)}
+            />
+            当前渠道优先
+          </Label>
+        )}
         <Label className='flex items-center gap-2'>
           <Checkbox
             checked={filters.price !== 'all' && filters.price !== ''}

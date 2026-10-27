@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { api } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { FieldGroup } from '@/components/ui/field'
 import {
   Form,
   FormControl,
@@ -13,6 +14,14 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
@@ -21,7 +30,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { MemberPicker } from '@/components/member-picker'
 import { RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import {
@@ -52,12 +60,9 @@ export function PolicyEditor({
     defaultValues: values(policy, isDefault),
   })
   const [error, setError] = useState<unknown>(null)
+  const mode = useWatch({ control: form.control, name: 'mode' })
   const pending = form.formState.isSubmitting
   async function submit(data: PolicyValues) {
-    if (!isDefault && Number(data.priority) === 0) {
-      form.setError('priority', { message: '普通策略的优先级需大于 0' })
-      return
-    }
     setError(null)
     try {
       await api<Policy>(
@@ -112,7 +117,7 @@ export function PolicyEditor({
               disabled={pending}
               className='flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 sm:p-6'
             >
-              <div className='grid gap-4 sm:grid-cols-2'>
+              <FieldGroup>
                 <FormField
                   control={form.control}
                   name='name'
@@ -132,53 +137,50 @@ export function PolicyEditor({
                 />
                 <FormField
                   control={form.control}
-                  name='priority'
+                  name='mode'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>优先级</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          inputMode='numeric'
-                          readOnly={isDefault}
-                          placeholder='数值越大，优先级越高'
-                        />
-                      </FormControl>
+                      <FormLabel>额度方式</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className='w-full'>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value='limited'>周期限额</SelectItem>
+                            <SelectItem value='unlimited'>不限额度</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <RuleFields disabled={pending} />
+              </FieldGroup>
+              {mode === 'limited' ? (
+                <RuleFields disabled={pending} />
+              ) : (
+                <p className='text-sm text-muted-foreground'>
+                  不设置成员积分上限，用量与成本仍正常记录。模型访问权限保持独立。
+                </p>
+              )}
               <Separator />
               {isDefault ? (
                 <div className='flex flex-wrap items-center gap-2'>
-                  <span className='font-medium'>适用成员</span>
-                  <Badge variant='secondary'>全部成员</Badge>
+                  <Badge variant='secondary'>组织默认</Badge>
                   <span className='text-sm text-muted-foreground'>
-                    包含以后加入的成员
+                    未指定策略的成员自动继承，包含以后加入的成员。
                   </span>
                 </div>
               ) : (
-                <FormField
-                  control={form.control}
-                  name='member_ids'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>适用成员</FormLabel>
-                      <FormControl>
-                        <MemberPicker
-                          value={field.value}
-                          onChange={field.onChange}
-                          includeAdministrators
-                          selectionLabel='适用成员'
-                          disabled={pending}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <p className='text-sm text-muted-foreground'>
+                  保存后，在“成员分配”中将此策略分配给成员。
+                </p>
               )}
             </fieldset>
             <Separator />
