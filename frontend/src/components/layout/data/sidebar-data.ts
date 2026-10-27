@@ -113,7 +113,7 @@ export function platformNavigation(): NavGroup[] {
           items: [
             { title: '品牌形象', url: '/platform/settings/general' },
             { title: '门户设置', url: '/platform/settings/portal' },
-            { title: '客户端下载', url: '/platform/settings/downloads' },
+            { title: '客户端版本', url: '/platform/settings/downloads' },
           ],
         },
         {
@@ -123,6 +123,7 @@ export function platformNavigation(): NavGroup[] {
             { title: '注册与开通', url: '/platform/settings/registration' },
             { title: 'CLI 接入', url: '/platform/settings/cli' },
             { title: '邮件服务', url: '/platform/settings/mail' },
+            { title: '对象存储', url: '/platform/settings/storage' },
             { title: '邮件模板', url: '/platform/settings/templates' },
           ],
         },

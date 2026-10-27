@@ -115,3 +115,8 @@ test('platform info is unauthenticated and does not read a credential store', as
   assert.equal(calls, 1);
   assert.deepEqual(JSON.parse(output).capabilities, ['skills.read']);
 });
+
+test('CLI reports the version from its installed package metadata', async () => {
+  const metadata = JSON.parse(await readFile(join(await skillPath(), '..', '..', 'package.json'), 'utf8'));
+  assert.equal(buildProgram().version(), metadata.version);
+});

@@ -73,7 +73,7 @@ class Metadata(BaseModel):
     contract_version: Literal[1] = 1
     authorization_contract_version: Literal[2] = 2
     supported_authorization_versions: list[int] = Field(default_factory=lambda: [1, 2, 3])
-    client_distribution_contract_version: Literal[1] = 1
+    client_distribution_contract_version: Literal[2] = 2
     instance_id: UUID
     platform_name: str
     client_id: str
@@ -89,6 +89,10 @@ class Metadata(BaseModel):
     reauthentication_days: int
     capabilities: list[str] = Field(
         default_factory=lambda: [
+            "object_storage.read",
+            "object_storage.write",
+            "client_distribution.import_manifest",
+            "client_distribution.win_arm64",
             "client_distribution.read",
             "client_distribution.write",
             "auth.login",

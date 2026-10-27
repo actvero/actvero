@@ -3965,6 +3965,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/management/platform/object-storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Storage */
+        get: operations["list_storage_api_v1_management_platform_object_storage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/platform/object-storage/{ident}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Storage */
+        put: operations["save_storage_api_v1_management_platform_object_storage__ident__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/platform/object-storage/{ident}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Storage */
+        post: operations["test_storage_api_v1_management_platform_object_storage__ident__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/management/refresh": {
         parameters: {
             query?: never;
@@ -5226,6 +5277,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/platform/object-storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Storage */
+        get: operations["list_storage_api_v1_platform_object_storage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/object-storage/{ident}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Storage */
+        put: operations["save_storage_api_v1_platform_object_storage__ident__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/object-storage/{ident}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Storage */
+        post: operations["test_storage_api_v1_platform_object_storage__ident__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/organization-invitations": {
         parameters: {
             query?: never;
@@ -5877,7 +5979,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "win-x64" | "mac-arm64" | "mac-x64";
+            target: "win-x64" | "win-arm64" | "mac-arm64" | "mac-x64";
             /** Url */
             url?: string | null;
         };
@@ -5920,7 +6022,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "win-x64" | "mac-arm64" | "mac-x64";
+            target: "win-x64" | "win-arm64" | "mac-arm64" | "mac-x64";
             /** Url */
             url: string | null;
         };
@@ -8545,6 +8647,8 @@ export interface components {
              * @default
              */
             notes: string;
+            /** Source Commit */
+            source_commit?: string | null;
             /** Version */
             version: string;
         };
@@ -8562,6 +8666,13 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Legacy
+             * @default false
+             */
+            legacy: boolean;
+            /** Legacy Assets */
+            legacy_assets?: components["schemas"]["ClientAsset"][];
             /** Minimum Os */
             minimum_os: {
                 [key: string]: string;
@@ -8570,6 +8681,8 @@ export interface components {
             notes: string;
             /** Revision */
             revision: number;
+            /** Source Commit */
+            source_commit?: string | null;
             /** Status */
             status: string;
             /** Version */
@@ -9598,7 +9711,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "win-x64" | "mac-arm64" | "mac-x64";
+            target: "win-x64" | "win-arm64" | "mac-arm64" | "mac-x64";
         };
         /** HealthResponse */
         HealthResponse: {
@@ -11402,10 +11515,10 @@ export interface components {
             capabilities?: string[];
             /**
              * Client Distribution Contract Version
-             * @default 1
+             * @default 2
              * @constant
              */
-            client_distribution_contract_version: 1;
+            client_distribution_contract_version: 2;
             /** Client Id */
             client_id: string;
             /**
@@ -12259,7 +12372,7 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
             /** Targets */
-            targets: ("win-x64" | "mac-arm64" | "mac-x64")[];
+            targets: ("win-x64" | "win-arm64" | "mac-arm64" | "mac-x64")[];
         };
         /** PlanView */
         PlanView: {
@@ -14643,10 +14756,13 @@ export interface components {
             path_style: boolean;
             /**
              * Prefix
-             * @default clients
+             * @default actvero
              */
             prefix: string;
-            /** Public Url */
+            /**
+             * Public Url
+             * @default
+             */
             public_url: string;
             /** Region */
             region: string;
@@ -26089,7 +26205,9 @@ export interface operations {
     };
     list_releases_api_v1_management_platform_client_distribution_releases_get: {
         parameters: {
-            query?: never;
+            query?: {
+                version?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -26105,6 +26223,15 @@ export interface operations {
                     "application/json": {
                         [key: string]: components["schemas"]["DistributionView"][];
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -26623,6 +26750,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UploadView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_storage_api_v1_management_platform_object_storage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["StorageView"][];
+                    };
+                };
+            };
+        };
+    };
+    save_storage_api_v1_management_platform_object_storage__ident__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_storage_api_v1_management_platform_object_storage__ident__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
                 };
             };
             /** @description Validation Error */
@@ -28086,7 +28301,9 @@ export interface operations {
     };
     list_releases_api_v1_platform_client_distribution_releases_get: {
         parameters: {
-            query?: never;
+            query?: {
+                version?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -28102,6 +28319,15 @@ export interface operations {
                     "application/json": {
                         [key: string]: components["schemas"]["DistributionView"][];
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -29069,6 +29295,94 @@ export interface operations {
                 "application/json": components["schemas"]["MailRecipient"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_storage_api_v1_platform_object_storage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["StorageView"][];
+                    };
+                };
+            };
+        };
+    };
+    save_storage_api_v1_platform_object_storage__ident__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorageSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_storage_api_v1_platform_object_storage__ident__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

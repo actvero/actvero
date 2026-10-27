@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "channel": "latest",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "notes": "示例结构，实际文件及摘要由桌面构建导出",
+  "minimum_os": {
+    "win-x64": "Windows 10"
+  },
+  "feed_roots": {
+    "win-x64": "https://platform.example.com/api/v1/client-updates/actvero/win-x64/"
+  },
+  "artifacts": [
+    {
+      "target": "win-x64",
+      "role": "payload",
+      "file": "app.exe",
+      "filename": "app.exe",
+      "size_bytes": 17,
+      "sha512": "e0KU/QK5ZVjns9igvuvxDZ+mDj186mXMeQq+tbqfTsaV2+usvFr8ZS5qYw9h6UOyB4z2QLdFk1XWGbGJfgQRWg=="
+    },
+    {
+      "target": "win-x64",
+      "role": "blockmap",
+      "file": "app.exe.blockmap",
+      "filename": "app.exe.blockmap",
+      "size_bytes": 16,
+      "sha512": "kdzrFyTdtuJkOX+5RjY04bmZNtykmiFayzwAbagBLJg+xA9XPQSMzI/DwsSkCIF6/dM2tCKZoQJmVKefLE1piA=="
+    }
+  ]
+}

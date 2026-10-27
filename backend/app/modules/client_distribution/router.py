@@ -1,7 +1,6 @@
 """One management contract, exposed with independent Web and CLI authentication."""
 
 import asyncio
-import io
 from datetime import timedelta
 from uuid import UUID, uuid4
 
@@ -9,7 +8,6 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import delete, select, update
 from starlette.responses import RedirectResponse, Response
 
-from app.core.outbound import resolve
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, now, provider
 from app.modules.client_distribution import service as domain
@@ -22,7 +20,6 @@ from app.modules.client_distribution.models import (
     ClientUpdateHead,
     ClientUpload,
 )
-from app.modules.client_distribution.network import check_range
 from app.modules.client_distribution.schemas import (
     SEMVER,
     TARGETS,
@@ -38,10 +35,9 @@ from app.modules.client_distribution.schemas import (
     PlanView,
     Publish,
     Revision,
-    StorageSave,
-    StorageView,
     UploadView,
 )
+from app.modules.object_storage.router import router as storage_router
 from app.modules.platform.download_models import ClientRecommendation, ClientRelease
 from app.modules.platform.downloads import event, recommend
 
@@ -49,103 +45,17 @@ router = APIRouter(tags=["client-distribution"])
 public_router = APIRouter(tags=["client-updates"])
 
 
-@router.get("/storage", response_model=dict[str, list[StorageView]])
-async def list_storage(request: Request, db: DB) -> dict[str, list[StorageView]]:
-    await domain.access(request, db)
-    return {
-        "items": [
-            StorageView.model_validate(s)
-            for s in (await db.scalars(select(ClientStorage).order_by(ClientStorage.name))).all()
-        ]
-    }
-
-
-@router.put("/storage/{ident}", response_model=StorageView)
-async def save_storage(ident: UUID, payload: StorageSave, request: Request, db: DB) -> StorageView:
-    await domain.access(request, db, "storage.manage")
-    settings = provider(request).settings
-    # Credentials are only sent to endpoints explicitly chosen by a platform operator.
-    await db.rollback()
-    await resolve(payload.endpoint, settings.client_distribution_allowed_private_origins)
-    await resolve(payload.public_url, settings.client_distribution_allowed_private_origins)
-    await domain.locked(request, db, "storage.manage")
-    row = await db.get(ClientStorage, ident)
-    domain.revision(row.revision if row else 0, payload.expected_revision)
-    if await db.scalar(
-        select(ClientStorage.id).where(
-            ClientStorage.name == payload.name, ClientStorage.id != ident
-        )
-    ):
-        raise HTTPException(409, "存储名称已存在")
-    values = payload.model_dump(exclude={"expected_revision", "access_key", "secret_key"})
-    if row:
-        if await db.scalar(
-            select(ClientArtifact.id).where(ClientArtifact.storage_id == ident).limit(1)
-        ):
-            locator = {"endpoint", "bucket", "region", "prefix", "public_url", "path_style"}
-            if any(getattr(row, k) != values[k] for k in locator):
-                raise HTTPException(409, "此存储已有文件，地址不可原地修改；请新增存储配置")
-        for key, value in values.items():
-            setattr(row, key, value)
-        row.revision += 1
-    else:
-        if not payload.access_key or not payload.secret_key:
-            raise HTTPException(422, "新存储需要访问密钥和秘密密钥")
-        row = ClientStorage(id=ident, **values)
-        db.add(row)
-    if payload.access_key and payload.secret_key:
-        row.credentials = provider(request).seal(
-            {
-                "access_key": payload.access_key.get_secret_value(),
-                "secret_key": payload.secret_key.get_secret_value(),
-            }
-        )
-    if payload.is_default:
-        await db.execute(
-            update(ClientStorage)
-            .where(ClientStorage.id != ident, ClientStorage.is_default.is_(True))
-            .values(is_default=False, revision=ClientStorage.revision + 1)
-        )
-    await db.commit()
-    return StorageView.model_validate(row)
-
-
-@router.post("/storage/{ident}/test", response_model=Message)
-async def test_storage(ident: UUID, request: Request, db: DB) -> Message:
-    await domain.access(request, db, "storage.manage")
-    profile = await domain.storage(db, ident)
-    store = domain.store(request, profile)
-    key = f"{profile.prefix}/checks/{uuid4().hex}"
-    url = f"{profile.public_url}/{key}"
-    await db.commit()
-    uploaded = False
-    try:
-        await store.put(key, io.BytesIO(b"actvero-storage-check"), 21)
-        uploaded = True
-        head = await store.head(key)
-        if (
-            not head
-            or head.get("ContentLength") != 21
-            or not await check_range(url, provider(request).settings, 21)
-        ):
-            raise HTTPException(
-                422, "写入成功，但公开下载或 Range 校验未通过，请检查公共地址和 CDN"
-            )
-    finally:
-        if uploaded:
-            await store.call("delete_object", Key=key)
-    return Message(message="已验证写入、公开读取、单段 Range 和删除")
+router.include_router(storage_router, prefix="/storage")
 
 
 @router.get("/releases", response_model=dict[str, list[DistributionView]])
-async def list_releases(request: Request, db: DB) -> dict[str, list[DistributionView]]:
+async def list_releases(
+    request: Request, db: DB, version: str | None = None
+) -> dict[str, list[DistributionView]]:
     await domain.access(request, db)
     ids = (
         await db.scalars(
-            select(ClientRelease.id)
-            .join(ClientDistribution)
-            .order_by(ClientRelease.created_at.desc())
-            .limit(100)
+            select(ClientRelease.id).order_by(ClientRelease.created_at.desc()).limit(100)
         )
     ).all()
     return {"items": [await domain.view(db, ident) for ident in ids]}
@@ -164,8 +74,15 @@ async def save_release(
     who = await domain.locked(request, db, "releases.write")
     row = await db.get(ClientRelease, ident)
     dist = await db.get(ClientDistribution, ident)
-    if row and not dist:
-        raise HTTPException(409, "旧下载记录请通过下载目录维护；更新发布请创建新版本")
+    if row and not dist and row.status != "draft":
+        raise HTTPException(409, "历史已发布版本保留下载记录，请创建新版本")
+    if (
+        dist
+        and payload.source_commit
+        and dist.source_commit
+        and payload.source_commit != dist.source_commit
+    ):
+        raise HTTPException(409, "同一版本的构建必须来自同一源码提交")
     if (
         row
         and dist
@@ -174,6 +91,7 @@ async def save_release(
         and row.notes == payload.notes
         and dist.channel == payload.channel
         and dist.minimum_os == payload.minimum_os
+        and (not payload.source_commit or dist.source_commit == payload.source_commit)
     ):
         return await domain.view(db, ident)
     domain.revision(row.revision if row else 0, payload.expected_revision)
@@ -187,6 +105,8 @@ async def save_release(
         domain.draft(row)
         if dist and (row.version != payload.version or dist.channel != payload.channel):
             raise HTTPException(409, "更新版本号和通道创建后不可修改，请创建新版本")
+        if not dist:
+            row.version = payload.version
         row.notes = payload.notes
         domain.record(db, who, row, "saved")
     else:
@@ -205,6 +125,8 @@ async def save_release(
     if not dist:
         dist = ClientDistribution(release_id=ident, channel=payload.channel)
         db.add(dist)
+    if payload.source_commit:
+        dist.source_commit = payload.source_commit
     dist.minimum_os = {str(k): v for k, v in payload.minimum_os.items()}
     await db.commit()
     return await domain.view(db, ident)
@@ -232,7 +154,11 @@ async def add_artifact(
             or existing.expected_sha512 != payload.sha512
             or (payload.size_bytes is not None and existing.size_bytes != payload.size_bytes)
             or existing.storage_id
-            != (payload.storage_id if not payload.url or payload.mirror else None)
+            != (
+                (payload.storage_id or existing.storage_id)
+                if not payload.url or payload.mirror
+                else None
+            )
             or source_url != payload.url
             or (existing.source == "mirror") != payload.mirror
         ):
@@ -250,8 +176,14 @@ async def add_artifact(
         raise HTTPException(409, "此目标和用途已有文件，请先删除草稿中的旧文件")
     managed = not payload.url or payload.mirror
     profile = await domain.storage(db, payload.storage_id) if managed else None
+    if profile:
+        profile.locator_frozen = True
     # Recreating a deleted draft ID must never reuse an orphaned completed object.
-    key = f"{profile.prefix}/{artifact_id}/{uuid4().hex}/{payload.filename}" if profile else None
+    key = (
+        f"{profile.prefix}/clients/{row.version}/{payload.target}/{uuid4().hex}/{payload.filename}"
+        if profile
+        else None
+    )
     artifact = ClientArtifact(
         id=artifact_id,
         release_id=ident,
@@ -264,7 +196,9 @@ async def add_artifact(
         source_url_ciphertext=provider(request).seal({"url": payload.url})
         if payload.mirror
         else None,
-        url=f"{profile.public_url}/{key}" if profile else payload.url,
+        url=(f"{profile.public_url}/{key}" if profile.public_url else None)
+        if profile
+        else payload.url,
         size_bytes=payload.size_bytes,
         expected_sha512=payload.sha512,
         status="pending",
@@ -568,9 +502,9 @@ async def publish_release(
                     channel=dist.channel, target=target, release_id=ident, manifest=content
                 )
             )
-        role = "payload" if target == "win-x64" else "installer"
+        role = "payload" if target.startswith("win-") else "installer"
         installer = next(a for a in files if a.target == target and a.role == role)
-        platform, arch = ("windows" if target == "win-x64" else "macos"), target.split("-")[1]
+        platform, arch = ("windows" if target.startswith("win-") else "macos"), target.split("-")[1]
         assets[platform, arch] = {
             "platform": platform,
             "architecture": arch,
@@ -597,7 +531,10 @@ async def withdraw_release(
     ident: UUID, payload: Revision, request: Request, db: DB
 ) -> DistributionView:
     who = await domain.locked(request, db, "releases.publish")
-    row, _ = await domain.release(db, ident, payload.expected_revision)
+    row = await db.get(ClientRelease, ident)
+    if not row:
+        raise HTTPException(404, "客户端版本不存在")
+    domain.revision(row.revision, payload.expected_revision)
     if row.status != "published":
         raise HTTPException(409, "只能下架已发布版本")
     row.status = "withdrawn"
@@ -614,7 +551,7 @@ async def withdraw_release(
 
 @public_router.get("/api/v1/client-updates/actvero/{target}/{feed}")
 async def update_feed(target: str, feed: str, db: DB) -> Response:
-    if target not in {"win-x64", "mac-x64", "mac-arm64"}:
+    if target not in set(TARGETS):
         raise HTTPException(404, "更新目标不存在")
     suffix = "-mac.yml" if target.startswith("mac-") else ".yml"
     channel = feed.removesuffix(suffix)
@@ -629,7 +566,9 @@ async def update_feed(target: str, feed: str, db: DB) -> Response:
 
 
 @public_router.get("/api/v1/client-artifacts/{channel}/{target}/{filename}", status_code=307)
-async def artifact_redirect(channel: str, target: str, filename: str, db: DB) -> RedirectResponse:
+async def artifact_redirect(
+    channel: str, target: str, filename: str, request: Request, db: DB
+) -> RedirectResponse:
     # Version-bearing canonical URLs are stable across storage changes. Old blockmaps
     # remain available after withdrawal because newer clients may need them for a delta.
     if channel not in {"latest", "nightly"} or target not in TARGETS:
@@ -654,8 +593,13 @@ async def artifact_redirect(channel: str, target: str, filename: str, db: DB) ->
                 ClientArtifact.published_at.is_not(None),
             )
         )
-        if artifact and artifact.url:
-            return RedirectResponse(
-                artifact.url, status_code=307, headers={"Cache-Control": "no-store"}
-            )
+        if artifact and (artifact.url or artifact.object_key):
+            url = artifact.url
+            if artifact.storage_id and artifact.object_key:
+                profile = await db.get(ClientStorage, artifact.storage_id)
+                if not profile:
+                    raise HTTPException(503, "文件存储配置不可用")
+                url = await domain.download_url(request, profile, artifact.object_key)
+            assert url
+            return RedirectResponse(url, status_code=307, headers={"Cache-Control": "no-store"})
     raise HTTPException(404, "发布文件不存在")

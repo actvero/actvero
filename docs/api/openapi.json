@@ -262,6 +262,7 @@
           "target": {
             "enum": [
               "win-x64",
+              "win-arm64",
               "mac-arm64",
               "mac-x64"
             ],
@@ -394,6 +395,7 @@
           "target": {
             "enum": [
               "win-x64",
+              "win-arm64",
               "mac-arm64",
               "mac-x64"
             ],
@@ -7530,6 +7532,7 @@
             "propertyNames": {
               "enum": [
                 "win-x64",
+                "win-arm64",
                 "mac-arm64",
                 "mac-x64"
               ]
@@ -7542,6 +7545,18 @@
             "maxLength": 12000,
             "title": "Notes",
             "type": "string"
+          },
+          "source_commit": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Commit"
           },
           "version": {
             "maxLength": 50,
@@ -7578,6 +7593,18 @@
             "title": "Id",
             "type": "string"
           },
+          "legacy": {
+            "default": false,
+            "title": "Legacy",
+            "type": "boolean"
+          },
+          "legacy_assets": {
+            "items": {
+              "$ref": "#/components/schemas/ClientAsset"
+            },
+            "title": "Legacy Assets",
+            "type": "array"
+          },
           "minimum_os": {
             "additionalProperties": {
               "type": "string"
@@ -7592,6 +7619,17 @@
           "revision": {
             "title": "Revision",
             "type": "integer"
+          },
+          "source_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Commit"
           },
           "status": {
             "title": "Status",
@@ -10050,6 +10088,7 @@
           "target": {
             "enum": [
               "win-x64",
+              "win-arm64",
               "mac-arm64",
               "mac-x64"
             ],
@@ -14524,8 +14563,8 @@
             "type": "array"
           },
           "client_distribution_contract_version": {
-            "const": 1,
-            "default": 1,
+            "const": 2,
+            "default": 2,
             "title": "Client Distribution Contract Version",
             "type": "integer"
           },
@@ -16657,6 +16696,7 @@
             "items": {
               "enum": [
                 "win-x64",
+                "win-arm64",
                 "mac-arm64",
                 "mac-x64"
               ],
@@ -23056,13 +23096,14 @@
             "type": "boolean"
           },
           "prefix": {
-            "default": "clients",
+            "default": "actvero",
             "maxLength": 200,
             "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$",
             "title": "Prefix",
             "type": "string"
           },
           "public_url": {
+            "default": "",
             "maxLength": 2048,
             "title": "Public Url",
             "type": "string"
@@ -23095,8 +23136,7 @@
           "name",
           "endpoint",
           "region",
-          "bucket",
-          "public_url"
+          "bucket"
         ],
         "title": "StorageSave",
         "type": "object"
@@ -42264,6 +42304,24 @@
     "/api/v1/management/platform/client-distribution/releases": {
       "get": {
         "operationId": "list_releases_api_v1_management_platform_client_distribution_releases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -42281,6 +42339,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -42669,7 +42737,8 @@
         ],
         "summary": "List Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -42727,7 +42796,8 @@
         ],
         "summary": "Save Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -42775,7 +42845,8 @@
         ],
         "summary": "Test Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -43156,6 +43227,145 @@
         "summary": "Start Upload",
         "tags": [
           "client-distribution"
+        ]
+      }
+    },
+    "/api/v1/management/platform/object-storage": {
+      "get": {
+        "operationId": "list_storage_api_v1_management_platform_object_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/StorageView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Storage Api V1 Management Platform Object Storage Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "List Storage",
+        "tags": [
+          "object-storage"
+        ]
+      }
+    },
+    "/api/v1/management/platform/object-storage/{ident}": {
+      "put": {
+        "operationId": "save_storage_api_v1_management_platform_object_storage__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Save Storage",
+        "tags": [
+          "object-storage"
+        ]
+      }
+    },
+    "/api/v1/management/platform/object-storage/{ident}/test": {
+      "post": {
+        "operationId": "test_storage_api_v1_management_platform_object_storage__ident__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "Test Storage",
+        "tags": [
+          "object-storage"
         ]
       }
     },
@@ -45265,6 +45475,24 @@
     "/api/v1/platform/client-distribution/releases": {
       "get": {
         "operationId": "list_releases_api_v1_platform_client_distribution_releases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -45282,6 +45510,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Releases",
@@ -45630,7 +45868,8 @@
         },
         "summary": "List Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -45683,7 +45922,8 @@
         },
         "summary": "Save Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -45726,7 +45966,8 @@
         },
         "summary": "Test Storage",
         "tags": [
-          "client-distribution"
+          "client-distribution",
+          "object-storage"
         ]
       }
     },
@@ -46745,6 +46986,130 @@
         "summary": "Test Mail",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/object-storage": {
+      "get": {
+        "operationId": "list_storage_api_v1_platform_object_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "$ref": "#/components/schemas/StorageView"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response List Storage Api V1 Platform Object Storage Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Storage",
+        "tags": [
+          "object-storage"
+        ]
+      }
+    },
+    "/api/v1/platform/object-storage/{ident}": {
+      "put": {
+        "operationId": "save_storage_api_v1_platform_object_storage__ident__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Storage",
+        "tags": [
+          "object-storage"
+        ]
+      }
+    },
+    "/api/v1/platform/object-storage/{ident}/test": {
+      "post": {
+        "operationId": "test_storage_api_v1_platform_object_storage__ident__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Storage",
+        "tags": [
+          "object-storage"
         ]
       }
     },

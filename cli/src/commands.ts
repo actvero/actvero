@@ -12,6 +12,7 @@ import { registerDistribution } from './distribution.js';
 import {
   example,
   exampleNames,
+  packageVersion,
   guide,
   guideTopics,
   installSkill,
@@ -70,7 +71,7 @@ export function buildProgram(runtime: Runtime = {}): Command {
     .enablePositionalOptions()
     .name('actvero')
     .description('Actvero 多组织资源管理 CLI')
-    .version('0.2.0-dev.2');
+    .version(packageVersion());
   program
     .option('--server <url>', '平台地址；默认使用上次成功登录的平台')
     .option('--json', '输出稳定的 JSON 结果');

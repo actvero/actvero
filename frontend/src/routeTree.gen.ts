@@ -48,6 +48,7 @@ import { Route as PlatformSettingsIndexRouteImport } from './routes/platform.set
 import { Route as AuthenticatedSkillsIndexRouteImport } from './routes/_authenticated/skills.index'
 import { Route as AuthenticatedExpertsIndexRouteImport } from './routes/_authenticated/experts.index'
 import { Route as PlatformSettingsTemplatesRouteImport } from './routes/platform.settings.templates'
+import { Route as PlatformSettingsStorageRouteImport } from './routes/platform.settings.storage'
 import { Route as PlatformSettingsRegistrationRouteImport } from './routes/platform.settings.registration'
 import { Route as PlatformSettingsPortalRouteImport } from './routes/platform.settings.portal'
 import { Route as PlatformSettingsMailRouteImport } from './routes/platform.settings.mail'
@@ -261,6 +262,11 @@ const PlatformSettingsTemplatesRoute =
     path: '/templates',
     getParentRoute: () => PlatformSettingsRoute,
   } as any)
+const PlatformSettingsStorageRoute = PlatformSettingsStorageRouteImport.update({
+  id: '/storage',
+  path: '/storage',
+  getParentRoute: () => PlatformSettingsRoute,
+} as any)
 const PlatformSettingsRegistrationRoute =
   PlatformSettingsRegistrationRouteImport.update({
     id: '/registration',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
   '/platform/settings/portal': typeof PlatformSettingsPortalRoute
   '/platform/settings/registration': typeof PlatformSettingsRegistrationRoute
+  '/platform/settings/storage': typeof PlatformSettingsStorageRoute
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/experts/': typeof AuthenticatedExpertsIndexRoute
   '/skills/': typeof AuthenticatedSkillsIndexRoute
@@ -410,6 +417,7 @@ export interface FileRoutesByTo {
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
   '/platform/settings/portal': typeof PlatformSettingsPortalRoute
   '/platform/settings/registration': typeof PlatformSettingsRegistrationRoute
+  '/platform/settings/storage': typeof PlatformSettingsStorageRoute
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/experts': typeof AuthenticatedExpertsIndexRoute
   '/skills': typeof AuthenticatedSkillsIndexRoute
@@ -462,6 +470,7 @@ export interface FileRoutesById {
   '/platform/settings/mail': typeof PlatformSettingsMailRoute
   '/platform/settings/portal': typeof PlatformSettingsPortalRoute
   '/platform/settings/registration': typeof PlatformSettingsRegistrationRoute
+  '/platform/settings/storage': typeof PlatformSettingsStorageRoute
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/_authenticated/experts/': typeof AuthenticatedExpertsIndexRoute
   '/_authenticated/skills/': typeof AuthenticatedSkillsIndexRoute
@@ -514,6 +523,7 @@ export interface FileRouteTypes {
     | '/platform/settings/mail'
     | '/platform/settings/portal'
     | '/platform/settings/registration'
+    | '/platform/settings/storage'
     | '/platform/settings/templates'
     | '/experts/'
     | '/skills/'
@@ -562,6 +572,7 @@ export interface FileRouteTypes {
     | '/platform/settings/mail'
     | '/platform/settings/portal'
     | '/platform/settings/registration'
+    | '/platform/settings/storage'
     | '/platform/settings/templates'
     | '/experts'
     | '/skills'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/platform/settings/mail'
     | '/platform/settings/portal'
     | '/platform/settings/registration'
+    | '/platform/settings/storage'
     | '/platform/settings/templates'
     | '/_authenticated/experts/'
     | '/_authenticated/skills/'
@@ -908,6 +920,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformSettingsTemplatesRouteImport
       parentRoute: typeof PlatformSettingsRoute
     }
+    '/platform/settings/storage': {
+      id: '/platform/settings/storage'
+      path: '/storage'
+      fullPath: '/platform/settings/storage'
+      preLoaderRoute: typeof PlatformSettingsStorageRouteImport
+      parentRoute: typeof PlatformSettingsRoute
+    }
     '/platform/settings/registration': {
       id: '/platform/settings/registration'
       path: '/registration'
@@ -1047,6 +1066,7 @@ interface PlatformSettingsRouteChildren {
   PlatformSettingsMailRoute: typeof PlatformSettingsMailRoute
   PlatformSettingsPortalRoute: typeof PlatformSettingsPortalRoute
   PlatformSettingsRegistrationRoute: typeof PlatformSettingsRegistrationRoute
+  PlatformSettingsStorageRoute: typeof PlatformSettingsStorageRoute
   PlatformSettingsTemplatesRoute: typeof PlatformSettingsTemplatesRoute
   PlatformSettingsIndexRoute: typeof PlatformSettingsIndexRoute
 }
@@ -1058,6 +1078,7 @@ const PlatformSettingsRouteChildren: PlatformSettingsRouteChildren = {
   PlatformSettingsMailRoute: PlatformSettingsMailRoute,
   PlatformSettingsPortalRoute: PlatformSettingsPortalRoute,
   PlatformSettingsRegistrationRoute: PlatformSettingsRegistrationRoute,
+  PlatformSettingsStorageRoute: PlatformSettingsStorageRoute,
   PlatformSettingsTemplatesRoute: PlatformSettingsTemplatesRoute,
   PlatformSettingsIndexRoute: PlatformSettingsIndexRoute,
 }

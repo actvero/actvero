@@ -6,27 +6,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 from app.modules.auth.service import now
-
-
-class ClientStorage(Base):
-    __tablename__ = "client_storage"
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(100), unique=True)
-    endpoint: Mapped[str] = mapped_column(String(2048))
-    region: Mapped[str] = mapped_column(String(100))
-    bucket: Mapped[str] = mapped_column(String(200))
-    prefix: Mapped[str] = mapped_column(String(200), default="clients")
-    public_url: Mapped[str] = mapped_column(String(2048))
-    path_style: Mapped[bool] = mapped_column(default=False)
-    credentials: Mapped[str] = mapped_column(Text)
-    enabled: Mapped[bool] = mapped_column(default=True)
-    is_default: Mapped[bool] = mapped_column(default=False)
-    revision: Mapped[int] = mapped_column(default=1)
+from app.modules.object_storage.models import ObjectStorage as ClientStorage  # noqa: F401
 
 
 class ClientDistribution(Base):
     __tablename__ = "client_distributions"
     release_id: Mapped[UUID] = mapped_column(ForeignKey("client_releases.id"), primary_key=True)
+    source_commit: Mapped[str | None] = mapped_column(String(40))
     channel: Mapped[str] = mapped_column(String(20))
     minimum_os: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
 
@@ -100,3 +86,6 @@ class ClientPublicationPlan(Base):
     artifact_ids: Mapped[list[str]] = mapped_column(JSON)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     consumed: Mapped[bool] = mapped_column(default=False)
+
+
+__all__ = ["ClientStorage"]

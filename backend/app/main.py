@@ -55,6 +55,7 @@ from app.modules.mcp.health import monitor, stop
 from app.modules.mcp.router import router as mcp_router
 from app.modules.members.invitations import router as invitations_router
 from app.modules.members.router import router as members_router
+from app.modules.object_storage.router import router as object_storage_router
 from app.modules.platform.brand_limits import BrandUploadLimit
 from app.modules.platform.brand_router import router as branding_router
 from app.modules.platform.brand_sync import monitor_branding
@@ -181,6 +182,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.add_middleware(BrandUploadLimit)
     register_error_handlers(application)
     application.include_router(router)
+    application.include_router(object_storage_router, prefix="/api/v1/platform/object-storage")
+    application.include_router(
+        object_storage_router,
+        prefix="/api/v1/management/platform/object-storage",
+        dependencies=management_bearer,
+    )
     application.include_router(distribution_router, prefix="/api/v1/platform/client-distribution")
     application.include_router(
         distribution_router,

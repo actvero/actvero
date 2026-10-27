@@ -9,9 +9,9 @@ description: 使用 Actvero CLI 管理指定平台和组织的 Skills、MCP 服�
 
 ## 从零开始
 
-1. 检查 `node --version`、`npm --version`、`actvero --version`。本手册对应 `@actvero/cli@0.2.0-dev.2`，Node.js ≥24。没有 CLI 或存在同名旧 Python CLI，读 [安装与初始化](references/bootstrap.md)。未安装时可执行：
+1. 检查 `node --version`、`npm --version`、`actvero --version`。本手册对应 `@actvero/cli@0.2.0-dev.3`，Node.js ≥24。没有 CLI 或存在同名旧 Python CLI，读 [安装与初始化](references/bootstrap.md)。未安装时可执行：
    ```sh
-   npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --help
+   npx --yes --package=@actvero/cli@0.2.0-dev.3 actvero --help
    ```
 2. 从用户当前请求、已授权配置取得平台基础 URL 和目标组织；缺少时只问缺少的值，不猜域名、账号或 UUID。先 `platform info --server <URL> --json` 检查能力，再 `auth status --server <URL> --json`。需要登录由用户在浏览器完成；凭据库/浏览器不可用按 bootstrap 处理。
 3. 用 `org list --server <URL> --json` 发现组织，按完整 UUID 选择，读取 `org permissions --org <UUID> --server <URL> --json`。同名/多个候选无法确定才询问。所有资源操作显式带 `--server` 和 `--org`。
@@ -23,7 +23,7 @@ description: 使用 Actvero CLI 管理指定平台和组织的 Skills、MCP 服�
 | 上传/维护技能、包内文件、版本发布/下架、分类、下载 | [Skills](references/skills.md) |
 | MCP 配置、连接、OAuth、能力开关、执行测试、内置内容 | [MCP](references/mcp.md) |
 | 专家草稿、使用范围、Skill/MCP 依赖、发布/下架 | [专家](references/experts.md) |
-| 客户端存储、构建文件上传、更新发布/下架 | [客户端发布](references/distribution.md) |
+| 共享对象存储、Win/Mac 构建清单上传、校验恢复、客户端发布/下架 | [客户端发布](references/distribution.md) |
 | 命令、参数、请求字段不清楚 | [命令与字段索引](references/commands.md)，再调用 `--help`、`schema show <名称>` |
 | 登录失败、409、超时、写入结果不明 | [错误恢复](references/recovery.md) |
 
