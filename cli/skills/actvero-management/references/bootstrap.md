@@ -1,6 +1,6 @@
 # 安装、初始化与切换
 
-本手册适用于 CLI 0.2.0-dev.2；这是开发预览版。平台必须部署资源管理接口，不能因为 npm 安装成功就认为现有服务器支持这些功能。
+本手册适用于 CLI 0.2.0-dev.3；这是开发预览版。平台必须部署资源管理接口，不能因为 npm 安装成功就认为现有服务器支持这些功能。
 
 ## 1. 获得命令
 
@@ -9,14 +9,14 @@
 固定版本调用，无需全局安装：
 
 ```sh
-npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --version
-npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero guide show overview
+npx --yes --package=@actvero/cli@0.2.0-dev.3 actvero --version
+npx --yes --package=@actvero/cli@0.2.0-dev.3 actvero guide show overview
 ```
 
 长期使用：
 
 ```sh
-npm install --global @actvero/cli@0.2.0-dev.2
+npm install --global @actvero/cli@0.2.0-dev.3
 actvero --version
 actvero --help
 ```

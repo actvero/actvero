@@ -11,7 +11,7 @@ from fastapi import HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.service import mutation_session, now, provider
+from app.modules.auth.service import now
 from app.modules.client_distribution.models import (
     ClientArtifact,
     ClientDistribution,
@@ -22,38 +22,11 @@ from app.modules.client_distribution.models import (
 )
 from app.modules.client_distribution.schemas import ArtifactView, DistributionView, UploadView
 from app.modules.client_distribution.storage import ObjectStore
-from app.modules.management.service import actor as management_actor
-from app.modules.platform.access import PlatformActor, platform_access
+from app.modules.object_storage.service import download_url, storage, store  # noqa: F401
+from app.modules.platform.access import PlatformActor
 from app.modules.platform.download_models import ClientRelease
 from app.modules.platform.downloads import changed, event
-from app.modules.tenants.models import Installation
-
-
-async def access(
-    request: Request, db: AsyncSession, permission: str | None = None
-) -> PlatformActor:
-    if request.url.path.startswith("/api/v1/management/"):
-        who = await management_actor(request, db)
-        if who.session.scope != "platform:read":
-            raise HTTPException(403, "请使用平台发布管理登录，组织凭据不能用于此接口")
-        if permission and permission not in who.session.platform_permissions:
-            raise HTTPException(403, "CLI 会话未获得此平台操作权限，请重新登录授权")
-        return PlatformActor(who.user)
-    if permission:
-        await mutation_session(request, db)
-    return await platform_access(request, db)
-
-
-async def locked(request: Request, db: AsyncSession, permission: str) -> PlatformActor:
-    await access(request, db, permission)
-    if not await db.scalar(select(Installation).where(Installation.id == 1).with_for_update()):
-        raise HTTPException(503, "数据库尚未完成迁移")
-    return await access(request, db, permission)
-
-
-def revision(actual: int, expected: int) -> None:
-    if actual != expected:
-        raise HTTPException(409, "记录已改变，请读取最新记录后核对")
+from app.modules.platform.operations import access, locked, revision  # noqa: F401
 
 
 async def release(
@@ -86,29 +59,23 @@ async def artifacts(db: AsyncSession, ident: UUID) -> list[ClientArtifact]:
 
 
 async def view(db: AsyncSession, ident: UUID) -> DistributionView:
-    row, distribution = await release(db, ident)
+    row = await db.get(ClientRelease, ident)
+    if not row:
+        raise HTTPException(404, "客户端版本不存在")
+    distribution = await db.get(ClientDistribution, ident)
     return DistributionView(
         id=row.id,
         version=row.version,
-        channel=distribution.channel,
+        channel=distribution.channel if distribution else "latest",
         notes=row.notes,
-        minimum_os=distribution.minimum_os,
+        minimum_os=distribution.minimum_os if distribution else {},
+        source_commit=distribution.source_commit if distribution else None,
+        legacy=distribution is None,
+        legacy_assets=row.assets if distribution is None else [],
         status=row.status,
         revision=row.revision,
         artifacts=[ArtifactView.model_validate(a) for a in await artifacts(db, ident)],
     )
-
-
-async def storage(db: AsyncSession, ident: UUID | None) -> ClientStorage:
-    row = await db.get(ClientStorage, ident) if ident else None
-    if not row or not row.enabled:
-        raise HTTPException(422, "请配置并启用存储位置")
-    return row
-
-
-def store(request: Request, row: ClientStorage) -> ObjectStore:
-    factory = getattr(request.app.state, "client_store_factory", ObjectStore)
-    return factory(row, provider(request).unseal(row.credentials))
 
 
 async def upload_context(
@@ -169,7 +136,7 @@ async def enqueue(db: AsyncSession, artifact: ClientArtifact, actor_id: UUID) ->
 
 
 def canonical_name(version: str, target: str, role: str) -> str:
-    extension = "exe" if target == "win-x64" else ("dmg" if role == "installer" else "zip")
+    extension = "exe" if target.startswith("win-") else ("dmg" if role == "installer" else "zip")
     return f"actvero-{version}-{target}.{extension}" + (".blockmap" if role == "blockmap" else "")
 
 
@@ -269,3 +236,6 @@ def record(db: AsyncSession, who: PlatformActor, row: ClientRelease, action: str
 
 def expiry() -> datetime:
     return now() + timedelta(days=7)
+
+
+__all__ = ["storage", "store", "download_url", "access", "locked", "revision"]

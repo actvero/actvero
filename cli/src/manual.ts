@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cp, mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,11 +16,11 @@ const topics: Record<string, string> = {
   distribution: 'references/distribution.md',
 };
 
-async function packageRoot(): Promise<string> {
+function packageRoot(): string {
   let directory = dirname(fileURLToPath(import.meta.url));
   for (let depth = 0; depth < 4; depth++) {
     try {
-      const pkg = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'));
+      const pkg = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
       if (pkg.name === '@actvero/cli') return directory;
     } catch {
       /* Search only this installed module's ancestors. */
@@ -27,6 +28,12 @@ async function packageRoot(): Promise<string> {
     directory = dirname(directory);
   }
   throw new CliError('package_incomplete', 'CLI 安装不完整，请重新安装同一版本');
+}
+
+export function packageVersion(): string {
+  const version: unknown = JSON.parse(readFileSync(join(packageRoot(), 'package.json'), 'utf8')).version;
+  if (typeof version !== 'string' || !version) throw new CliError('package_incomplete', 'CLI 安装包缺少版本号');
+  return version;
 }
 
 export async function skillPath(): Promise<string> {
@@ -116,7 +123,7 @@ export async function schema(name: string): Promise<unknown> {
   };
 }
 
-const examples = ['expert', 'mcp', 'mcp-run', 'skill-metadata', 'mcp-builtin'];
+const examples = ['expert', 'mcp', 'mcp-run', 'skill-metadata', 'mcp-builtin', 'client-release'];
 export function exampleNames(): string[] {
   return [...examples];
 }

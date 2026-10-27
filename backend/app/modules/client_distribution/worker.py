@@ -17,8 +17,8 @@ from sqlalchemy import or_, select, update
 
 from app.modules.auth.service import now
 from app.modules.client_distribution.models import ClientArtifact, ClientJob, ClientStorage
-from app.modules.client_distribution.network import check_range, download
 from app.modules.client_distribution.storage import ObjectStore
+from app.modules.object_storage.network import check_range, download
 from app.modules.platform.download_models import ClientRelease
 from app.modules.tenants.models import Installation, PlatformOperator
 
@@ -144,6 +144,14 @@ async def process(app: FastAPI, job: ClientJob, token: UUID) -> None:
             temp.seek(0)
             await store.put_large(key, temp)
         url = f"{profile.public_url}/{key}"
+    stored_url = (
+        f"{profile.public_url}/{key}" if profile and profile.public_url and key else artifact.url
+    )
+    if profile and key and not profile.public_url:
+        factory = getattr(app.state, "client_store_factory", ObjectStore)
+        url = await factory(
+            profile, app.state.identity_provider.unseal(profile.credentials)
+        ).sign_get(key)
     size, sha512, sha256, small = await read_file(app, job.id, token, url, limit=limit)
     if artifact.size_bytes and size != artifact.size_bytes:
         raise HTTPException(422, "下载文件大小与声明不符")
@@ -170,7 +178,7 @@ async def process(app: FastAPI, job: ClientJob, token: UUID) -> None:
             select(ClientRelease).where(ClientRelease.id == artifact.release_id).with_for_update()
         )
         assert release
-        artifact.url, artifact.object_key = url, key
+        artifact.url, artifact.object_key = stored_url, key
         artifact.size_bytes, artifact.sha512, artifact.sha256 = size, sha512, sha256
         artifact.status, artifact.validation, artifact.range_supported, artifact.error = (
             "ready",

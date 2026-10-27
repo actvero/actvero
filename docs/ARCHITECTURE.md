@@ -24,4 +24,4 @@ Keycloak 负责认证协议、密码与 MFA。平台负责组织成员关系、�
 
 ## 客户端分发
 
-`client_distribution` 扩展既有客户端版本表，维护加密存储配置、文件、multipart 上传、持久化校验任务、发布计划与更新通道快照。Web 与 CLI 使用不同认证入口并复用领域服务；公开更新清单仅引用校验后的发布文件。操作契约见[客户端更新发布](CLIENT-DISTRIBUTION.md)。
+`object_storage` 提供平台级加密存储配置和 S3 连接能力，供不同业务模块复用。`client_distribution` 扩展既有客户端版本表，维护文件、multipart 上传、持久化校验任务、发布计划与更新通道快照。Web 与 CLI 使用不同认证入口并复用领域服务；公开更新清单仅引用校验后的发布文件。操作契约见[客户端更新发布](CLIENT-DISTRIBUTION.md)。

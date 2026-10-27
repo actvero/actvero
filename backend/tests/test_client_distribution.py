@@ -18,13 +18,15 @@ from test_identity_access import env  # noqa: F401
 from test_platform_settings import operator
 
 from app.modules.auth.service import now
-from app.modules.client_distribution import network, router, worker
+from app.modules.client_distribution import worker
 from app.modules.client_distribution.models import ClientArtifact, ClientJob, ClientStorage
 from app.modules.client_distribution.schemas import DistributionSave
 from app.modules.client_distribution.service import newer
 from app.modules.client_distribution.storage import ClientError, ObjectStore
 from app.modules.desktop.oidc import NativeIdentity
 from app.modules.desktop.service import pkce
+from app.modules.object_storage import network
+from app.modules.object_storage import router as storage_router
 from app.modules.tenants.models import PlatformOperator
 
 BASE = "/api/v1/platform/client-distribution"
@@ -43,7 +45,11 @@ async def release(api, version="1.0.0"):
             "expected_revision": 0,
             "version": version,
             "channel": "latest",
-            "minimum_os": {"win-x64": "Windows 10", "mac-arm64": "macOS 13"},
+            "minimum_os": {
+                "win-x64": "Windows 10",
+                "win-arm64": "Windows 11 ARM64",
+                "mac-arm64": "macOS 13",
+            },
         },
     )
     assert response.status_code == 200, response.text
@@ -52,7 +58,9 @@ async def release(api, version="1.0.0"):
 
 async def add(api, row, role, data, target="win-x64", **changes):
     row = (await api.get(BASE + "/releases/" + row["id"])).json()
-    filename = "app.exe" if target == "win-x64" else "app.dmg" if role == "installer" else "app.zip"
+    filename = (
+        "app.exe" if target.startswith("win-") else "app.dmg" if role == "installer" else "app.zip"
+    )
     if role == "blockmap":
         filename += ".blockmap"
     response = await api.put(
@@ -84,7 +92,7 @@ def files(monkeypatch, payload=b"signed-installer-fixture", *, range_ok=True):
 
     @asynccontextmanager
     async def download(url, settings):
-        content = blockmap if url.endswith("blockmap") else payload
+        content = blockmap if url.split("?", 1)[0].endswith("blockmap") else payload
         yield httpx.Response(200, content=content)
 
     monkeypatch.setattr(worker, "download", download)
@@ -206,7 +214,7 @@ async def test_reject_missing_mac_installer_bad_hash_and_non_range_feed(env, mon
 
 async def test_storage_secrets_are_encrypted_and_locator_freezes_after_upload(env, monkeypatch):  # noqa: F811
     actor = await operator(env)
-    monkeypatch.setattr(router, "resolve", AsyncMock(return_value="8.8.8.8"))
+    monkeypatch.setattr(storage_router, "resolve", AsyncMock(return_value="8.8.8.8"))
     ident = str(uuid4())
     payload = {
         "expected_revision": 0,
@@ -363,7 +371,7 @@ async def test_semver_and_bounded_blockmaps():
 
 async def test_multipart_resume_and_lost_completion_response(env, monkeypatch):  # noqa: F811
     actor = await operator(env)
-    monkeypatch.setattr(router, "resolve", AsyncMock(return_value="8.8.8.8"))
+    monkeypatch.setattr(storage_router, "resolve", AsyncMock(return_value="8.8.8.8"))
 
     class Store:
         def __init__(self):
@@ -470,3 +478,154 @@ async def test_abort_retry_accepts_missing_upload_but_preserves_provider_failure
         await store.abort("artifact", "upload")
     assert error.value.status_code == 502
     assert "sensitive-provider-detail" not in str(error.value.detail)
+
+
+async def test_private_default_storage_verifies_and_redirects_without_persisting_signed_urls(
+    env,  # noqa: F811
+    monkeypatch,
+):
+    actor = await operator(env)
+    monkeypatch.setattr(storage_router, "resolve", AsyncMock(return_value="8.8.8.8"))
+    storage_id = str(uuid4())
+    result = await actor.api.put(
+        "/api/v1/platform/object-storage/" + storage_id,
+        json={
+            "expected_revision": 0,
+            "name": "private",
+            "endpoint": "https://s3.example.com",
+            "region": "r1",
+            "bucket": "private-bucket",
+            "is_default": True,
+            "access_key": "test-access",
+            "secret_key": "test-secret",
+        },
+    )
+    assert result.status_code == 200, result.text
+    assert result.json()["public_url"] == ""
+    assert (await actor.api.get(BASE + "/storage")).json()["items"][0]["id"] == storage_id
+    row = await release(actor.api)
+    payload, blockmap = files(monkeypatch)
+    signed = []
+
+    class Store:
+        async def sign_get(self, key):
+            url = "https://s3.example.com/" + key + "?X-Amz-Signature=synthetic"
+            signed.append(url)
+            return url
+
+    env.app.state.client_store_factory = lambda *_: Store()
+    for role, data in [("payload", payload), ("blockmap", blockmap)]:
+        item = await add(actor.api, row, role, data, url=None)
+        assert item["storage_id"] == storage_id
+        async with env.sessions() as db:
+            artifact = await db.get(ClientArtifact, UUID(item["id"]))
+            assert "/clients/1.0.0/win-x64/" in artifact.object_key
+            artifact.status = "verifying"
+            db.add(ClientJob(artifact_id=artifact.id, actor_id=actor.user.id))
+            await db.commit()
+        assert await worker.run_once(env.app)
+    row = (await actor.api.get(BASE + "/releases/" + row["id"])).json()
+    assert all(a["url"] is None and a["status"] == "ready" for a in row["artifacts"])
+    response = await actor.api.post(
+        BASE + "/releases/" + row["id"] + "/publish",
+        json={"plan_id": (await plan(actor.api, row))["id"]},
+    )
+    assert response.status_code == 200, response.text
+    async with env.sessions() as db:
+        (await db.get(ClientStorage, UUID(storage_id))).enabled = False
+        await db.commit()
+    path = "/api/v1/client-artifacts/latest/win-x64/actvero-1.0.0-win-x64.exe"
+    for _ in range(2):
+        response = await actor.api.get(path, headers={"Range": "bytes=0-3"})
+        assert response.status_code == 307
+        assert response.headers["location"].startswith("https://s3.example.com/")
+    assert len(signed) == 4
+    async with env.sessions() as db:
+        artifacts = (await db.scalars(select(ClientArtifact))).all()
+        assert all(a.url is None for a in artifacts)
+
+
+async def test_release_source_identity_and_legacy_draft_adoption(env):  # noqa: F811
+    from app.modules.platform.download_models import ClientRelease
+
+    actor = await operator(env)
+    legacy_id = uuid4()
+    async with env.sessions() as db:
+        legacy = ClientRelease(
+            id=legacy_id,
+            version="1.0.0",
+            release_date=now().date(),
+            notes="keep",
+            assets=[],
+            status="draft",
+            revision=1,
+        )
+        db.add(legacy)
+        await db.commit()
+    items = (await actor.api.get(BASE + "/releases?version=1.0.0")).json()["items"]
+    assert len(items) == 1 and items[0]["legacy"] is True
+    payload = {
+        "expected_revision": 1,
+        "version": "1.0.0",
+        "notes": "keep",
+        "source_commit": "a" * 40,
+    }
+    response = await actor.api.put(BASE + "/releases/" + str(legacy_id), json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["legacy"] is False and saved["source_commit"] == "a" * 40
+    response = await actor.api.put(
+        BASE + "/releases/" + str(legacy_id),
+        json={**payload, "expected_revision": saved["revision"], "source_commit": "b" * 40},
+    )
+    assert response.status_code == 409
+    assert (await actor.api.get(BASE + "/releases/" + str(legacy_id))).json()[
+        "source_commit"
+    ] == "a" * 40
+
+
+async def test_upload_without_default_storage_fails_with_actionable_error(env):  # noqa: F811
+    actor = await operator(env)
+    row = await release(actor.api)
+    response = await actor.api.put(
+        BASE + "/releases/" + row["id"] + "/artifacts/" + str(uuid4()),
+        json={
+            "expected_revision": row["revision"],
+            "target": "win-x64",
+            "role": "payload",
+            "filename": "app.exe",
+            "size_bytes": 4,
+        },
+    )
+    assert response.status_code == 422
+    assert "默认对象存储" in response.text
+
+
+async def test_windows_arm_release_has_independent_feed_download_and_blockmap(env, monkeypatch):  # noqa: F811
+    actor = await operator(env)
+    x64 = await verified(env, monkeypatch, actor, "1.0.0")
+    await actor.api.post(
+        BASE + "/releases/" + x64["id"] + "/publish",
+        json={"plan_id": (await plan(actor.api, x64))["id"]},
+    )
+    arm = await verified(env, monkeypatch, actor, "2.0.0", target="win-arm64")
+    response = await actor.api.post(
+        BASE + "/releases/" + arm["id"] + "/publish",
+        json={"plan_id": (await plan(actor.api, arm, ["win-arm64"]))["id"]},
+    )
+    assert response.status_code == 200, response.text
+    feed = await actor.api.get("/api/v1/client-updates/actvero/win-arm64/latest.yml")
+    assert feed.status_code == 200 and "actvero-2.0.0-win-arm64.exe" in feed.text
+    x64_feed = await actor.api.get("/api/v1/client-updates/actvero/win-x64/latest.yml")
+    assert x64_feed.status_code == 200 and "actvero-1.0.0-win-x64.exe" in x64_feed.text
+    async with env.sessions() as db:
+        from app.modules.platform.download_models import ClientRelease
+
+        saved = await db.get(ClientRelease, UUID(arm["id"]))
+        assert saved.assets[0]["platform"] == "windows"
+        assert saved.assets[0]["architecture"] == "arm64"
+    for extension in [".exe", ".exe.blockmap"]:
+        file = await actor.api.get(
+            "/api/v1/client-artifacts/latest/win-arm64/actvero-2.0.0-win-arm64" + extension
+        )
+        assert file.status_code == 307

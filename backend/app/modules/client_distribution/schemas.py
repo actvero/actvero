@@ -5,12 +5,16 @@ from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-Target = Literal["win-x64", "mac-arm64", "mac-x64"]
+from app.modules.object_storage.schemas import StorageSave, StorageView  # noqa: F401
+from app.modules.object_storage.validation import Input, https_url
+from app.modules.platform.download_schemas import ClientAsset
+
+Target = Literal["win-x64", "win-arm64", "mac-arm64", "mac-x64"]
 Channel = Literal["latest", "nightly"]
 Role = Literal["installer", "payload", "blockmap"]
-TARGETS = ("win-x64", "mac-arm64", "mac-x64")
+TARGETS = ("win-x64", "win-arm64", "mac-arm64", "mac-x64")
 SEMVER = re.compile(
     r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
     r"(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -18,78 +22,12 @@ SEMVER = re.compile(
 )
 
 
-def https_url(value: str) -> str:
-    p = urlsplit(value)
-    if (
-        p.scheme != "https"
-        or not p.hostname
-        or p.username
-        or p.password
-        or p.fragment
-        or any(ord(c) < 33 or c in '<>"\\' for c in value)
-    ):
-        raise ValueError("请使用不含账号、密码和片段的 HTTPS 地址")
-    _ = p.port
-    return value
-
-
-class Input(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-
-class StorageSave(Input):
-    expected_revision: int = Field(ge=0)
-    name: str = Field(min_length=1, max_length=100)
-    endpoint: str = Field(max_length=2048)
-    region: str = Field(min_length=1, max_length=100, pattern=r"^[\w-]+$")
-    bucket: str = Field(min_length=3, max_length=200, pattern=r"^[a-zA-Z0-9._-]+$")
-    prefix: str = Field(
-        default="clients", max_length=200, pattern=r"^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$"
-    )
-    public_url: str = Field(max_length=2048)
-    path_style: bool = False
-    access_key: SecretStr | None = Field(default=None, min_length=1, max_length=500)
-    secret_key: SecretStr | None = Field(default=None, min_length=1, max_length=1000)
-    enabled: bool = True
-    is_default: bool = False
-
-    @field_validator("endpoint", "public_url")
-    @classmethod
-    def address(cls, value: str) -> str:
-        value = https_url(value).rstrip("/")
-        if urlsplit(value).query:
-            raise ValueError("存储地址不能包含查询参数")
-        return value
-
-    @model_validator(mode="after")
-    def credentials_pair(self) -> "StorageSave":
-        if bool(self.access_key) != bool(self.secret_key):
-            raise ValueError("请同时提供访问密钥和秘密密钥")
-        if self.is_default and not self.enabled:
-            raise ValueError("默认存储必须启用")
-        return self
-
-
-class StorageView(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: UUID
-    name: str
-    endpoint: str
-    region: str
-    bucket: str
-    prefix: str
-    public_url: str
-    path_style: bool
-    enabled: bool
-    is_default: bool
-    revision: int
-
-
 class DistributionSave(Input):
     expected_revision: int = Field(ge=0)
     version: str = Field(max_length=50)
     channel: Channel = "latest"
     notes: str = Field(default="", max_length=12000)
+    source_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     minimum_os: dict[Target, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -132,19 +70,23 @@ class ArtifactCreate(Input):
 
     @model_validator(mode="after")
     def source_rules(self) -> "ArtifactCreate":
-        if not self.url and (not self.storage_id or not self.size_bytes):
-            raise ValueError("上传文件需要存储位置和大小")
-        if self.mirror and (not self.url or not self.storage_id):
-            raise ValueError("转存需要来源地址和存储位置")
+        if not self.url and not self.size_bytes:
+            raise ValueError("上传文件需要文件大小")
+        if self.mirror and not self.url:
+            raise ValueError("转存需要来源地址")
         if self.url and not self.mirror and urlsplit(self.url).query:
             raise ValueError("长期引用不能使用带查询参数的地址，请选择转存")
-        extension = ".exe" if self.target == "win-x64" else ".zip"
+        extension = ".exe" if self.target.startswith("win-") else ".zip"
         expected = (
             extension + ".blockmap"
             if self.role == "blockmap"
-            else (".dmg" if self.role == "installer" and self.target != "win-x64" else extension)
+            else (
+                ".dmg"
+                if self.role == "installer" and not self.target.startswith("win-")
+                else extension
+            )
         )
-        if self.target == "win-x64" and self.role == "installer":
+        if self.target.startswith("win-") and self.role == "installer":
             raise ValueError("Windows EXE 请使用更新包角色，同时用于下载安装")
         if not self.filename.endswith(expected):
             raise ValueError("文件扩展名与目标用途不一致")
@@ -177,6 +119,9 @@ class DistributionView(BaseModel):
     minimum_os: dict[str, str]
     status: str
     revision: int
+    source_commit: str | None = None
+    legacy: bool = False
+    legacy_assets: list[ClientAsset] = Field(default_factory=list)
     artifacts: list[ArtifactView]
 
 
@@ -243,3 +188,6 @@ class PlanView(BaseModel):
     release_revision: int
     targets: dict[str, int]
     expires_at: datetime
+
+
+__all__ = ["StorageSave", "StorageView", "https_url"]

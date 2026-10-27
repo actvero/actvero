@@ -1,6 +1,6 @@
 {
   "name": "@actvero/cli",
-  "version": "0.2.0-dev.2",
+  "version": "0.2.0-dev.3",
   "description": "Organization-scoped management CLI for Actvero",
   "type": "module",
   "license": "MIT",
@@ -25,10 +25,11 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "tsc -p tsconfig.json --noEmit && node scripts/check-public.mjs",
+    "check": "node scripts/sync-skill.mjs --check && tsc -p tsconfig.json --noEmit && node scripts/check-public.mjs",
     "test": "tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
     "prepack": "npm run check && npm run build",
-    "dev": "npm run build && node dist/index.js"
+    "dev": "npm run build && node dist/index.js",
+    "sync:skill": "node scripts/sync-skill.mjs"
   },
   "dependencies": {
     "@napi-rs/keyring": "2.1.1",

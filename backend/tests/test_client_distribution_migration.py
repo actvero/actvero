@@ -43,12 +43,47 @@ async def test_distribution_migration_preserves_downloads_and_indexes(monkeypatc
                 text("SELECT to_jsonb(r) FROM client_releases r WHERE id=:id"), {"id": ident}
             )
             await db.run_sync(migrate, "117l_client_distribution")
+            storage_id = uuid4()
+            await db.execute(
+                text(
+                    "INSERT INTO client_storage "
+                    "(id,name,endpoint,region,bucket,prefix,public_url,path_style,credentials,"
+                    "enabled,is_default,revision) "
+                    "VALUES (:id,'old','https://s3.example.com','r1','bucket','old-prefix',"
+                    "'https://files.example.com',false,'sealed-fixture',true,true,3)"
+                ),
+                {"id": storage_id},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO client_artifacts "
+                    "(id,release_id,target,role,filename,source,url,storage_id,object_key,"
+                    "status,range_supported,validation,created_at) "
+                    "VALUES (:id,:release,'win-x64','payload','old.exe','upload',"
+                    "'https://files.example.com/old-prefix/old.exe',:storage,"
+                    "'old-prefix/old.exe','ready',true,'{}',CURRENT_TIMESTAMP)"
+                ),
+                {"id": uuid4(), "release": ident, "storage": storage_id},
+            )
+            old_storage = await db.scalar(
+                text("SELECT to_jsonb(s) FROM client_storage s WHERE id=:id"), {"id": storage_id}
+            )
+            await db.run_sync(migrate, "118m_release_provenance")
             assert (
                 await db.scalar(
                     text("SELECT to_jsonb(r) FROM client_releases r WHERE id=:id"), {"id": ident}
                 )
                 == before
             )
+            migrated_storage = await db.scalar(
+                text("SELECT to_jsonb(s) FROM client_storage s WHERE id=:id"), {"id": storage_id}
+            )
+            assert migrated_storage.pop("locator_frozen") is True
+            assert migrated_storage == old_storage
+            source_columns = await db.run_sync(
+                lambda sync: inspect(sync).get_columns("client_distributions")
+            )
+            assert any(c["name"] == "source_commit" for c in source_columns)
             indexes = await db.run_sync(lambda sync: inspect(sync).get_indexes("client_artifacts"))
             assert any(i["column_names"] == ["release_id"] for i in indexes)
             columns = await db.run_sync(
@@ -62,7 +97,7 @@ async def test_distribution_migration_preserves_downloads_and_indexes(monkeypatc
                 )
                 == before
             )
-            await db.run_sync(migrate, "117l_client_distribution")
+            await db.run_sync(migrate, "118m_release_provenance")
     finally:
         await engine.dispose()
         async with owner.begin() as db:

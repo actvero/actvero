@@ -2,18 +2,18 @@
 
 用于管理 Actvero 平台的独立命令行客户端。支持多组织下的 **Skills、MCP 服务、专家**，适合终端操作和 Agent 调用。平台继续负责权限、版本、审计与发布校验。
 
-当前为 `0.2.0-dev.2` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `115j_cli_consent` 迁移的浏览器授权与资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
+当前为 `0.2.0-dev.3` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `115j_cli_consent` 迁移的浏览器授权与资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
 
 ## 安装与 Agent Skill
 
 需要 Node.js 24 或更高版本，以及可用的系统凭据库：macOS Keychain、Windows Credential Manager 或 Linux Secret Service。
 
 ```sh
-npm install --global @actvero/cli@0.2.0-dev.2
+npm install --global @actvero/cli@0.2.0-dev.3
 actvero --version
 actvero --help
 # 无需全局安装的固定版本调用
-npx --yes --package=@actvero/cli@0.2.0-dev.2 actvero --help
+npx --yes --package=@actvero/cli@0.2.0-dev.3 actvero --help
 # 安装配套 Codex Skill；--to 是 skills 父目录，已有同名目录不会覆盖
 actvero agent-skill install --to "$HOME/.codex/skills"
 ```
@@ -174,3 +174,14 @@ MIT，见 [LICENSE](LICENSE)。
 ## 客户端更新发布
 
 使用 `auth login --target platform` 在浏览器选择平台发布权限，再运行 `storage` 和 `releases` 命令。`guide show distribution` 提供存储配置、构建清单导入、续传、检查发布和下架步骤；平台与组织凭据分开保存，组织命令保持原行为。
+
+
+客户端上传默认读取平台的默认对象存储。Windows x64 / ARM64 与 Mac 构建机导出的产物使用同一版本和源码提交，上传合并到一个草稿，上传不会自动发布：
+
+```sh
+actvero releases import --dir ./artifacts --server https://platform.example.com
+actvero releases wait <版本UUID> --server https://platform.example.com
+actvero releases retry <版本UUID> --server https://platform.example.com
+```
+
+`--no-wait` 可在上传后返回，`--timeout` 调整等待秒数；中断后使用相同清单重跑可续传。平台须支持 `client_distribution.import_manifest`；旧平台应先升级，CLI 不会静默绕过兼容检查。项目 Skill 是源文件，`npm run sync:skill` 同步到包内，`npm run check` 检查两份内容一致。

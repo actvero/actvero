@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "6c7b84fdb28bf8ad0f862d866b4f8abf28ca7eb96de9d309c4ccf0958a1a4a50",
+  "source_sha256": "d9d2349a0eaf27889870c3e733bf5c64f556084e99ad5e028436a8ecfa72eded",
   "roots": [
     "ArtifactCreate",
     "ArtifactView",
@@ -131,6 +131,7 @@
         "target": {
           "enum": [
             "win-x64",
+            "win-arm64",
             "mac-arm64",
             "mac-x64"
           ],
@@ -263,6 +264,7 @@
         "target": {
           "enum": [
             "win-x64",
+            "win-arm64",
             "mac-arm64",
             "mac-x64"
           ],
@@ -390,6 +392,71 @@
         "revision"
       ],
       "title": "CategoryRename",
+      "type": "object"
+    },
+    "ClientAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "enum": [
+            "x64",
+            "arm64",
+            "universal"
+          ],
+          "title": "Architecture",
+          "type": "string"
+        },
+        "filename": {
+          "default": "",
+          "maxLength": 180,
+          "title": "Filename",
+          "type": "string"
+        },
+        "minimum_os": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Minimum Os",
+          "type": "string"
+        },
+        "platform": {
+          "enum": [
+            "windows",
+            "macos"
+          ],
+          "title": "Platform",
+          "type": "string"
+        },
+        "sha256": {
+          "default": "",
+          "maxLength": 64,
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 20000000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Size Bytes"
+        },
+        "url": {
+          "default": "",
+          "maxLength": 2048,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "architecture"
+      ],
+      "title": "ClientAsset",
       "type": "object"
     },
     "CommandStatus": {
@@ -605,6 +672,7 @@
           "propertyNames": {
             "enum": [
               "win-x64",
+              "win-arm64",
               "mac-arm64",
               "mac-x64"
             ]
@@ -617,6 +685,18 @@
           "maxLength": 12000,
           "title": "Notes",
           "type": "string"
+        },
+        "source_commit": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Commit"
         },
         "version": {
           "maxLength": 50,
@@ -653,6 +733,18 @@
           "title": "Id",
           "type": "string"
         },
+        "legacy": {
+          "default": false,
+          "title": "Legacy",
+          "type": "boolean"
+        },
+        "legacy_assets": {
+          "items": {
+            "$ref": "#/$defs/ClientAsset"
+          },
+          "title": "Legacy Assets",
+          "type": "array"
+        },
         "minimum_os": {
           "additionalProperties": {
             "type": "string"
@@ -667,6 +759,17 @@
         "revision": {
           "title": "Revision",
           "type": "integer"
+        },
+        "source_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Commit"
         },
         "status": {
           "title": "Status",
@@ -1694,6 +1797,7 @@
         "target": {
           "enum": [
             "win-x64",
+            "win-arm64",
             "mac-arm64",
             "mac-x64"
           ],
@@ -3030,8 +3134,8 @@
           "type": "array"
         },
         "client_distribution_contract_version": {
-          "const": 1,
-          "default": 1,
+          "const": 2,
+          "default": 2,
           "title": "Client Distribution Contract Version",
           "type": "integer"
         },
@@ -4074,13 +4178,14 @@
           "type": "boolean"
         },
         "prefix": {
-          "default": "clients",
+          "default": "actvero",
           "maxLength": 200,
           "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$",
           "title": "Prefix",
           "type": "string"
         },
         "public_url": {
+          "default": "",
           "maxLength": 2048,
           "title": "Public Url",
           "type": "string"
@@ -4113,8 +4218,7 @@
         "name",
         "endpoint",
         "region",
-        "bucket",
-        "public_url"
+        "bucket"
       ],
       "title": "StorageSave",
       "type": "object"
