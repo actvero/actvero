@@ -63,6 +63,56 @@ const release = {
   ],
 }
 
+it('saves an explicit download-only release', async () => {
+  let saved: Record<string, unknown> | undefined
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        saved = JSON.parse(init.body as string)
+        return Response.json({ ...release, ...saved })
+      }
+      return Response.json({ items: [] })
+    })
+  )
+  await show()
+  await page.getByRole('button', { name: '新建版本' }).click()
+  await waitForAnimations()
+  await page.getByRole('textbox', { name: '版本号' }).fill('0.1.15')
+  await page.getByRole('combobox', { name: '发布范围' }).click()
+  await page.getByRole('option', { name: '仅网页下载', exact: true }).click()
+  await page.getByRole('button', { name: '保存草稿' }).click()
+  await expect.poll(() => saved?.updates_enabled).toBe(false)
+})
+
+it('describes download-only publication without promising an update push', async () => {
+  const ordinary = { ...release, updates_enabled: false }
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.endsWith('/plan'))
+        return Response.json({
+          id: 'ab098bcb-10b1-45f0-b01e-42127d4779c8',
+          targets: { 'win-x64': 0 },
+        })
+      return Response.json({
+        items: url.endsWith('/releases') ? [ordinary] : [],
+      })
+    })
+  )
+  await show()
+  await page.getByRole('button', { name: '检查并发布' }).click()
+  await waitForAnimations()
+  await page.getByRole('button', { name: '检查发布条件' }).click()
+  await expect
+    .element(
+      page.getByText(
+        '检查通过。确认后，下载页将提供所选安装包，自动更新通道保持不变。'
+      )
+    )
+    .toBeVisible()
+})
+
 it('publishes only after checking a plan and a separate confirmation', async () => {
   const writes: { url: string; body: Record<string, unknown> }[] = []
   vi.stubGlobal(

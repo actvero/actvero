@@ -159,6 +159,9 @@ function DistributionSettings() {
                     <span className='text-sm text-muted-foreground'>
                       {row.channel === 'latest' ? '正式' : '预览'}
                     </span>
+                    {row.updates_enabled === false && (
+                      <Badge variant='outline'>仅网页下载</Badge>
+                    )}
                   </div>
                   <div className='flex flex-wrap gap-2'>
                     {row.status === 'draft' && (
@@ -346,6 +349,7 @@ type EditorProps<T> = {
 const releaseSchema = z.object({
   version: z.string().min(1, '请填写版本号'),
   channel: z.enum(['latest', 'nightly']),
+  updates_enabled: z.boolean(),
   notes: z.string().max(12000),
   win: z.string(),
   winArm: z.string(),
@@ -359,6 +363,7 @@ function ReleaseEditor({ saved, csrf, close, changed }: EditorProps<Release>) {
     defaultValues: {
       version: saved?.version || '',
       channel: saved?.channel || 'latest',
+      updates_enabled: saved?.updates_enabled ?? true,
       notes: saved?.notes || '',
       win: saved?.minimum_os['win-x64'] || 'Windows 10 及以上',
       winArm: saved?.minimum_os['win-arm64'] || 'Windows 11 ARM64',
@@ -367,6 +372,10 @@ function ReleaseEditor({ saved, csrf, close, changed }: EditorProps<Release>) {
     },
   })
   const channel = useWatch({ control: form.control, name: 'channel' })
+  const updatesEnabled = useWatch({
+    control: form.control,
+    name: 'updates_enabled',
+  })
   const mutation = useMutation({
     mutationFn: (v: z.infer<typeof releaseSchema>) =>
       api(
@@ -376,6 +385,7 @@ function ReleaseEditor({ saved, csrf, close, changed }: EditorProps<Release>) {
           expected_revision: saved?.revision || 0,
           version: v.version,
           channel: v.channel,
+          updates_enabled: v.updates_enabled,
           notes: v.notes,
           minimum_os: {
             'win-x64': v.win,
@@ -402,6 +412,18 @@ function ReleaseEditor({ saved, csrf, close, changed }: EditorProps<Release>) {
         className='space-y-5'
       >
         <FieldGroup>
+          <Choice
+            id='publication-scope'
+            label='发布范围'
+            value={updatesEnabled ? 'updates' : 'downloads'}
+            onChange={(value) =>
+              form.setValue('updates_enabled', value === 'updates')
+            }
+            choices={[
+              ['updates', '网页下载及自动更新'],
+              ['downloads', '仅网页下载'],
+            ]}
+          />
           <TextField
             id='version'
             label='版本号'
@@ -806,9 +828,18 @@ function PublishEditor({
       </FieldGroup>
       {plan && (
         <p className='rounded-md border p-3 text-sm'>
-          检查通过。确认后，{row.channel === 'latest' ? '正式' : '预览'}通道的{' '}
-          {selected.map((t) => names[t]).join('、')} 将推送 v{row.version}
-          。下载页也会同步更新。
+          {row.updates_enabled === false ? (
+            <>
+              检查通过。确认后，下载页将提供所选安装包，自动更新通道保持不变。
+            </>
+          ) : (
+            <>
+              检查通过。确认后，{row.channel === 'latest' ? '正式' : '预览'}
+              通道的 {selected.map((t) => names[t]).join('、')} 将推送 v
+              {row.version}
+              。下载页也会同步更新。
+            </>
+          )}
         </p>
       )}
       {mutation.isError && <RequestError error={mutation.error} />}
