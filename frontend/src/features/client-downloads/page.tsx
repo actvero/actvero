@@ -105,7 +105,6 @@ function PlatformDownload({
   current: boolean
   commonVersion?: string
 }) {
-  const [choice, setChoice] = useState('')
   const available = new Set(
     catalog.items.flatMap((release) =>
       release.assets
@@ -121,9 +120,11 @@ function PlatformDownload({
     available.has(architecture)
   )
   // A browser's OS does not reliably identify the CPU. Keep multiple choices explicit.
+  const [choice, setChoice] = useState(() =>
+    architectures.length === 1 ? architectures[0] : ''
+  )
   const selected =
-    architectures.find((architecture) => architecture === choice) ??
-    (!choice && architectures.length === 1 ? architectures[0] : '')
+    architectures.find((architecture) => architecture === choice) ?? ''
   const download = recommendedDownload(catalog, platform, selected)
   const icon = platform === 'macos' ? appleIcon : windowsIcon
   return (

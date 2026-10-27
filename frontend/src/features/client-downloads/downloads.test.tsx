@@ -404,3 +404,27 @@ it('完全未发布时只有一次空状态，没有示例版本、架构或安�
     page.getByRole('button', { name: '历史版本', exact: true }).query()
   ).toBeNull()
 })
+
+it('自动选中的唯一架构被替换后，也需要重新确认 CPU', async () => {
+  let body = catalog([asset('x64', 'windows')])
+  const client = await show(async () => Response.json(body))
+  await expect
+    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .toHaveAttribute(
+      'href',
+      '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=x64'
+    )
+  body = catalog([asset('arm64', 'windows')])
+  await client.invalidateQueries({ queryKey: ['public', 'client-downloads'] })
+  await expect
+    .element(page.getByRole('button', { name: '下载 Windows 版' }))
+    .toBeDisabled()
+  expect(document.querySelector('a[href*="architecture=x64"]')).toBeNull()
+  await page.getByRole('radio', { name: 'ARM64', exact: true }).click()
+  await expect
+    .element(page.getByRole('link', { name: '下载 Windows 版' }))
+    .toHaveAttribute(
+      'href',
+      '/api/v1/platform/downloads/release-a/file?platform=windows&architecture=arm64'
+    )
+})
