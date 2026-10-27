@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Menu } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -18,11 +19,14 @@ import { siteSettingsOptions } from './site-settings'
 export function PublicLayout({
   children,
   home = false,
+  variant = 'default',
 }: {
   children: ReactNode
   home?: boolean
+  variant?: 'default' | 'download'
 }) {
   const brand = useBranding()
+  const download = variant === 'download'
   const settings = useQuery({ ...siteSettingsOptions, enabled: !home })
   // Portal availability only changes navigation; downloads never wait for it.
   const showPortal =
@@ -39,7 +43,12 @@ export function PublicLayout({
   ]
   const [open, setOpen] = useState(false)
   return (
-    <div className='relative min-h-svh bg-background text-foreground'>
+    <div
+      className={cn(
+        'relative min-h-svh bg-background text-foreground',
+        download && 'flex flex-col'
+      )}
+    >
       <a
         href='#main'
         className='sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-background focus:p-3 focus:ring-2 focus:ring-ring'
@@ -47,11 +56,19 @@ export function PublicLayout({
         跳转到内容
       </a>
       <header className='sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl'>
-        <div className='mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6 lg:px-8'>
+        <div
+          className={cn(
+            'mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6 lg:px-8',
+            download && 'h-20 w-full max-w-[1408px] sm:h-24'
+          )}
+        >
           <a
             href='/'
             aria-label={`${brand.name} 首页`}
-            className='flex items-center gap-2.5 rounded-sm font-manrope text-xl font-bold tracking-tight outline-ring focus-visible:ring-2'
+            className={cn(
+              'flex items-center gap-2.5 rounded-sm font-manrope text-xl font-bold tracking-tight outline-ring focus-visible:ring-2',
+              download && 'sm:text-3xl'
+            )}
           >
             <BrandLockup />
           </a>
@@ -61,7 +78,15 @@ export function PublicLayout({
           >
             {links.map(([url, title]) => (
               <Button key={url} asChild variant='ghost'>
-                <a href={url}>{title}</a>
+                <a
+                  href={url}
+                  aria-current={
+                    download && url === '/download' ? 'page' : undefined
+                  }
+                  className='aria-[current=page]:underline aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8'
+                >
+                  {title}
+                </a>
               </Button>
             ))}
           </nav>
@@ -93,7 +118,13 @@ export function PublicLayout({
                 <nav className='flex flex-col gap-3 p-4' aria-label='移动导航'>
                   {links.map(([url, title]) => (
                     <Button key={url} asChild variant='ghost'>
-                      <a href={url} onClick={() => setOpen(false)}>
+                      <a
+                        href={url}
+                        aria-current={
+                          download && url === '/download' ? 'page' : undefined
+                        }
+                        onClick={() => setOpen(false)}
+                      >
                         {title}
                       </a>
                     </Button>
@@ -110,33 +141,41 @@ export function PublicLayout({
           </div>
         </div>
       </header>
-      <main id='main'>{children}</main>
-      <footer className='border-t bg-muted/20'>
-        <div className='mx-auto flex max-w-6xl flex-col gap-6 px-6 py-9 sm:flex-row sm:items-center sm:justify-between lg:px-8'>
-          <div>
-            <a
-              href='/'
-              className='flex w-fit items-center gap-2 font-manrope font-bold'
-            >
-              <BrandLockup />
-            </a>
-            <p className='mt-3 text-xs text-muted-foreground'>
-              让企业 AI，真正用起来。
-            </p>
-          </div>
-          <div className='flex flex-wrap items-center gap-2'>
-            <Button asChild variant='ghost' size='sm'>
-              <a href='/download'>客户端下载</a>
-            </Button>
-            <Button asChild variant='ghost' size='sm'>
-              <a href='/console'>
-                控制台
-                <ArrowRight />
+      <main id='main' className={download ? 'flex-1' : undefined}>
+        {children}
+      </main>
+      {download ? (
+        <footer className='mx-6 border-t py-12 text-center text-sm text-muted-foreground sm:mx-12 lg:mx-24'>
+          © {new Date().getFullYear()} {brand.name}
+        </footer>
+      ) : (
+        <footer className='border-t bg-muted/20'>
+          <div className='mx-auto flex max-w-6xl flex-col gap-6 px-6 py-9 sm:flex-row sm:items-center sm:justify-between lg:px-8'>
+            <div>
+              <a
+                href='/'
+                className='flex w-fit items-center gap-2 font-manrope font-bold'
+              >
+                <BrandLockup />
               </a>
-            </Button>
+              <p className='mt-3 text-xs text-muted-foreground'>
+                让企业 AI，真正用起来。
+              </p>
+            </div>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Button asChild variant='ghost' size='sm'>
+                <a href='/download'>客户端下载</a>
+              </Button>
+              <Button asChild variant='ghost' size='sm'>
+                <a href='/console'>
+                  控制台
+                  <ArrowRight />
+                </a>
+              </Button>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   )
 }

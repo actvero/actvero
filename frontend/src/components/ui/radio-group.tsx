@@ -8,13 +8,13 @@ function RadioGroup({
   variant = 'default',
   ...props
 }: React.ComponentProps<typeof RadioGroupPrimitive.Root> & {
-  variant?: 'default' | 'segmented'
+  variant?: 'default' | 'segmented' | 'segmented-solid'
 }) {
   return (
     <RadioGroupPrimitive.Root
       data-slot='radio-group'
       className={cn(
-        variant === 'segmented'
+        variant !== 'default'
           ? 'flex w-fit flex-wrap gap-1 rounded-lg bg-muted p-1'
           : 'grid gap-3',
         className
@@ -30,20 +30,25 @@ function RadioGroupItem({
   children,
   ...props
 }: React.ComponentProps<typeof RadioGroupPrimitive.Item> & {
-  variant?: 'default' | 'segmented'
+  variant?: 'default' | 'segmented' | 'segmented-solid'
 }) {
   return (
     <RadioGroupPrimitive.Item
       data-slot='radio-group-item'
       className={cn(
-        variant === 'segmented'
-          ? 'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=checked]:bg-background data-[state=checked]:text-foreground data-[state=checked]:shadow-sm'
+        variant !== 'default'
+          ? cn(
+              'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=checked]:shadow-sm',
+              variant === 'segmented-solid'
+                ? 'text-base data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground'
+                : 'data-[state=checked]:bg-background data-[state=checked]:text-foreground'
+            )
           : 'aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40',
         className
       )}
       {...props}
     >
-      {variant === 'segmented' ? (
+      {variant !== 'default' ? (
         children
       ) : (
         <RadioGroupPrimitive.Indicator

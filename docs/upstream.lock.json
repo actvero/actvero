@@ -81,6 +81,27 @@
       "location": "backend/app/modules/skills/assets/icons.json",
       "license": "frontend/public/notices/lucide.txt",
       "source": "https://lucide.dev/license"
+    },
+    {
+      "name": "Tabler operating system icons",
+      "repository": "https://github.com/tabler/tabler-icons",
+      "version": "3.35.0",
+      "revision": "v3.35.0",
+      "importedAt": "2026-10-27",
+      "location": "frontend/src/assets/platforms",
+      "license": "frontend/public/notices/tabler-icons.txt",
+      "files": [
+        {
+          "path": "frontend/src/assets/platforms/apple.svg",
+          "sha256": "ccade5a2af49ea96e97624e8fcd7dbb6173d2d682024bb1d1def131f63069f6e",
+          "git_blob": "1c4bccb988fe4eaf13212b69b7e3076b0f4cb7b3"
+        },
+        {
+          "path": "frontend/src/assets/platforms/windows.svg",
+          "sha256": "056635018e21b8dba3a4beb4f11869ef39a96c1c398bb1e74290502b4fb7c21b",
+          "git_blob": "1d87ec7f1b8ca3b8c88cdb3e1eea6297689e30c5"
+        }
+      ]
     }
   ]
 }

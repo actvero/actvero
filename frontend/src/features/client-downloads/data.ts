@@ -5,6 +5,7 @@ export type Release = Schema['ReleaseView']
 export type Asset = Schema['ClientAsset']
 export type PublicRelease = Schema['PublicRelease']
 export type Recommendation = Schema['RecommendationView']
+export type PublicDownloads = Schema['PublicDownloads']
 export const platformNames = { windows: 'Windows', macos: 'macOS' } as const
 export const architectureNames = {
   x64: 'x64',
@@ -52,3 +53,50 @@ export const sizeLabel = (bytes: number | null | undefined) =>
     : (bytes / 1024 / 1024).toLocaleString('zh-CN', {
         maximumFractionDigits: 1,
       }) + ' MB'
+
+export function recommendedDownload(
+  catalog: PublicDownloads,
+  platform: Asset['platform'],
+  architecture: string
+) {
+  const head = catalog.recommendations.find(
+    (item) => item.platform === platform && item.architecture === architecture
+  )
+  const release = catalog.items.find((item) => item.id === head?.release_id)
+  const asset = release?.assets.find(
+    (item) => item.platform === platform && item.architecture === architecture
+  )
+  return release && asset ? { release, asset } : undefined
+}
+
+export function commonRecommendedVersion(catalog: PublicDownloads) {
+  const versions = new Set(
+    catalog.recommendations.flatMap(({ platform, architecture }) => {
+      const download = recommendedDownload(catalog, platform, architecture)
+      return download ? [download.release.version] : []
+    })
+  )
+  return versions.size === 1 ? [...versions][0] : undefined
+}
+
+export function currentPlatform(
+  userAgent: string
+): Asset['platform'] | undefined {
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)) return undefined
+  if (/Macintosh|Mac OS X/i.test(userAgent)) return 'macos'
+  if (/Windows/i.test(userAgent)) return 'windows'
+  return undefined
+}
+
+export const downloadArchitectureLabel = (
+  platform: Asset['platform'],
+  architecture: Asset['architecture']
+) =>
+  platform === 'macos'
+    ? { arm64: 'Apple 芯片', x64: 'Intel 芯片', universal: 'Universal' }[
+        architecture
+      ]
+    : architectureNames[architecture]
+
+export const packageFormat = (filename: string) =>
+  filename.match(/\.([a-z0-9]{2,7})$/i)?.[1].toUpperCase() ?? '安装包'

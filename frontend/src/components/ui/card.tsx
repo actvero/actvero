@@ -5,11 +5,13 @@ import { cn } from '@/lib/utils'
 function Card({
   className,
   density = 'default',
+  tone = 'default',
   asChild = false,
   interactive = false,
   ...props
 }: React.ComponentProps<'div'> & {
   density?: 'default' | 'compact'
+  tone?: 'default' | 'muted'
   asChild?: boolean
   interactive?: boolean
 }) {
@@ -19,6 +21,7 @@ function Card({
       data-slot='card'
       className={cn(
         'flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm',
+        tone === 'muted' && 'bg-muted/20',
         density === 'compact' && 'gap-0 py-2',
         interactive &&
           'cursor-pointer transition-[border-color,box-shadow] hover:border-ring/50 hover:shadow-md focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',

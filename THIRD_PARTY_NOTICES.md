@@ -8,6 +8,7 @@ Actvero's project code is licensed under MIT. Third-party code, dependencies and
 | Lobe Icons provider avatars | `frontend/src/assets/provider-avatars/` | Included `LICENSE` and asset `README.md` — MIT, LobeHub |
 | Magic UI Magic Card adaptation | `frontend/src/features/portal/effects.tsx` | `frontend/public/notices/magic-ui.txt` — MIT |
 | Lucide / Feather-derived icon assets | Frontend icon usage and `backend/app/modules/skills/assets/icons.json` | `frontend/public/notices/lucide.txt` — full notice from the locked dependency, including applicable Feather attribution |
+| Tabler Apple and Windows icons, v3.35.0 | `frontend/src/assets/platforms/` | `frontend/public/notices/tabler-icons.txt` — MIT, Paweł Kuna; unmodified SVGs from the pinned [Tabler Icons release](https://github.com/tabler/tabler-icons/tree/v3.35.0/icons/filled) |
 
 Names and marks used to identify third-party providers belong to their respective owners. Their presence does not imply endorsement or support for every provider capability.
 
