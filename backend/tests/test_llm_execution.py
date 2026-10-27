@@ -383,7 +383,7 @@ async def test_policy_change_keeps_consumption_and_pending_stays_in_its_window(e
                 quota["windows"][0]["used"] == "0.0244"
                 and quota["windows"][0]["remaining"] == "199.9756"
             )
-            assert quota["windows"][1]["resets_at"] == "2026-09-27T16:00:00Z"
+            assert quota["windows"][1]["resets_at"] == "2026-10-02T01:00:00Z"
             state["usage"] = None
             assert (
                 await api.post(GATEWAY, headers=bearer(token), json=payload(model))

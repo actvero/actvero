@@ -54,7 +54,7 @@ async def test_cli_consent_migration_preserves_read_sessions_and_requires_new_wr
                     ),
                     {"id": session_id, "identity": identity, "scope": scope},
                 )
-            await db.run_sync(migrate, "head")
+            await db.run_sync(migrate, "115j_cli_consent")
             rows = (
                 await db.execute(
                     text("SELECT id,revoked_at,authorized_org_ids FROM management_sessions")

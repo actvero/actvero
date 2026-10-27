@@ -98,4 +98,5 @@ jobs:
           python3 scripts/test-identity-theme-assets.py
           python3 scripts/test-server.py
           python3 scripts/test-server-remote.py
+          python3 scripts/test-gateway-deployment.py
           node --test scripts/test-identity-account-switch.mjs

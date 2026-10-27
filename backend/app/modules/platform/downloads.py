@@ -31,17 +31,26 @@ from app.modules.platform.download_schemas import (
     ReleaseStatus,
     ReleaseView,
 )
-from app.modules.tenants.models import Installation
+from app.modules.tenants.models import Installation, PlatformOperator
 
 router = APIRouter(prefix="/api/v1/platform/downloads", tags=["client-downloads"])
 
 
 async def locked_actor(request: Request, db: DB) -> PlatformActor:
-    await platform_access(request, db)
+    actor = await platform_access(request, db)
     # Serializes unique versions and recommendations across all deployment operators.
     if await db.scalar(select(Installation).where(Installation.id == 1).with_for_update()) is None:
         raise HTTPException(503, "数据库尚未完成迁移")
-    return await platform_access(request, db)
+    # Authentication renews and commits the browser session. Do not repeat it
+    # after acquiring the mutation lock; only recheck the operator grant here.
+    active = await db.scalar(
+        select(PlatformOperator.user_id).where(
+            PlatformOperator.user_id == actor.user.id, PlatformOperator.status == "active"
+        )
+    )
+    if active is None:
+        raise HTTPException(403, "此页面仅限平台运营人员")
+    return actor
 
 
 async def release(db: DB, release_id: UUID, revision: int | None = None) -> ClientRelease:

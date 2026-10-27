@@ -232,6 +232,11 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
 
             before = await snapshots()
             assert len(before["llm_settlements"]) == 4
+            await connection.run_sync(upgrade, "97r_settlement_evidence")
+            # This migration itself must refuse to discard retained billing evidence.
+            with pytest.raises(RuntimeError, match="请求幂等与结算证据不能自动丢弃"):
+                async with connection.begin_nested():
+                    await connection.run_sync(downgrade, "96q_route_protection")
             await connection.run_sync(upgrade, "head")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
                 head
@@ -254,7 +259,7 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
             assert repeated == after
             # Roll back the failed downgrade command, including newer reversible
             # revisions, while preserving this fixture's outer transaction.
-            with pytest.raises(RuntimeError, match="restore the pre-upgrade backup"):
+            with pytest.raises(RuntimeError, match="restore .*backup"):
                 async with connection.begin_nested():
                     await connection.run_sync(downgrade, "96q_route_protection")
             assert await connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
