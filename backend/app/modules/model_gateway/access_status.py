@@ -15,6 +15,7 @@ from app.modules.llm.catalog_schemas import (
     OperationKind,
     ReasoningOption,
 )
+from app.modules.llm.model_identifier import ModelIdentifier
 from app.modules.llm.models import CatalogModel
 from app.modules.llm.points import current_conversion
 from app.modules.llm.settlement import snapshot
@@ -23,7 +24,7 @@ from app.modules.members.service import BusinessActor
 from app.modules.model_gateway import client, publication, service
 from app.modules.users.models import User
 
-ModelName = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,127}$")]
+ModelName = Annotated[ModelIdentifier, Field(max_length=128)]
 
 
 class PublicationNames(BaseModel):

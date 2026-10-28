@@ -8,10 +8,14 @@ from uuid import NAMESPACE_URL, uuid5
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-from app.modules.auth.service import DB
+from app.modules.auth.service import DB, provider
 from app.modules.members.service import record
-from app.modules.model_gateway import client, native_models, service
+from app.modules.model_gateway import ark_directory, client, native_models, service
 from app.modules.model_gateway.authorization import administrator
+from app.modules.model_gateway.connection_templates import (
+    initialize_official_prices,
+    is_ark_plan_template,
+)
 from app.modules.model_gateway.router import audit, protect_mutation
 
 router = APIRouter(
@@ -145,7 +149,8 @@ async def native_update(
     ):
         await service.invalidate_directory(db, actor.tenant.id, body.id)
     await audit(db, actor, "channel.update", str(body.id))
-    return {"success": True}
+    pricing = await initialize_official_prices(request, actor.tenant.id, current | data)
+    return {"success": True, **({"pricing": pricing} if pricing is not None else {})}
 
 
 @router.post("/api/channel")
@@ -163,7 +168,12 @@ async def native_create(request: Request, db: DB, body: NativeCreateInput) -> di
         "New API channel",
     )
     await db.commit()
-    return {"success": True, "data": result}
+    pricing = await initialize_official_prices(request, actor.tenant.id, body.channel)
+    return {
+        "success": True,
+        "data": result,
+        **({"pricing": pricing} if pricing is not None else {}),
+    }
 
 
 @router.post("/api/channel/fetch_models")
@@ -174,6 +184,11 @@ async def native_discover(request: Request, db: DB, body: dict[str, JsonValue]) 
     # Only draft discovery is exposed in this block. Never accept an ID from
     # another registry as permission to read a stored supplier credential.
     body.pop("channel_id", None)
+    if is_ark_plan_template(body):
+        return {
+            "success": True,
+            "data": await ark_directory.directory.get(provider(request).settings),
+        }
     data = await client.call(
         request, actor.tenant.id, "POST", "/api/channel/fetch_models", payload=body
     )

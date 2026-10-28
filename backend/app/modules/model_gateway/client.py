@@ -14,6 +14,18 @@ from app.core.outbound import PinnedTransport, resolve
 from app.modules.auth.service import provider
 from app.modules.model_gateway.config import NewApiConnection
 
+CHANNEL_TEST_ERRORS = {
+    "model_price_error": "模型计费配置缺失或无效，尚未请求上游；请检查该模型的定价后重试",
+    "channel:no_available_key": "渠道没有可用密钥，请检查密钥配置和状态",
+    "channel:invalid_key": "渠道密钥配置无效，请检查密钥格式",
+    "channel:model_mapped_error": "模型映射配置无效，请检查该模型的上游名称",
+    "channel:param_override_invalid": "渠道参数覆盖配置无效，请检查参数配置",
+    "channel:header_override_invalid": "渠道请求头配置无效，请检查请求头配置",
+    "do_request_failed": "无法连接上游服务，请检查渠道地址和网络连接",
+    "bad_response_status_code": "上游服务拒绝了测试请求，请检查渠道地址、密钥和模型访问权限",
+    "model_not_found": "上游未找到该模型，请检查模型名称和访问权限",
+}
+
 
 def connection(request: Request, tenant_id: UUID) -> NewApiConnection | None:
     settings = provider(request).settings
@@ -208,7 +220,15 @@ async def call(
         raise HTTPException(429, "模型网关请求过于频繁，请稍后重试")
     if not response.is_success or not isinstance(data, dict) or data.get("success") is not True:
         # The upstream can include credentials, arbitrary request bodies, or
-        # provider errors. Keep those out of the platform response and audit.
+        # provider errors. Only translate explicitly known codes, never its text.
+        if method == "GET" and path.startswith("/api/channel/test/"):
+            code = data.get("error_code") if isinstance(data, dict) else None
+            message = CHANNEL_TEST_ERRORS.get(code) if isinstance(code, str) else None
+            raise HTTPException(
+                502, message or "渠道测试失败，请检查渠道地址、密钥、模型和计费配置"
+            )
+        if method == "GET":
+            raise HTTPException(502, "模型网关未能完成读取，请稍后重试")
         raise HTTPException(502, "模型网关未接受此次操作，请检查配置；保存操作请先刷新核对结果")
     if path.startswith("/api/channel/test/"):
         return {"time": data.get("time")}

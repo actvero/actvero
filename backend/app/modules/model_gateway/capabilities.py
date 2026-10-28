@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import Request
 
 from app.modules.llm.catalog_schemas import CatalogInput
+from app.modules.model_gateway import ark_capabilities
 from app.modules.model_gateway.feature_reference import comparable, features, merge
 
 # Native channel identifiers from the pinned New API channel contract.
@@ -32,6 +33,8 @@ def reference() -> list[dict[str, Any]]:
 
 
 def lookup(provider: str | None, model: str) -> dict[str, Any] | None:
+    if provider == ark_capabilities.PROVIDER:
+        return ark_capabilities.lookup(model)
     candidates = [
         m
         for m in reference()
@@ -109,7 +112,9 @@ def resolve(model: str, group: str, channels: list[dict[str, Any]]) -> dict[str,
             upstream = mapping.get(model, model)
         except (ValueError, AttributeError):
             return {"status": "unresolved", "reason": "渠道模型映射无效"}
-        resolved = lookup(PROVIDERS.get(channel.get("type", 0)), upstream)
+        resolved = lookup(
+            channel.get("capability_provider") or PROVIDERS.get(channel.get("type", 0)), upstream
+        )
         if resolved is None:
             return {
                 "status": "unresolved",
@@ -135,47 +140,55 @@ async def effective(
     channels: list[dict[str, Any]] | None = None,
 ) -> CatalogInput:
     """Use current routes for both discovery and admission, including model aliases."""
-    if config.gateway and config.kind == "chat":
-        # New API converts its universal max_tokens field to each supplier dialect.
-        # The platform's public max_completion_tokens contract remains unchanged.
+    if not config.gateway or config.kind != "chat":
+        return config
+    if config.gateway.capability_mode == "auto":
+        from fastapi import HTTPException
+
+        from app.modules.llm.catalog_schemas import ChatPolicy, ModelCapabilities, ReasoningEffort
+        from app.modules.model_gateway import client, service
+
+        connection = await client.relay_connection(request, tenant)
+        resolved = resolve(
+            config.slug,
+            connection.relay_group,
+            channels if channels is not None else await service.all_channels(request, tenant),
+        )
+        if resolved["status"] != "resolved":
+            raise HTTPException(409, resolved["reason"])
         config = config.model_copy(
             update={
-                "bindings": [
-                    binding.model_copy(
-                        update={
-                            "chat_options": binding.chat_options.model_copy(
-                                update={"output_parameter": "max_tokens"}
-                            )
-                        }
-                    )
-                    for binding in config.bindings
-                ]
+                "context_window": resolved["context_window"],
+                "max_output": resolved["max_output"],
+                "capabilities": ModelCapabilities.model_validate(resolved["capabilities"]),
+                "reasoning_options": [
+                    ReasoningEffort.model_validate(r) for r in resolved["reasoning_options"]
+                ],
+                "chat_policy": ChatPolicy.model_validate(resolved["chat_policy"]),
+                "gateway": config.gateway.model_copy(
+                    update={"capability_source": resolved["source"]}
+                ),
             }
         )
-    if not config.gateway or config.gateway.capability_mode != "auto" or config.kind != "chat":
-        return config
-    from fastapi import HTTPException
-
-    from app.modules.llm.catalog_schemas import ChatPolicy, ModelCapabilities, ReasoningEffort
-    from app.modules.model_gateway import client, service
-
-    connection = await client.relay_connection(request, tenant)
-    resolved = resolve(
-        config.slug,
-        connection.relay_group,
-        channels if channels is not None else await service.all_channels(request, tenant),
+    # Ark's pass-through route needs a total output bound including reasoning.
+    # Other native adapters retain the gateway's universal max_tokens input.
+    assert config.gateway is not None
+    output_parameter = (
+        "max_completion_tokens"
+        if config.gateway.capability_source.get("provider") == ark_capabilities.PROVIDER
+        else "max_tokens"
     )
-    if resolved["status"] != "resolved":
-        raise HTTPException(409, resolved["reason"])
     return config.model_copy(
         update={
-            "context_window": resolved["context_window"],
-            "max_output": resolved["max_output"],
-            "capabilities": ModelCapabilities.model_validate(resolved["capabilities"]),
-            "reasoning_options": [
-                ReasoningEffort.model_validate(r) for r in resolved["reasoning_options"]
+            "bindings": [
+                binding.model_copy(
+                    update={
+                        "chat_options": binding.chat_options.model_copy(
+                            update={"output_parameter": output_parameter}
+                        )
+                    }
+                )
+                for binding in config.bindings
             ],
-            "chat_policy": ChatPolicy.model_validate(resolved["chat_policy"]),
-            "gateway": config.gateway.model_copy(update={"capability_source": resolved["source"]}),
         }
     )

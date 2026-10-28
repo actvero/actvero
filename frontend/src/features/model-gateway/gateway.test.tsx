@@ -6,6 +6,8 @@ import {
 } from '@tanstack/react-query'
 import '@/styles/index.css'
 import { waitForAnimations } from '@/test-utils/animations'
+import { ARK_AGENT_PLAN_CONFIG } from '@/vendor/newapi/features/channels/lib/connection-templates'
+import { ModelPricingPanel } from '@/vendor/newapi/features/model-pricing/model-pricing-panel'
 import { PriceSyncDialog } from '@/vendor/newapi/features/models/components/dialogs/price-sync-dialog'
 import { SyncWizardDialog } from '@/vendor/newapi/features/models/components/dialogs/sync-wizard-dialog'
 import { ModelMutateDrawer } from '@/vendor/newapi/features/models/components/drawers/model-mutate-drawer'
@@ -16,6 +18,7 @@ import { page } from 'vitest/browser'
 import { GatewayChannels } from './channels'
 import { NativeLanguage } from './native-language'
 import { NativeModelManagement } from './native-models'
+import { bindNativeAdministrator } from './native-session'
 import { GatewayPage } from './page'
 import { makePricing, tokenRates } from './pricing'
 import { ModelPublication } from './publication'
@@ -233,6 +236,99 @@ afterEach(async () => {
   nativeApi.defaults.adapter = nativeAdapter
   vi.unstubAllGlobals()
 })
+it('prefills Agent Plan native routes and labels its supplier public directory', async () => {
+  await page.viewport(1440, 1000)
+  await show(<GatewayChannels />, (url) =>
+    url === '/api/channel/fetch_models' ? ['upstream-agent-model'] : undefined
+  )
+  await page.getByRole('button', { name: '添加渠道', exact: true }).click()
+  await page
+    .getByRole('option', { name: '火山 Agent Plan 内置', exact: true })
+    .click()
+  await expect
+    .element(page.getByRole('textbox', { name: 'API 地址', exact: true }))
+    .toHaveValue('https://ark.cn-beijing.volces.com')
+  await page.getByRole('textbox', { name: /API 密钥/ }).fill('test-plan-key')
+  await page.getByRole('button', { name: '获取公开模型', exact: true }).click()
+  await expect
+    .poll(() =>
+      writes.some((write) => write.url === '/api/channel/fetch_models')
+    )
+    .toBe(true)
+  const discovery = writes.find(
+    (write) => write.url === '/api/channel/fetch_models'
+  )!
+  expect(discovery.body).toMatchObject({
+    type: 58,
+    base_url: 'https://ark.cn-beijing.volces.com',
+    advanced_custom: JSON.stringify(ARK_AGENT_PLAN_CONFIG),
+  })
+  expect(discovery.body).not.toHaveProperty('models')
+  await expect.element(page.getByText(/来自火山公开文本模型目录/)).toBeVisible()
+  await expect
+    .element(page.getByText('upstream-agent-model', { exact: true }).first())
+    .toBeVisible()
+})
+it('keeps missing prices distinct from free pricing and refreshes clean imported prices', async () => {
+  bindNativeAdministrator('csrf', '')
+  const config = {
+    entries: [
+      {
+        model_name: 'public-model',
+        version: 'empty',
+        configured: {},
+        effective: {},
+      },
+    ],
+    options: {},
+    empty_version: 'empty',
+  }
+  await show(
+    <NativeLanguage>
+      <ModelPricingPanel modelName='public-model' />
+    </NativeLanguage>,
+    (url) =>
+      url === '/api/option/model_pricing'
+        ? config
+        : url === '/api/pricing'
+          ? []
+          : undefined
+  )
+  await expect
+    .element(page.getByText('未配置计费价格', { exact: true }))
+    .toBeVisible()
+  const preview = page.getByRole('complementary', { name: '预览' })
+  await expect.element(preview).toHaveTextContent('尚未配置价格')
+  await expect.element(preview).not.toHaveTextContent('tier("base"')
+  await page.getByRole('button', { name: '保存模型价格', exact: true }).click()
+  expect(writes).toHaveLength(0)
+  client.setQueryData(['model-pricing-config', 'public-model'], {
+    ...config,
+    entries: [
+      {
+        model_name: 'public-model',
+        version: 'imported',
+        configured: {},
+        effective: {
+          'billing_setting.billing_mode': 'tiered_expr',
+          'billing_setting.billing_expr':
+            'tier("reference", p * 1 + cr * 0.1 + c * 3)',
+        },
+        pricing_reference: {
+          label: 'TRAE 官方参考价',
+          url: 'https://docs.volcengine.com/docs/trae-cn/billing-items?lang=zh',
+          verified_at: '2026-10-28',
+          basis: 'official_reference',
+        },
+      },
+    ],
+  })
+  await expect
+    .element(page.getByRole('link', { name: 'TRAE 官方参考价', exact: true }))
+    .toBeVisible()
+  await expect.element(preview).not.toHaveTextContent('尚未配置价格')
+})
+
 it.each([
   [1440, 900],
   [1024, 480],
@@ -548,6 +644,73 @@ it('keeps organization access in the host session outside the native query cache
     .element(page.getByRole('radio', { name: '全体成员', exact: true }))
     .toBeChecked()
   expect(writes).toHaveLength(0)
+})
+
+it('checks aliases with spaces and reports specific missing configuration without endless loading', async () => {
+  const names = ['DeepSeek Flash', 'orphan-model', 'unknown-model', 'bad,model']
+  const states = names.slice(0, 3).map((model_name, index) => ({
+    model_name,
+    enabled: false,
+    audience: 'administrators',
+    member_count: 0,
+    ready: index === 0,
+    active_channels: index === 1 ? 0 : 1,
+    automatic: { status: index === 2 ? 'unresolved' : 'resolved' },
+    checks:
+      index === 0
+        ? []
+        : [
+            {
+              key: index === 1 ? 'channels' : 'parameters',
+              status: 'blocked',
+              message:
+                index === 1
+                  ? '未关联当前调用分组的启用渠道'
+                  : '尚无可靠能力资料',
+            },
+          ],
+  }))
+  await show(
+    <NativeLanguage>
+      <NativeModelManagement />
+    </NativeLanguage>,
+    (url) =>
+      url === '/api/models/'
+        ? {
+            items: names.map((model_name, index) => ({
+              id: index + 21,
+              model_name,
+              status: 1,
+              sync_official: 1,
+              name_rule: 0,
+              created_time: 100,
+              updated_time: 100,
+            })),
+            total: names.length,
+          }
+        : url.endsWith('/publication/status')
+          ? { items: states }
+          : undefined
+  )
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'DeepSeek Flash' }))
+    .toHaveTextContent('配置就绪')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'orphan-model' }))
+    .toHaveTextContent('未关联渠道')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'unknown-model' }))
+    .toHaveTextContent('缺少能力资料')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'bad,model' }))
+    .toHaveTextContent('名称格式不支持')
+  await expect.element(page.getByText('检查中…')).not.toBeInTheDocument()
+  const statusCall = vi
+    .mocked(fetch)
+    .mock.calls.find(([url]) => String(url).endsWith('/publication/status'))
+  expect(JSON.parse(String(statusCall?.[1]?.body)).models).toEqual(
+    [...names.slice(0, 3)].sort()
+  )
 })
 it('blocks opening an incomplete model while allowing its disabled draft to be saved', async () => {
   await show(<ModelPublication model='team' />, (url) => {

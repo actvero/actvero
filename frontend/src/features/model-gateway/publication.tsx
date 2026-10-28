@@ -34,6 +34,7 @@ type Automatic = {
   input_modalities?: string[]
   output_modalities?: string[]
   chat_policy?: Schema['ChatPolicy']
+  source?: { provider?: string; url?: string; verified_at?: string }
 }
 type Policy = Partial<Schema['PublicationInput']> & { automatic?: Automatic }
 type AccessControls = {
@@ -263,6 +264,20 @@ function PublicationForm({
                   .join('、') || '无'}
               </p>
               <p className='mt-1 text-xs'>当前对话通道未接入音频、视频输入。</p>
+              {automatic.source?.url && (
+                <p className='text-xs'>
+                  <a
+                    href={automatic.source.url}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='underline underline-offset-4'
+                  >
+                    供应商能力资料
+                  </a>
+                  {' · 核对日期 '}
+                  {automatic.source.verified_at}
+                </p>
+              )}
             </div>
           ) : (
             <p className='text-muted-foreground'>

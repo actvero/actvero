@@ -6,17 +6,34 @@ import { api, type Schema } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useOrganization } from '@/features/auth/session'
+import { supportsMemberAccess } from './model-name'
+
+function problemLabel(state: Schema['PublicationStatus']) {
+  const problem = state.checks.find((check) => check.status !== 'ready')
+  if (state.checks.some((check) => check.status === 'unknown'))
+    return '状态待确认'
+  if (problem?.key === 'parameters') {
+    if (state.automatic?.status === 'conflict') return '能力冲突'
+    if (state.automatic?.status === 'unresolved') return '缺少能力资料'
+    return '参数不完整'
+  }
+  const labels: Record<Schema['PublicationCheck']['key'], string> = {
+    relay: '调用未配置',
+    channels: '未关联渠道',
+    pricing: '未配置价格',
+    conversion: '未配置积分换算',
+    parameters: '参数不完整',
+    members: '成员未配置',
+  }
+  return problem ? labels[problem.key] : '配置不完整'
+}
 
 export function useAccessColumns(onManage: (model: Model) => void) {
   const { organization, csrf } = useOrganization()
   const [names, setNames] = useState<string[]>([])
   const onModelsVisible = useCallback((models: Model[]) => {
     const next = models
-      .filter(
-        (m) =>
-          m.name_rule === 0 &&
-          /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$/.test(m.model_name)
-      )
+      .filter((m) => m.name_rule === 0 && supportsMemberAccess(m.model_name))
       .map((m) => m.model_name)
       .sort()
     setNames((previous) =>
@@ -62,6 +79,12 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                 按具体模型开放
               </span>
             )
+          if (!supportsMemberAccess(row.original.model_name))
+            return (
+              <span className='text-xs text-muted-foreground'>
+                名称格式不支持
+              </span>
+            )
           return (
             <Button
               variant='link'
@@ -96,6 +119,12 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                 资料匹配规则
               </span>
             )
+          if (!supportsMemberAccess(row.original.model_name))
+            return (
+              <span className='text-xs text-muted-foreground'>
+                调用名称需为 128 字符以内的英文标识，可含内部空格
+              </span>
+            )
           if (isError)
             return (
               <Button variant='link' size='sm' onClick={() => void refetch()}>
@@ -116,11 +145,7 @@ export function useAccessColumns(onManage: (model: Model) => void) {
               onClick={() => onManage(row.original)}
             >
               <Badge variant={state.ready ? 'secondary' : 'outline'}>
-                {state.ready
-                  ? '配置就绪'
-                  : problems.some((c) => c.status === 'unknown')
-                    ? '状态待确认'
-                    : '待完善'}
+                {state.ready ? '配置就绪' : problemLabel(state)}
               </Badge>
               <span
                 className='max-w-48 truncate text-xs text-muted-foreground'

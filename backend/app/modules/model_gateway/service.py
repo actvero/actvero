@@ -9,6 +9,8 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.model_gateway import client
+from app.modules.model_gateway.ark_capabilities import PROVIDER as ARK_PLAN_PROVIDER
+from app.modules.model_gateway.connection_templates import is_ark_plan_template
 from app.modules.model_gateway.models import GatewayDirectory
 from app.modules.model_gateway.schemas import GatewayChannelInput, GatewayDirectoryView
 
@@ -146,7 +148,12 @@ async def all_channels(request: Request, tenant_id: UUID) -> list[dict[str, Any]
                 request, tenant_id, "GET", "/api/channel/", params={"p": page, "page_size": 100}
             )
         )
-        rows.extend(channel_view(row) for row in result.get("items", []))
+        for raw in result.get("items", []):
+            row = channel_view(raw)
+            # Retain a derived provider identity, never raw route settings or credentials.
+            if is_ark_plan_template(raw):
+                row["capability_provider"] = ARK_PLAN_PROVIDER
+            rows.append(row)
         if len(rows) >= result.get("total", 0):
             return rows
     raise HTTPException(422, "渠道数量超过本次映射查询上限，请缩小查询范围")

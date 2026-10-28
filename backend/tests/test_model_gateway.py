@@ -1,10 +1,12 @@
 """Gateway boundaries and native contracts using isolated PostgreSQL schemas."""
 
+import json
 from copy import deepcopy
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
 from pydantic import SecretStr, ValidationError
 from sqlalchemy import select
 from test_identity_access import env as identity_env
@@ -164,6 +166,40 @@ async def test_directory_persists_and_connection_edit_invalidates(env, monkeypat
     assert (await admin.api.get(BASE + "/channels/4/directory")).json()["models"] == []
     async with env.sessions() as db:
         assert await db.get(GatewayDirectory, (admin.tenant.id, 4)) is None
+
+
+async def test_plan_directory_is_authorized_and_never_uses_a_supplier_key(env, monkeypatch):
+    from app.modules.model_gateway import ark_directory
+    from app.modules.model_gateway.connection_templates import ARK_ORIGIN, ARK_PLAN_ROUTES
+
+    admin = await env.client()
+    member = await env.client(role="member", tenant=admin.tenant)
+    bind(env, admin)
+    advanced = {
+        "advanced_routes": [
+            {"incoming_path": incoming, "upstream_path": upstream, "converter": converter}
+            for incoming, (upstream, converter) in ARK_PLAN_ROUTES.items()
+        ]
+    }
+    row = channel(type=58, base_url=ARK_ORIGIN, settings=json.dumps({"advanced_custom": advanced}))
+    native = AsyncMock(return_value=row)
+    fetch = AsyncMock(return_value=["supplier-public-model"])
+    monkeypatch.setattr(client, "call", native)
+    monkeypatch.setattr(ark_directory.directory, "get", fetch)
+    path = BASE + "/native/api/channel/fetch_models"
+    draft = {"type": 58, "base_url": ARK_ORIGIN, "advanced_custom": json.dumps(advanced)}
+    assert (await member.api.post(path, json=draft)).status_code == 403
+    fetch.assert_not_awaited()
+    response = await admin.api.post(path, json={**draft, "channel_id": 99, "key": "secret"})
+    assert response.json()["data"] == ["supplier-public-model"]
+    native.assert_not_awaited()
+    assert fetch.await_args.args == (env.provider.settings,)
+    response = await admin.api.post(BASE + "/channels/4/directory", json={})
+    assert response.json()["models"] == ["supplier-public-model"]
+    assert native.await_args.args[3] == "/api/channel/4"  # Ownership before public lookup.
+    native.side_effect = HTTPException(404, "渠道不存在")
+    assert (await admin.api.post(BASE + "/channels/99/directory", json={})).status_code == 404
+    assert fetch.await_count == 2
 
 
 async def test_model_revision_ignores_derived_connections():

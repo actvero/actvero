@@ -11,6 +11,7 @@ from pydantic import JsonValue
 from app.modules.auth.service import DB
 from app.modules.members.service import Access
 from app.modules.model_gateway import client, service
+from app.modules.model_gateway.connection_templates import pricing_reference
 from app.modules.model_gateway.router import audit
 
 READS = {
@@ -138,6 +139,12 @@ async def read(request: Request, tenant_id: UUID, path: str) -> dict[str, Any]:
             {key: row.get(key) for key in ("id", "name", "type", "status", "base_url")}
             for row in data or []
         ]
+    elif path == "api/option/model_pricing":
+        for entry in data.get("entries", []):
+            expression = entry.get("effective", {}).get("billing_setting.billing_expr")
+            reference = pricing_reference(expression)
+            if reference:
+                entry["pricing_reference"] = reference
     return {"success": True, "data": data}
 
 

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -66,6 +66,21 @@ export function ModelPricingPanel(props: {
   const save = useSaveModelPricing()
   const [entry, setEntry] = useState<ModelPricingEntry | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const onDirtyChange = useCallback(
+    (value: boolean) => {
+      setDirty(value)
+      props.onDirtyChange?.(value)
+    },
+    [props.onDirtyChange]
+  )
+  const display = entry ? modelPricingDisplay(entry) : null
+  const hasEffectivePricing = Boolean(
+    display?.billing_expr?.trim() ||
+    Number.isFinite(display?.model_price) ||
+    Number.isFinite(display?.model_ratio) ||
+    entry?.plugin_variants?.some((variant) => variant.effective)
+  )
   const editor = useRef<ModelPricingEditorPanelHandle>(null)
   const editData = useMemo(() => {
     if (!entry) return null
@@ -82,13 +97,21 @@ export function ModelPricingPanel(props: {
     const loaded = query.data?.entries.find(
       (item) => item.model_name === props.modelName
     )
-    if (loaded && (!entry || entry.model_name !== props.modelName)) {
+    if (
+      loaded &&
+      loaded !== entry &&
+      (!entry || entry.model_name !== props.modelName || !dirty)
+    ) {
       setEntry(loaded)
     }
-  }, [query.data, entry, props.modelName])
+  }, [query.data, entry, props.modelName, dirty])
 
   const persist = async (reset = false) => {
     if (!entry) return
+    if (!reset && !hasEffectivePricing && !dirty) {
+      toast.warning('请先填写模型价格，再保存。')
+      return
+    }
     try {
       const draft = reset ? null : await editor.current?.commitDraft()
       if (!reset && !draft) return
@@ -165,7 +188,12 @@ export function ModelPricingPanel(props: {
         editData={editData}
         usageSchema={entry.usage_schema}
         pluginVariants={entry.plugin_variants}
-        onDirtyChange={props.onDirtyChange}
+        onDirtyChange={onDirtyChange}
+        previewPlaceholder={
+          !hasEffectivePricing && !dirty
+            ? '尚未配置价格，填写后显示草稿预览。'
+            : undefined
+        }
         onSave={() => persist()}
         isSaving={save.isPending}
         className='rounded-none border-0'
@@ -174,9 +202,11 @@ export function ModelPricingPanel(props: {
             <div className='flex flex-wrap items-center justify-between gap-2'>
               <div className='min-w-0 flex-1 break-words'>
                 <p className='text-muted-foreground text-xs'>
-                  {Object.keys(entry.configured).length
-                    ? t('Stored configuration with effective defaults')
-                    : t('Using built-in or default pricing')}
+                  {!hasEffectivePricing
+                    ? '未配置计费价格'
+                    : Object.keys(entry.configured).length
+                      ? t('Stored configuration with effective defaults')
+                      : t('Using built-in or default pricing')}
                 </p>
               </div>
               <Button
@@ -188,6 +218,23 @@ export function ModelPricingPanel(props: {
                 {t('Restore default pricing')}
               </Button>
             </div>
+            {entry.pricing_reference && (
+              <p className='text-muted-foreground text-xs'>
+                <a
+                  className='underline underline-offset-4'
+                  href={entry.pricing_reference.url}
+                  target='_blank'
+                  rel='noreferrer'
+                >
+                  {entry.pricing_reference.label}
+                </a>
+                {' · 核对日期 '}
+                {entry.pricing_reference.verified_at}
+                {entry.pricing_reference.basis !== 'online_inference_standard'
+                  ? ' · 用于积分计价参考'
+                  : ''}
+              </p>
+            )}
             <section
               aria-label={t('Current Billing')}
               className='space-y-3 border-b pb-3'

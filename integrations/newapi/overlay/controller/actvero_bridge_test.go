@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gorm.io/gorm"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -12,12 +13,47 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
 const actveroOrgA = "00000000-0000-4000-8000-000000000001"
 const actveroOrgB = "00000000-0000-4000-8000-000000000002"
+
+func TestActveroBridgeDiscoversSavedAndDraftModels(t *testing.T) {
+	actveroTestDatabase(t)
+	t.Setenv("ACTVERO_ORGANIZATION_ISOLATION", "true")
+	var keys []string
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/v1/models", r.URL.Path)
+		keys = append(keys, r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"object":"list","data":[{"id":"discovered-model"}]}`))
+	}))
+	t.Cleanup(upstream.Close)
+	t.Setenv("ACTVERO_EGRESS_PRIVATE_TARGETS", upstream.Listener.Addr().String())
+	service.InitHttpClient()
+	created := actveroTestBridge(t, actveroOrgA, "POST", "/api/channel", map[string]any{
+		"mode": "single", "channel": map[string]any{
+			"name": "Discovery fixture", "type": 1, "key": "saved-fixture-key", "models": "old-model", "base_url": upstream.URL,
+		},
+	}, nil)
+	require.Equal(t, true, created["success"], created)
+	page := actveroTestBridge(t, actveroOrgA, "GET", "/api/channel", nil, map[string]any{"p": 1, "page_size": 20})
+	rows := page["data"].(map[string]any)["items"].([]any)
+	require.Len(t, rows, 1)
+	id := int(rows[0].(map[string]any)["id"].(float64))
+	saved := actveroTestBridge(t, actveroOrgA, "GET", fmt.Sprintf("/api/channel/fetch_models/%d", id), nil, nil)
+	require.Equal(t, true, saved["success"], saved)
+	require.Equal(t, []any{"discovered-model"}, saved["data"])
+	draft := actveroTestBridge(t, actveroOrgA, "POST", "/api/channel/fetch_models", map[string]any{
+		"type": 1, "base_url": upstream.URL, "key": "draft-fixture-key", "channel_id": id,
+	}, nil)
+	require.Equal(t, true, draft["success"], draft)
+	require.Equal(t, []any{"discovered-model"}, draft["data"])
+	require.Equal(t, []string{"Bearer saved-fixture-key", "Bearer draft-fixture-key"}, keys)
+}
 
 func actveroTestBridge(t *testing.T, owner, method, path string, payload any, params map[string]any) map[string]any {
 	t.Helper()

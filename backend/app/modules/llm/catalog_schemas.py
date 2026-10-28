@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_serializer, field_validator, model_
 
 from app.modules.llm.audio_schemas import SpeechOptions, TranscriptionOptions
 from app.modules.llm.image_schemas import ImageOptions
+from app.modules.llm.model_identifier import ModelIdentifier
 from app.modules.llm.reference_quotes import QuoteSnapshot
 from app.modules.llm.schemas import Input
 
@@ -218,7 +219,7 @@ class ChatOptions(Input):
 class ModelBinding(Input):
     binding_id: UUID | None = None
     channel_id: UUID
-    upstream_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,199}$")
+    upstream_id: ModelIdentifier
     price: TokenPrice | None = None
     enabled: bool = Field(
         default=True,
@@ -402,7 +403,7 @@ class ModelOperation(OperationParameters):
 
 
 class CatalogInput(OperationParameters):
-    slug: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,199}$")
+    slug: ModelIdentifier
     name: str = Field(min_length=1, max_length=100)
     vendor: str = Field(default="", max_length=100)
     description: str = Field(default="", max_length=2000)
@@ -453,6 +454,14 @@ class CatalogInput(OperationParameters):
 
     @model_validator(mode="after")
     def compatible_limits(self) -> Self:
+        # Interior spaces are native gateway aliases. Direct catalog technical
+        # identifiers retain their existing contract, including nested operations.
+        if (
+            " " in self.slug
+            and self.gateway is None
+            and not any(operation.gateway for operation in self.operations or [])
+        ):
+            raise ValueError("直接管理模型的技术名称不能包含空格")
         if self.operations is None:
             self.validate_operation(
                 self.access.enabled, self.access.channel_id, self.access.upstream_id

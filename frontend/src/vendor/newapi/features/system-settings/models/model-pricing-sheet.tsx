@@ -134,6 +134,7 @@ type ModelPricingEditorPanelProps = Omit<
   className?: string
   embedded?: boolean
   scrollHeader?: ReactNode
+  previewPlaceholder?: string
 }
 
 export type ModelPricingEditorPanelHandle = {
@@ -201,6 +202,7 @@ export const ModelPricingEditorPanel = forwardRef<
     onDirtyChange,
     embedded = false,
     scrollHeader,
+    previewPlaceholder,
   },
   ref
 ) {
@@ -1194,34 +1196,45 @@ export const ModelPricingEditorPanel = forwardRef<
                   </div>
                 </div>
                 <div className='divide-y'>
-                  {pricingMode === 'per-token' && !effectivePreview && (
+                  {previewPlaceholder ? (
                     <p
                       className='text-muted-foreground px-3 py-2 text-xs'
                       role='status'
                     >
-                      {pricePreview.isError
-                        ? t('Failed to load model pricing')
-                        : t('Loading...')}
+                      {previewPlaceholder}
                     </p>
-                  )}
-                  {(pricingMode !== 'per-token' || effectivePreview) &&
-                    previewRows.map((row) => (
-                      <div key={row.key} className='grid gap-1 px-3 py-2.5'>
-                        <span className='text-muted-foreground text-xs'>
-                          {row.label}
-                        </span>
-                        <span
-                          className={cn(
-                            'min-w-0 text-sm',
-                            row.multiline
-                              ? 'font-mono text-xs leading-5 break-words whitespace-pre-wrap'
-                              : 'truncate'
-                          )}
+                  ) : (
+                    <>
+                      {pricingMode === 'per-token' && !effectivePreview && (
+                        <p
+                          className='text-muted-foreground px-3 py-2 text-xs'
+                          role='status'
                         >
-                          {row.value}
-                        </span>
-                      </div>
-                    ))}
+                          {pricePreview.isError
+                            ? t('Failed to load model pricing')
+                            : t('Loading...')}
+                        </p>
+                      )}
+                      {(pricingMode !== 'per-token' || effectivePreview) &&
+                        previewRows.map((row) => (
+                          <div key={row.key} className='grid gap-1 px-3 py-2.5'>
+                            <span className='text-muted-foreground text-xs'>
+                              {row.label}
+                            </span>
+                            <span
+                              className={cn(
+                                'min-w-0 text-sm',
+                                row.multiline
+                                  ? 'font-mono text-xs leading-5 break-words whitespace-pre-wrap'
+                                  : 'truncate'
+                              )}
+                            >
+                              {row.value}
+                            </span>
+                          </div>
+                        ))}
+                    </>
+                  )}
                 </div>
               </aside>
             </div>

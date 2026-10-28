@@ -1877,7 +1877,9 @@
             "$ref": "#/components/schemas/RoutingPolicy"
           },
           "slug": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,199}$",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Slug",
             "type": "string"
           },
@@ -2136,7 +2138,9 @@
             "$ref": "#/components/schemas/RoutingPolicy"
           },
           "slug": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,199}$",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Slug",
             "type": "string"
           },
@@ -2393,7 +2397,9 @@
             "$ref": "#/components/schemas/RoutingPolicy"
           },
           "slug": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,199}$",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Slug",
             "type": "string"
           },
@@ -15593,7 +15599,9 @@
             "type": "integer"
           },
           "upstream_id": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,199}$",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Upstream Id",
             "type": "string"
           },
@@ -15665,7 +15673,9 @@
             "type": "integer"
           },
           "upstream_id": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,199}$",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Upstream Id",
             "type": "string"
           },
@@ -19373,7 +19383,9 @@
             "type": "array"
           },
           "model_name": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,127}$",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
             "title": "Model Name",
             "type": "string"
           },
@@ -19444,7 +19456,9 @@
         "properties": {
           "models": {
             "items": {
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+\\-]{0,127}$",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
               "type": "string"
             },
             "maxItems": 1000,

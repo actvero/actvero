@@ -198,6 +198,13 @@ import {
 } from '../../lib/channel-plugin-extensions'
 import { getChannelTypeConfig } from '../../lib/channel-type-config'
 import {
+  ARK_AGENT_PLAN_CONFIG,
+  ARK_AGENT_PLAN_LABEL,
+  ARK_AGENT_PLAN_ORIGIN,
+  ARK_AGENT_PLAN_TEMPLATE,
+  isArkAgentPlanTemplate,
+} from '../../lib/connection-templates'
+import {
   collectInvalidStatusCodeEntries,
   collectNewDisallowedStatusCodeRedirects,
 } from '../../lib/status-code-risk-guard'
@@ -604,6 +611,7 @@ export function ChannelMutateDrawer({
     formValues.upstream_model_update_check_enabled
   const currentSettings = formValues.settings
   const currentAdvancedCustom = formValues.advanced_custom
+  const isPlanTemplate = isArkAgentPlanTemplate(formValues)
   const currentHeaderOverride = formValues.header_override
   const currentProxy = formValues.proxy
   const currentHttpProtocol = formValues.http_protocol
@@ -791,6 +799,9 @@ export function ChannelMutateDrawer({
         )
       : undefined
   const providerLabel =
+    (providerTarget?.kind === 'builtin' && providerTarget.preset
+      ? ARK_AGENT_PLAN_LABEL
+      : '') ||
     boundTaskPlugin?.name ||
     (currentType === CHANNEL_TYPE_TASK_PLUGIN && currentTaskPluginKey) ||
     t(currentTypeLabel)
@@ -801,7 +812,8 @@ export function ChannelMutateDrawer({
       if (
         (target.kind === 'builtin' &&
           providerTarget?.kind === 'builtin' &&
-          target.type === providerTarget.type) ||
+          target.type === providerTarget.type &&
+          target.preset === providerTarget.preset) ||
         (target.kind === 'plugin' &&
           providerTarget?.kind === 'plugin' &&
           target.key === providerTarget.key)
@@ -848,11 +860,29 @@ export function ChannelMutateDrawer({
           return
         }
         form.setValue('type', target.type, { shouldDirty: true })
+        if (target.preset === ARK_AGENT_PLAN_TEMPLATE) {
+          form.setValue('base_url', ARK_AGENT_PLAN_ORIGIN, {
+            shouldDirty: true,
+          })
+          form.setValue(
+            'advanced_custom',
+            JSON.stringify(ARK_AGENT_PLAN_CONFIG),
+            { shouldDirty: true }
+          )
+          form.setValue('openai_organization', '', { shouldDirty: true })
+        }
         if (!isEditing && !providerTarget && !form.getValues('name').trim()) {
           const label = CHANNEL_TYPE_OPTIONS.find(
             (option) => option.value === target.type
           )?.label
-          form.setValue('name', label ? t(label) : `#${target.type}`)
+          form.setValue(
+            'name',
+            target.preset
+              ? ARK_AGENT_PLAN_LABEL
+              : label
+                ? t(label)
+                : `#${target.type}`
+          )
         }
       }
       setProviderTarget(target)
@@ -1056,7 +1086,13 @@ export function ChannelMutateDrawer({
       setProviderTarget(
         defaults.type === CHANNEL_TYPE_TASK_PLUGIN
           ? { kind: 'plugin', key: defaults.task_plugin_key || '' }
-          : { kind: 'builtin', type: defaults.type }
+          : {
+              kind: 'builtin',
+              type: defaults.type,
+              ...(isArkAgentPlanTemplate(defaults)
+                ? { preset: ARK_AGENT_PLAN_TEMPLATE }
+                : {}),
+            }
       )
       if (isNewChannel) {
         setModelConfiguration(null)
@@ -1195,11 +1231,9 @@ export function ChannelMutateDrawer({
     [currentModelsArray, form]
   )
 
-  // Ordinary edits use the saved channel. Advanced Custom retains its existing
-  // preview path, which reuses the saved credential on the server.
-  const previewModels =
-    !isEditing ||
-    (currentType === CHANNEL_TYPE_ADVANCED_CUSTOM && canEditSensitive)
+  // Editing discovers from the authorized saved connection. A draft never
+  // borrows a stored credential via a browser-supplied channel ID.
+  const previewModels = !isEditing
   const canDiscoverModels = previewModels ? canEditSensitive : canOperateChannel
   const previewKey = isEditing ? undefined : currentKey
   const previewRequest = useMemo<ChannelModelDiscoveryRequest>(
@@ -1208,7 +1242,6 @@ export function ChannelMutateDrawer({
       data: {
         type: currentType,
         key: previewKey,
-        channel_id: isEditing ? channelId || undefined : undefined,
         base_url: currentBaseUrl || '',
         advanced_custom: currentAdvancedCustom,
         header_override: currentHeaderOverride,
@@ -3294,6 +3327,11 @@ export function ChannelMutateDrawer({
 
             {MODEL_FETCHABLE_TYPES.has(currentType) && (
               <div aria-live='polite' className='mt-4 space-y-3'>
+                {isPlanTemplate && (
+                  <p className='text-sm text-muted-foreground'>
+                    来自火山公开文本模型目录，实际可用性以套餐为准。保存时补齐已核实的官方定价。
+                  </p>
+                )}
                 {discovery.status === 'loading' && (
                   <LoadingState
                     className='min-h-0 py-4'
@@ -3460,7 +3498,9 @@ export function ChannelMutateDrawer({
                       }
                     >
                       <Sparkles className='mr-2 h-4 w-4' aria-hidden='true' />
-                      {t('Fetch from Upstream')}
+                      {isPlanTemplate
+                        ? '获取公开模型'
+                        : t('Fetch from Upstream')}
                     </Button>
                     {!canDiscoverModels && (
                       <span className='text-muted-foreground basis-full text-xs'>

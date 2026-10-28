@@ -21,5 +21,6 @@ Actvero modifications:
 - Native model/vendor tables use the Actvero models route and its native search schema. Cloud GPU deployments are not included. An optional organization-access action opens the Actvero policy editor.
 - Model metadata updates use the detail snapshot captured when the native form loads; native source/record, vendor and price versions remain intact. Each organization has a separate query client.
 - Price-edit capability follows the Actvero organization-admin presentation grants; the server and configured native token recheck every operation. Combobox trigger buttons explicitly retain native button semantics.
+- The provider picker adds an Ark Agent Plan preset backed by native Advanced Custom routes. It fills connection paths without supplying a model inventory, recognizes the preset again when editing, and reports the result of server-side ordinary Ark list-price initialization.
 
 The upstream form schema, provider selection, conditional fields, model mapping, validation, and create/update payload transformations remain the source of behavior. Changes to these files should be compared against the pinned upstream version rather than independently redesigning the flow.
