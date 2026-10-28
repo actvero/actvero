@@ -58,6 +58,8 @@ Before changing the upstream version, review `apply.py` anchors, token-scope gua
 
 The backend capability snapshot is generated separately with `node frontend/scripts/export-model-capabilities.mjs`, using the locked pi-ai dependency. It supplies advisory capabilities for real discovered routes and never replaces an upstream model-list response. Deployments do not read a sibling desktop checkout.
 
+Exact Ark Agent Plan templates also use the separately reviewed `backend/app/modules/model_gateway/data/ark-plan-capabilities.json` profile. It records official sources and verification date, resolves the actual mapped upstream name, and retains unknown optional features instead of inventing support. The current snapshot covers 15 text models; models without verified effort controls expose only the supplier default. The provider identity is derived server-side from the full canonical routes and origin, without forwarding raw channel settings. This profile never applies by name alone to unrelated custom endpoints. Ark pass-through requests use `max_completion_tokens` to bound both reasoning and answer output; other native adapters retain their existing `max_tokens` input.
+
 ### Ark Agent Plan template
 
 The provider picker includes an Ark Agent Plan preset using native Advanced Custom routes. Chat and Anthropic Messages use the plan-specific paths; Responses requests use New API's native Chat conversion. Both creation and editing retain the same native form. Customizing the routes makes the channel an ordinary Advanced Custom connection.

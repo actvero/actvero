@@ -7,6 +7,7 @@ import pytest
 from llm_billing_helpers import billing
 from pydantic import SecretStr
 from sqlalchemy import func, select
+from test_gateway_connection_templates import plan_channel
 from test_identity_access import env as identity_env
 from test_model_gateway import BASE, bind
 
@@ -160,3 +161,82 @@ async def test_empty_member_selection_does_not_report_a_model_parameter_error(en
     checks = {c["key"]: c for c in response.json()["configuration"]["checks"]}
     assert checks["parameters"]["status"] == "ready"
     assert checks["members"]["status"] == "blocked"
+
+
+async def test_plan_alias_publication_reaches_member_catalog_with_supplier_parameters(
+    env, monkeypatch
+):
+    from fastapi import Request
+
+    from app.modules.llm.catalog_schemas import CatalogInput
+    from app.modules.llm.chat_policy import resolve
+    from app.modules.llm.chat_schemas import ChatInput
+    from app.modules.llm.providers.chat import prepare
+    from app.modules.model_gateway.capabilities import effective
+
+    admin, draft, channels, prices, _ = await setup(env, monkeypatch)
+    name = "DeepSeek Flash"
+    channels[:] = [
+        plan_channel(
+            id=1,
+            status=1,
+            group="default",
+            models=name,
+            model_mapping='{"DeepSeek Flash":"deepseek-v4.1-flash"}',
+        )
+    ]
+    prices["entries"][0]["model_name"] = name
+    draft.update(model_name=name)
+    response = await admin.api.post(BASE + "/publication/status", json={"models": [name]})
+    assert response.status_code == 200, response.text
+    status = response.json()["items"][0]
+    assert status["ready"] and status["automatic"]["source"]["provider"] == "volcengine-ark-plan"
+    assert status["context_window"] == 1024000 and status["max_output"] == 384000
+    assert status["capabilities"]["vision"] == "supported"
+    saved = await admin.api.put(BASE + "/publication", json=draft)
+    assert saved.status_code == 200, saved.text
+    catalog = await admin.api.get("/api/v1/account/llm/models")
+    assert catalog.status_code == 200, catalog.text
+    item = catalog.json()["items"][0]
+    assert item["slug"] == name
+    operation = item["operations"][0]
+    assert operation["context_window"] == 1024000
+    assert operation["capabilities"]["vision"] == "supported"
+    async with env.sessions() as db:
+        row = await db.scalar(select(CatalogModel).where(CatalogModel.tenant_id == admin.tenant.id))
+        config = CatalogInput.model_validate(row.configuration)
+    config = await effective(Request({"type": "http", "app": env.app}), admin.tenant.id, config)
+    body = resolve(ChatInput(model=name, messages=[{"role": "user", "content": "hi"}]), config, 1)
+    payload = prepare(body, config, config.bindings[0])
+    assert payload["max_completion_tokens"] == 8192 and "max_tokens" not in payload
+    assert payload["reasoning_effort"] == "high"
+    assert operation["reasoning_options"][0]["values"] == ["none", "low", "high", "max"]
+    # The same model name at an arbitrary custom endpoint must not acquire Ark's profile.
+    channels[0]["base_url"] = "https://proxy.example"
+    assert (await admin.api.get("/api/v1/account/llm/models")).json()["items"] == []
+
+
+async def test_plan_always_thinking_model_rejects_stale_off_control(env, monkeypatch):
+    from fastapi import HTTPException
+
+    from app.modules.llm.catalog_schemas import CatalogInput
+    from app.modules.llm.chat_policy import resolve
+    from app.modules.llm.chat_schemas import ChatInput
+
+    admin, draft, channels, prices, _ = await setup(env, monkeypatch)
+    name = "glm-5.3"
+    channels[:] = [plan_channel(id=1, status=1, group="default", models=name)]
+    prices["entries"][0]["model_name"] = name
+    draft.update(model_name=name)
+    assert (await admin.api.put(BASE + "/publication", json=draft)).status_code == 200
+    async with env.sessions() as db:
+        row = await db.scalar(select(CatalogModel).where(CatalogModel.tenant_id == admin.tenant.id))
+        config = CatalogInput.model_validate(row.configuration)
+    for parameters in ({"reasoning_effort": "none"}, {"thinking": {"type": "disabled"}}):
+        with pytest.raises(HTTPException) as error:
+            resolve(
+                ChatInput(model=name, messages=[{"role": "user", "content": "hi"}], **parameters),
+                config,
+                1,
+            )
+        assert error.value.status_code == 422

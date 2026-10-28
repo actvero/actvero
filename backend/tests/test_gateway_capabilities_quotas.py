@@ -15,6 +15,7 @@ from test_quota_accounting_audit import entry, quota, setup
 from test_quota_policies import hours
 
 from app.modules.llm.models import QuotaClock, UsageSettlement
+from app.modules.model_gateway import ark_capabilities
 from app.modules.model_gateway.capabilities import lookup, resolve
 from app.modules.quota.models import QuotaPolicy
 
@@ -47,6 +48,37 @@ def test_real_mapping_uses_exact_capabilities_and_does_not_guess_unknown_models(
     ]
     channels.append({**channels[0], "model_mapping": '{"team":"deepseek-v4-pro"}'})
     assert resolve("team", "default", channels)["status"] == "conflict"
+
+
+def test_reviewed_plan_capabilities_are_provider_scoped_and_cover_current_price_snapshot():
+    from app.modules.model_gateway.connection_templates import official_catalog
+
+    for name in official_catalog()["models"]:
+        found = lookup(ark_capabilities.PROVIDER, name)
+        assert found is not None
+        assert found["chat_policy"]["default_max_output"] <= 8192
+        assert found["output_modalities"] == ["text"]
+    assert lookup(ark_capabilities.PROVIDER, "future-model") is None
+    assert lookup(None, "glm-5.3") is None
+    assert lookup("deepseek", "deepseek-flash")["context_window"] == 1000000
+    assert lookup(ark_capabilities.PROVIDER, "glm-5.3-flash")["reasoning_options"][0]["values"] == [
+        "low",
+        "high",
+        "max",
+    ]
+
+
+@pytest.mark.parametrize("name", [" bad", "bad ", "bad\n", "bad,model", "bad\nmodel", "x" * 129])
+def test_publication_and_batch_use_the_same_identifier_boundary(name):
+    from pydantic import ValidationError
+
+    from app.modules.model_gateway.access_status import PublicationNames
+    from app.modules.model_gateway.publication import PublicationInput
+
+    with pytest.raises(ValidationError):
+        PublicationInput(model_name=name, name="Model")
+    with pytest.raises(ValidationError):
+        PublicationNames(models=[name])
 
 
 @pytest.mark.asyncio

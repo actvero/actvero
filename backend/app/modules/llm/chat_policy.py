@@ -37,6 +37,19 @@ def resolve(body: ChatInput, config: CatalogInput, version: int) -> ChatInput:
         ]
         if effort not in allowed:
             fail(422, "parameter_not_allowed", "当前模型不支持所选推理档位，请刷新模型目录")
+    if (
+        config.gateway
+        and config.gateway.capability_mode == "auto"
+        and body.thinking is not None
+        and body.thinking.type == "disabled"
+        and not any(
+            value in ("none", "minimal")
+            for option in config.reasoning_options
+            if option.type == "effort"
+            for value in option.values
+        )
+    ):
+        fail(422, "parameter_not_allowed", "当前模型不支持关闭思考，请刷新模型目录")
     if not policy.reasoning_adjustable and (
         body.thinking is not None or effort not in (None, policy.default_reasoning_effort)
     ):

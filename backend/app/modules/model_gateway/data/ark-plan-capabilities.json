@@ -1,0 +1,124 @@
+{
+  "version": "ark-plan-2026-10-28",
+  "verified_at": "2026-10-28",
+  "sources": {
+    "plan": "https://docs.volcengine.com/docs/ark/agent-plan-personal-plan-overview?lang=zh",
+    "coding": "https://docs.volcengine.com/docs/ark/coding-plan-personal-plan-overview?lang=zh",
+    "models": "https://docs.volcengine.com/docs/ark/model-list?lang=zh",
+    "thinking": "https://docs.volcengine.com/docs/ark/deep-thinking?lang=zh",
+    "chat": "https://docs.volcengine.com/docs/ark/chat-api?lang=zh",
+    "glm": "https://huggingface.co/zai-org/GLM-5.3/blob/main/README.md"
+  },
+  "models": {
+    "deepseek-v4.1-flash": {
+      "context_window": 1024000, "max_output": 384000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "high", "max"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "deepseek-v4-1-flash-261017"
+    },
+    "deepseek-v4.1-flash-economy": {
+      "context_window": 1049000, "max_output": 384000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "high", "max"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "deepseek-v4-1-flash-economy-261017"
+    },
+    "deepseek-v4-flash": {
+      "context_window": 1024000, "max_output": 384000,
+      "input": ["text"],
+      "efforts": ["none", "low", "high", "max"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "deepseek-v4-flash-ga-260731"
+    },
+    "deepseek-v4-pro": {
+      "context_window": 1024000, "max_output": 384000,
+      "input": ["text"],
+      "efforts": ["none", "low", "high", "max"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "deepseek-v4-pro-ga-260813"
+    },
+    "doubao-seed-2.1-pro": {
+      "context_window": 1024000, "max_output": 256000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "medium", "high"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "doubao-seed-2-1-pro-260915"
+    },
+    "doubao-seed-2.1-lite": {
+      "context_window": 1024000, "max_output": 256000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "medium", "high"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "doubao-seed-2-1-lite-260915"
+    },
+    "doubao-seed-evolving": {
+      "context_window": 1024000, "max_output": 256000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "medium", "high"], "default_effort": "high",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"]
+    },
+    "doubao-seed-2.0-mini": {
+      "context_window": 256000, "max_output": 128000,
+      "input": ["text", "image"],
+      "efforts": ["none", "low", "medium", "high"], "default_effort": "medium",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "doubao-seed-2-0-mini-260428"
+    },
+    "glm-5.3-flash": {
+      "context_window": 1024000, "max_output": 128000,
+      "input": ["text", "image"],
+      "efforts": ["low", "high", "max"], "default_effort": "max",
+      "tools": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "glm-5-3-flash-260828"
+    },
+    "glm-5.3": {
+      "context_window": 1024000, "max_output": 128000,
+      "input": ["text"],
+      "efforts": ["low", "high", "max"], "default_effort": "max",
+      "tools": "supported",
+      "sources": ["plan", "glm", "chat"]
+    },
+    "kimi-k3.1-pro": {
+      "context_window": 1024000, "max_output": 128000,
+      "input": ["text", "image"],
+      "efforts": ["low", "high", "max"], "default_effort": "max",
+      "tools": "supported", "structured_output": "supported",
+      "sources": ["plan", "models", "thinking", "chat"],
+      "source_model": "kimi-k3-1-pro-261024"
+    },
+    "kimi-k3": {
+      "context_window": 1024000, "max_output": 128000,
+      "input": ["text", "image"],
+      "efforts": [null],
+      "sources": ["plan", "coding", "chat"]
+    },
+    "kimi-k2.8-preview": {
+      "context_window": 1024000, "max_output": 1024000,
+      "input": ["text", "image"],
+      "efforts": [null],
+      "sources": ["plan", "coding", "chat"]
+    },
+    "kimi-k2.7-code": {
+      "context_window": 256000, "max_output": 32000,
+      "input": ["text", "image"],
+      "efforts": [null],
+      "sources": ["plan", "coding", "chat"]
+    },
+    "minimax-m3": {
+      "context_window": 1024000, "max_output": 128000,
+      "input": ["text"], "vision": "unknown",
+      "efforts": [null],
+      "sources": ["plan", "chat"]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 """Actvero access policy over a native model name; no duplicate supplier routes."""
 
 import hashlib
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from fastapi import HTTPException, Request
@@ -22,6 +22,7 @@ from app.modules.llm.catalog_schemas import (
     RetrievalOptions,
 )
 from app.modules.llm.image_schemas import ImageOptions
+from app.modules.llm.model_identifier import ModelIdentifier
 from app.modules.llm.models import CatalogModel, ModelChannel
 from app.modules.llm.schemas import Input
 from app.modules.members.models import Membership
@@ -31,7 +32,7 @@ from app.modules.tenants.models import Tenant
 
 
 class PublicationInput(Input):
-    model_name: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,127}$")
+    model_name: Annotated[ModelIdentifier, Field(max_length=128)]
     version: int = Field(default=0, ge=0)
     name: str = Field(min_length=1, max_length=100)
     enabled: bool = False

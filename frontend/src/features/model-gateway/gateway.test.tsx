@@ -645,6 +645,73 @@ it('keeps organization access in the host session outside the native query cache
     .toBeChecked()
   expect(writes).toHaveLength(0)
 })
+
+it('checks aliases with spaces and reports specific missing configuration without endless loading', async () => {
+  const names = ['DeepSeek Flash', 'orphan-model', 'unknown-model', 'bad,model']
+  const states = names.slice(0, 3).map((model_name, index) => ({
+    model_name,
+    enabled: false,
+    audience: 'administrators',
+    member_count: 0,
+    ready: index === 0,
+    active_channels: index === 1 ? 0 : 1,
+    automatic: { status: index === 2 ? 'unresolved' : 'resolved' },
+    checks:
+      index === 0
+        ? []
+        : [
+            {
+              key: index === 1 ? 'channels' : 'parameters',
+              status: 'blocked',
+              message:
+                index === 1
+                  ? '未关联当前调用分组的启用渠道'
+                  : '尚无可靠能力资料',
+            },
+          ],
+  }))
+  await show(
+    <NativeLanguage>
+      <NativeModelManagement />
+    </NativeLanguage>,
+    (url) =>
+      url === '/api/models/'
+        ? {
+            items: names.map((model_name, index) => ({
+              id: index + 21,
+              model_name,
+              status: 1,
+              sync_official: 1,
+              name_rule: 0,
+              created_time: 100,
+              updated_time: 100,
+            })),
+            total: names.length,
+          }
+        : url.endsWith('/publication/status')
+          ? { items: states }
+          : undefined
+  )
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'DeepSeek Flash' }))
+    .toHaveTextContent('配置就绪')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'orphan-model' }))
+    .toHaveTextContent('未关联渠道')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'unknown-model' }))
+    .toHaveTextContent('缺少能力资料')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'bad,model' }))
+    .toHaveTextContent('名称格式不支持')
+  await expect.element(page.getByText('检查中…')).not.toBeInTheDocument()
+  const statusCall = vi
+    .mocked(fetch)
+    .mock.calls.find(([url]) => String(url).endsWith('/publication/status'))
+  expect(JSON.parse(String(statusCall?.[1]?.body)).models).toEqual(
+    [...names.slice(0, 3)].sort()
+  )
+})
 it('blocks opening an incomplete model while allowing its disabled draft to be saved', async () => {
   await show(<ModelPublication model='team' />, (url) => {
     if (url.includes('/publication?'))
