@@ -61,6 +61,13 @@ export type ModelPricingPluginVariant = {
 }
 
 export type ModelPricingEntry = ModelPricingDescription & {
+  pricing_reference?: {
+    label: string
+    url: string
+    basis: string
+    source_updated_at: string
+    verified_at: string
+  }
   plugin_variants?: ModelPricingPluginVariant[]
   model_name: string
   version: string

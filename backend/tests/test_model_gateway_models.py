@@ -257,3 +257,33 @@ async def test_native_public_pricing_preserves_top_level_contract_without_unknow
     assert response.json()["group_ratio"] == {"default": 1}
     assert response.json()["data"] == packet["data"]
     assert "must-not-return" not in response.text
+
+
+async def test_imported_pricing_exposes_its_reference_but_custom_edits_do_not(env, monkeypatch):
+    from decimal import Decimal
+
+    from app.modules.model_gateway.connection_templates import price_expression
+
+    admin = await env.client()
+    bind(env, admin)
+    expression = price_expression("glm-5.3", Decimal("7.3"))
+    packet = {
+        "entries": [
+            {
+                "model_name": "public-alias",
+                "version": "unchanged-native-version",
+                "configured": {},
+                "effective": {"billing_setting.billing_expr": expression},
+            }
+        ]
+    }
+    monkeypatch.setattr(client, "call", AsyncMock(side_effect=lambda *a, **k: deepcopy(packet)))
+    response = await admin.api.get(BASE + "/api/option/model_pricing?model=public-alias")
+    entry = response.json()["data"]["entries"][0]
+    assert entry["version"] == "unchanged-native-version"
+    assert entry["pricing_reference"]["label"] == "TRAE 官方参考价"
+    packet["entries"][0]["effective"]["billing_setting.billing_expr"] = expression.replace(
+        "p * 8", "p * 9"
+    )
+    response = await admin.api.get(BASE + "/api/option/model_pricing?model=public-alias")
+    assert "pricing_reference" not in response.json()["data"]["entries"][0]

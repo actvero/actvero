@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -28,6 +28,7 @@ import {
 import { handleServerError } from '@newapi/lib/handle-server-error'
 import { createServerError } from '@newapi/lib/server-error-message'
 import { useAuthStore } from '@newapi/stores/auth-store'
+import { invalidateModelPricing } from '@newapi/features/model-pricing/api'
 
 import { createChannel, updateChannel, type ChannelTemplatePricing } from '../api'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
@@ -71,6 +72,7 @@ function reportTemplatePricing(pricing?: ChannelTemplatePricing) {
 
 export function useChannelMutateForm(props: UseChannelMutateFormParams) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const currentUser = useAuthStore((s) => s.auth.user)
   const canEditSensitive = hasPermission(
     currentUser,
@@ -114,6 +116,7 @@ export function useChannelMutateForm(props: UseChannelMutateFormParams) {
           throw createServerError(response, t(ERROR_MESSAGES.UPDATE_FAILED))
         }
         reportTemplatePricing(response.pricing)
+        if (response.pricing) await invalidateModelPricing(queryClient)
         return SUCCESS_MESSAGES.UPDATED
       }
 
@@ -123,6 +126,7 @@ export function useChannelMutateForm(props: UseChannelMutateFormParams) {
         throw createServerError(response, t(ERROR_MESSAGES.CREATE_FAILED))
       }
       reportTemplatePricing(response.pricing)
+      if (response.pricing) await invalidateModelPricing(queryClient)
       return SUCCESS_MESSAGES.CREATED
     },
     onSuccess: (messageKey) => {

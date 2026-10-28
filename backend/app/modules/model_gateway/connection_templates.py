@@ -1,6 +1,7 @@
 """Named native route presets and reviewed supplier list-price defaults."""
 
 import json
+import re
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from pathlib import Path
@@ -55,6 +56,8 @@ def is_ark_plan_template(channel: dict[str, Any]) -> bool:
 
 def price_expression(name: str, usd_to_cny: Decimal) -> str:
     rates = official_catalog()["models"][name]
+    source = official_catalog()["references"][rates.get("source", "ark")]
+    stamp = source["updated_at"][:10].replace("-", "")
     if not usd_to_cny.is_finite() or usd_to_cny <= 0:
         raise ValueError("A positive native CNY exchange rate is required")
     rate = format(usd_to_cny, "f")
@@ -67,11 +70,56 @@ def price_expression(name: str, usd_to_cny: Decimal) -> str:
         ]
         # Actvero's chat contract accepts text and images. Audio tariffs remain
         # in the source snapshot, not in a partially supported cache expression.
-        return f'tier("ark_{label}_20261024", ({" + ".join(terms)}) / {rate})'
+        return (
+            f'tier("{source["expression_prefix"]}_{label}_{stamp}", ({" + ".join(terms)}) / {rate})'
+        )
 
+    if "tiers" in rates:
+        length = "len + c" if rates.get("length_basis") == "input_output" else "len"
+        tiers = rates["tiers"]
+        expression = tier(tiers[-1], "long_context")
+        for index, values in reversed(list(enumerate(tiers[:-1]))):
+            expression = (
+                f"{length} <= {values['max_context']} ? {tier(values, f'context_{index}')} : "
+                + expression
+            )
+        return expression
     if "peak" in rates:
         return f"{ARK_PEAK} ? {tier(rates['peak'], 'peak')} : {tier(rates, 'off_peak')}"
     return tier(rates, "standard")
+
+
+def reference_for_model(name: str) -> dict[str, Any]:
+    catalog = official_catalog()
+    model = catalog["models"][name]
+    reference = catalog["references"][model.get("source", "ark")]
+    return {
+        "label": reference["label"],
+        "url": reference["url"],
+        "basis": reference["basis"],
+        "source_updated_at": reference["updated_at"],
+        "verified_at": catalog["verified_at"],
+    }
+
+
+def pricing_reference(expression: Any) -> dict[str, Any] | None:
+    """Recognize an unchanged imported expression, including one used by an alias.
+
+    A copied label alone is not provenance. Any custom price edit makes this
+    an organization price instead of claiming it still matches the source.
+    """
+    if not isinstance(expression, str) or len(expression) > 4096:
+        return None
+    matches = re.findall(r" / ([0-9]+(?:\.[0-9]+)?)\)", expression)
+    if not matches or len(set(matches)) != 1:
+        return None
+    rate = Decimal(matches[0])
+    if rate <= 0:
+        return None
+    for name in official_catalog()["models"]:
+        if expression == price_expression(name, rate):
+            return reference_for_model(name)
+    return None
 
 
 async def initialize_official_prices(
@@ -85,15 +133,25 @@ async def initialize_official_prices(
         )
     )
     catalog = official_catalog()
-    known = [name for name in names if name in catalog["models"]]
+    try:
+        mapping = json.loads(channel.get("model_mapping") or "{}")
+        targets = {name: mapping.get(name, name) for name in names}
+    except (ValueError, TypeError, AttributeError):
+        targets = {}
+    known = [
+        name
+        for name in names
+        if isinstance(targets.get(name), str) and targets[name] in catalog["models"]
+    ]
     result: dict[str, Any] = {
         "applied": [],
         "preserved": [],
-        "unavailable": [name for name in names if name not in catalog["models"]],
+        "unavailable": [name for name in names if name not in known],
         "source": catalog["source"],
         "verified_at": catalog["verified_at"],
         "currency": "CNY",
         "pending": False,
+        "references": {name: reference_for_model(targets[name]) for name in known},
     }
     if not known:
         return result
@@ -121,7 +179,7 @@ async def initialize_official_prices(
                     "expected_version": entry["version"],
                     "pricing": {
                         "billing_setting.billing_mode": "tiered_expr",
-                        "billing_setting.billing_expr": price_expression(name, fx),
+                        "billing_setting.billing_expr": price_expression(targets[name], fx),
                     },
                 }
             )

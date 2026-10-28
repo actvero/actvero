@@ -15,6 +15,7 @@ from app.modules.model_gateway.connection_templates import (
     initialize_official_prices,
     is_ark_plan_template,
     price_expression,
+    pricing_reference,
 )
 
 
@@ -22,7 +23,7 @@ def plan_channel(**updates):
     return {
         "type": 58,
         "base_url": ARK_ORIGIN,
-        "models": "doubao-seed-2.1-pro,deepseek-v4-pro,glm-5.3,kimi-k3.1-pro",
+        "models": "doubao-seed-2.1-pro,deepseek-v4-pro,unlisted-model,kimi-k3.1-pro",
         "settings": json.dumps(
             {
                 "advanced_custom": {
@@ -104,11 +105,57 @@ async def test_template_initializes_exact_matches_without_overwriting_custom_pri
     result = await initialize_official_prices(Request({"type": "http"}), owner, plan_channel())
     assert result["applied"] == ["doubao-seed-2.1-pro", "kimi-k3.1-pro"]
     assert result["preserved"] == ["deepseek-v4-pro"]
-    assert result["unavailable"] == ["glm-5.3"]
+    assert result["unavailable"] == ["unlisted-model"]
     changes = calls[-1][2]["payload"]["changes"]
     assert len(changes) == 2
     assert changes[0]["expected_version"] == "doubao-seed-2.1-pro-version"
     assert "13" in changes[1]["pricing"]["billing_setting.billing_expr"]
+
+
+def test_reference_prices_preserve_source_and_context_conditions():
+    rate = Decimal("7.3")
+    expression = price_expression("glm-5.3", rate)
+    assert "p * 8 + cr * 2 + c * 28" in expression
+    assert pricing_reference(expression)["label"] == "TRAE 官方参考价"
+    assert pricing_reference(expression.replace("p * 8", "p * 9")) is None
+    assert pricing_reference('tier("trae_ref_standard_20261024", fixed(0))') is None
+    expression = price_expression("minimax-m3", rate)
+    assert "len + c <= 512000" in expression
+    assert "p * 2.1 + cr * 0.42 + c * 8.4" in expression
+    assert "p * 4.2 + cr * 0.84 + c * 16.8" in expression
+    expression = price_expression("doubao-seed-2.0-mini", rate)
+    assert "len <= 32000" in expression and "len <= 128000" in expression
+    assert pricing_reference(expression)["basis"] == "online_inference_standard"
+    assert pricing_reference(price_expression("kimi-k2.7-code", rate))["basis"] == (
+        "historical_official_reference"
+    )
+
+
+@pytest.mark.asyncio
+async def test_explicit_model_mapping_sets_alias_price_without_guessing_names(monkeypatch):
+    calls = []
+
+    async def native(request, tenant, method, path, **kwargs):
+        calls.append((method, path, kwargs))
+        if path == "/api/status":
+            return {"usd_exchange_rate": 7.3}
+        if method == "GET":
+            return {"entries": [{"model_name": "team-model", "version": "v1", "configured": {}}]}
+        return None
+
+    monkeypatch.setattr(client, "call", native)
+    channel = plan_channel(
+        models="team-model,unknown-display-name",
+        model_mapping=json.dumps({"team-model": "deepseek-v4.1-flash"}),
+    )
+    result = await initialize_official_prices(Request({"type": "http"}), uuid4(), channel)
+    assert result["applied"] == ["team-model"]
+    assert result["unavailable"] == ["unknown-display-name"]
+    change = calls[-1][2]["payload"]["changes"][0]
+    assert change["model_name"] == "team-model"
+    assert change["pricing"]["billing_setting.billing_expr"] == price_expression(
+        "deepseek-v4.1-flash", Decimal("7.3")
+    )
 
 
 @pytest.mark.asyncio

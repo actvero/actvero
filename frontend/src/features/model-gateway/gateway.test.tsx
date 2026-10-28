@@ -7,6 +7,7 @@ import {
 import '@/styles/index.css'
 import { waitForAnimations } from '@/test-utils/animations'
 import { ARK_AGENT_PLAN_CONFIG } from '@/vendor/newapi/features/channels/lib/connection-templates'
+import { ModelPricingPanel } from '@/vendor/newapi/features/model-pricing/model-pricing-panel'
 import { PriceSyncDialog } from '@/vendor/newapi/features/models/components/dialogs/price-sync-dialog'
 import { SyncWizardDialog } from '@/vendor/newapi/features/models/components/dialogs/sync-wizard-dialog'
 import { ModelMutateDrawer } from '@/vendor/newapi/features/models/components/drawers/model-mutate-drawer'
@@ -17,6 +18,7 @@ import { page } from 'vitest/browser'
 import { GatewayChannels } from './channels'
 import { NativeLanguage } from './native-language'
 import { NativeModelManagement } from './native-models'
+import { bindNativeAdministrator } from './native-session'
 import { GatewayPage } from './page'
 import { makePricing, tokenRates } from './pricing'
 import { ModelPublication } from './publication'
@@ -267,6 +269,66 @@ it('prefills Agent Plan native routes and labels its supplier public directory',
     .element(page.getByText('upstream-agent-model', { exact: true }).first())
     .toBeVisible()
 })
+it('keeps missing prices distinct from free pricing and refreshes clean imported prices', async () => {
+  bindNativeAdministrator('csrf', '')
+  const config = {
+    entries: [
+      {
+        model_name: 'public-model',
+        version: 'empty',
+        configured: {},
+        effective: {},
+      },
+    ],
+    options: {},
+    empty_version: 'empty',
+  }
+  await show(
+    <NativeLanguage>
+      <ModelPricingPanel modelName='public-model' />
+    </NativeLanguage>,
+    (url) =>
+      url === '/api/option/model_pricing'
+        ? config
+        : url === '/api/pricing'
+          ? []
+          : undefined
+  )
+  await expect
+    .element(page.getByText('未配置计费价格', { exact: true }))
+    .toBeVisible()
+  const preview = page.getByRole('complementary', { name: '预览' })
+  await expect.element(preview).toHaveTextContent('尚未配置价格')
+  await expect.element(preview).not.toHaveTextContent('tier("base"')
+  await page.getByRole('button', { name: '保存模型价格', exact: true }).click()
+  expect(writes).toHaveLength(0)
+  client.setQueryData(['model-pricing-config', 'public-model'], {
+    ...config,
+    entries: [
+      {
+        model_name: 'public-model',
+        version: 'imported',
+        configured: {},
+        effective: {
+          'billing_setting.billing_mode': 'tiered_expr',
+          'billing_setting.billing_expr':
+            'tier("reference", p * 1 + cr * 0.1 + c * 3)',
+        },
+        pricing_reference: {
+          label: 'TRAE 官方参考价',
+          url: 'https://docs.volcengine.com/docs/trae-cn/billing-items?lang=zh',
+          verified_at: '2026-10-28',
+          basis: 'official_reference',
+        },
+      },
+    ],
+  })
+  await expect
+    .element(page.getByRole('link', { name: 'TRAE 官方参考价', exact: true }))
+    .toBeVisible()
+  await expect.element(preview).not.toHaveTextContent('尚未配置价格')
+})
+
 it.each([
   [1440, 900],
   [1024, 480],
