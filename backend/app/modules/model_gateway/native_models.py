@@ -7,12 +7,14 @@ from uuid import UUID
 
 from fastapi import HTTPException, Request
 from pydantic import JsonValue
+from sqlalchemy import select
 
 from app.modules.auth.service import DB
 from app.modules.members.service import Access
-from app.modules.model_gateway import client, service
+from app.modules.model_gateway import client, presentation, service
 from app.modules.model_gateway.connection_templates import pricing_reference
 from app.modules.model_gateway.router import audit
+from app.modules.tenants.models import Tenant
 
 READS = {
     "api/models": "/api/models/",
@@ -99,7 +101,7 @@ def vendor_view(raw: Any) -> dict[str, Any]:
     return {key: row.get(key) for key in VENDOR_FIELDS}
 
 
-async def read(request: Request, tenant_id: UUID, path: str) -> dict[str, Any]:
+async def read(request: Request, db: DB, tenant_id: UUID, path: str) -> dict[str, Any]:
     if path == "api/pricing":
         # This public native contract puts groups/endpoints beside data.
         # Never proxy arbitrary option packets or management responses.
@@ -127,6 +129,7 @@ async def read(request: Request, tenant_id: UUID, path: str) -> dict[str, Any]:
     data = await client.call(request, tenant_id, "GET", target, params=query_params(request))
     if re.fullmatch(r"api/models/[1-9][0-9]*", path):
         data = service.model_view(data)
+        await presentation.enrich(db, tenant_id, [data])
     elif re.fullmatch(r"api/vendors/[1-9][0-9]*", path):
         data = vendor_view(data)
     elif path in {"api/models", "api/models/search", "api/vendors", "api/vendors/search"}:
@@ -134,6 +137,8 @@ async def read(request: Request, tenant_id: UUID, path: str) -> dict[str, Any]:
         convert = service.model_view if path.startswith("api/models") else vendor_view
         data = {key: page.get(key) for key in ("total", "page", "page_size", "vendor_counts")}
         data["items"] = [convert(row) for row in page.get("items", [])]
+        if path.startswith("api/models"):
+            await presentation.enrich(db, tenant_id, data["items"])
     elif path == "api/ratio_sync/channels":
         data = [
             {key: row.get(key) for key in ("id", "name", "type", "status", "base_url")}
@@ -165,10 +170,17 @@ async def mutate(
         target = "/" + path
     if not target:
         raise HTTPException(404, "此网关操作尚未接入")
-    payload = body if body is not None else None
+    payload = dict(body) if body is not None else None
     if payload is not None and (len(payload) > 100 or len(json.dumps(payload)) > 2000000):
         raise HTTPException(422, "模型配置超过大小上限")
     params: dict[str, str | int] = {}
+    display_name = None
+    change = None
+    if path == "api/models" and method in {"POST", "PUT"} and payload is not None:
+        if "display_name" in payload:
+            display_name = payload.pop("display_name")
+            await db.scalar(select(Tenant.id).where(Tenant.id == actor.tenant.id).with_for_update())
+            change = await presentation.prepare(request, db, actor.tenant.id, payload, display_name)
     if method == "PUT" and path == "api/models":
         if body is None:
             raise HTTPException(422, "缺少模型配置")
@@ -183,7 +195,9 @@ async def mutate(
             params["status_only"] = "true"
         else:
             current = await client.call(request, actor.tenant.id, "GET", f"/api/models/{model_id}")
-            service.check_revision(service.model_view(current), request.headers.get("If-Match"))
+            view = service.model_view(current)
+            await presentation.enrich(db, actor.tenant.id, [view])
+            service.check_revision(view, request.headers.get("If-Match"))
     if method == "DELETE" and deleting and deleting[1] == "models":
         for key in ("remove_from_channels", "remove_pricing"):
             value = request.query_params.get(key, "false")
@@ -193,8 +207,11 @@ async def mutate(
     result = await client.call(
         request, actor.tenant.id, method, target, payload=payload, params=params
     )
+    if change is not None and payload is not None:
+        await presentation.save(db, actor.tenant.id, str(payload["model_name"]), change)
     if path == "api/models" and isinstance(result, dict) and result.get("model_name"):
         result = service.model_view(result)
+        await presentation.enrich(db, actor.tenant.id, [result])
     elif path == "api/vendors" and isinstance(result, dict):
         result = vendor_view(result)
     # Native source/record/price versions stay intact. Audits contain only the

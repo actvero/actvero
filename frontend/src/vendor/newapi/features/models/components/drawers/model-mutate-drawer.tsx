@@ -68,6 +68,7 @@ import {
 } from '@newapi/lib/server-error-message'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { createModel, updateModel, getModel, getVendors } from '../../api'
 import { getNameRuleOptions, ENDPOINT_TEMPLATES } from '../../constants'
 import { modelsQueryKeys, vendorsQueryKeys } from '../../lib'
@@ -190,6 +191,7 @@ export function ModelMutateDrawer(props: {
         : {
             ...MODEL_FORM_DEFAULT_VALUES,
             model_name: currentRow?.model_name ?? '',
+            display_name: currentRow?.display_name ?? '',
           }
     )
     loadedKey.current = key
@@ -200,6 +202,12 @@ export function ModelMutateDrawer(props: {
     meta: { errorToast: false },
     onMutate: () => form.clearErrors('root.server'),
     mutationFn: async (values: ModelFormValues) => {
+      if (
+        (accessDirty || accessSaving) &&
+        values.display_name !== (savedModel?.display_name ?? '')
+      ) {
+        throw new Error('请先保存或放弃访问管理的修改，再修改展示名称。')
+      }
       if (
         (pricingDirty || accessDirty || accessSaving) &&
         values.model_name !== currentRow?.model_name
@@ -378,27 +386,55 @@ export function ModelMutateDrawer(props: {
                         name='model_name'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel required>{t('Model Name')}</FormLabel>
+                            <FormLabel required>调用 ID</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder={t('gpt-4, claude-3-opus, etc.')}
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              {t('The unique identifier for this model')}
-                              {isEditing &&
-                                form.watch('model_name') !==
-                                  currentRow?.model_name && (
-                                  <span className='mt-1 block text-warning'>
-                                    {t(
-                                      'Renaming metadata does not rename channel models or move pricing. Existing prices stay with the original model name.'
-                                    )}
-                                  </span>
-                                )}
-                            </FormDescription>
+                            {isEditing &&
+                              form.watch('model_name') !==
+                                currentRow?.model_name && (
+                                <FormDescription className='text-warning'>
+                                  {t(
+                                    'Renaming metadata does not rename channel models or move pricing. Existing prices stay with the original model name.'
+                                  )}
+                                </FormDescription>
+                              )}
                             <FormMessage />
                           </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='display_name'
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor='model-display-name'>
+                              展示名称
+                            </FieldLabel>
+                            <Input
+                              id='model-display-name'
+                              placeholder={
+                                form.watch('model_name') ||
+                                '例如：DeepSeek V4.1 Flash'
+                              }
+                              maxLength={100}
+                              disabled={form.watch('name_rule') !== 0}
+                              aria-invalid={fieldState.invalid}
+                              {...field}
+                            />
+                            {fieldState.error && (
+                              <p
+                                role='alert'
+                                className='text-sm text-destructive'
+                              >
+                                {fieldState.error.message}
+                              </p>
+                            )}
+                          </Field>
                         )}
                       />
 

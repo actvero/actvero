@@ -43,6 +43,8 @@ export interface Model {
   configured_channel_count?: number
   id: number
   model_name: string
+  /** Member-facing Actvero name; model_name remains the native invocation ID. */
+  display_name?: string
   description?: string
   icon?: string
   tags?: string
@@ -432,4 +434,3 @@ export interface DeploymentLogsResponse {
     cursor?: string
   }
 }
-

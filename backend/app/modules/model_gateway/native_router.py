@@ -88,7 +88,7 @@ async def native_read(
     path = path.rstrip("/")
     if native_models.can_read(path):
         response.headers["Cache-Control"] = "no-store"
-        return await native_models.read(request, actor.tenant.id, path)
+        return await native_models.read(request, db, actor.tenant.id, path)
     if match := re.fullmatch(r"api/channel/([1-9][0-9]*)", path):
         raw = await service.get_channel(request, actor.tenant.id, int(match[1]))
         response.headers["Cache-Control"] = "no-store"

@@ -393,11 +393,13 @@ it('creates independent metadata through the shared native model form without a 
       <ModelMutateDrawer open onOpenChange={close} />
     </NativeLanguage>
   )
-  await page.getByLabelText('模型名称 *', { exact: true }).fill('team-model')
+  await page.getByLabelText('调用 ID *', { exact: true }).fill('team-model')
+  await page.getByLabelText('展示名称', { exact: true }).fill('团队通用模型')
   await page.getByRole('button', { name: '保存资料', exact: true }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0].url).toBe('/api/models/')
   expect(writes[0].body.model_name).toBe('team-model')
+  expect(writes[0].body.display_name).toBe('团队通用模型')
   expect(writes[0].body).not.toHaveProperty('channel_id')
   expect(reads.some((url) => url.includes('/channels'))).toBe(false)
   await expect.poll(() => close.mock.calls).toContainEqual([false])
@@ -512,6 +514,43 @@ it('saves an existing native model from the footer button with its loaded revisi
   })
   expect(nativeUpdateVersion).toBe('a'.repeat(64))
   await expect.poll(() => close.mock.calls).toContainEqual([false])
+})
+it('edits and clears the member-facing name without changing the invocation ID', async () => {
+  const model = {
+    id: 21,
+    model_name: 'deepseek-flash',
+    display_name: 'DeepSeek V4.1 Flash',
+    status: 1,
+    sync_official: 1,
+    name_rule: 0,
+    created_time: 100,
+    updated_time: 100,
+    revision: 'b'.repeat(64),
+  }
+  await show(
+    <NativeLanguage>
+      <ModelMutateDrawer open currentRow={model} onOpenChange={() => {}} />
+    </NativeLanguage>,
+    (url) => (url === '/api/models/21' ? model : undefined)
+  )
+  await expect
+    .element(page.getByLabelText('展示名称', { exact: true }))
+    .toHaveValue(model.display_name)
+  await page.getByLabelText('展示名称', { exact: true }).fill('团队快速模型')
+  await page.getByRole('button', { name: '保存资料', exact: true }).click()
+  await expect.poll(() => writes.length).toBe(1)
+  expect(writes[0].body).toMatchObject({
+    model_name: model.model_name,
+    display_name: '团队快速模型',
+  })
+  expect(nativeUpdateVersion).toBe(model.revision)
+  await page.getByLabelText('展示名称', { exact: true }).fill('')
+  await page.getByRole('button', { name: '保存资料', exact: true }).click()
+  await expect.poll(() => writes.length).toBe(2)
+  expect(writes[1].body).toMatchObject({
+    model_name: model.model_name,
+    display_name: '',
+  })
 })
 it('edits through the native form and preserves provider settings without resubmitting a key', async () => {
   localStorage.setItem('actvero:gateway-channels:view', 'table')
@@ -631,7 +670,7 @@ it('keeps organization access in the host session outside the native query cache
   await page.getByRole('radio', { name: '全体成员', exact: true }).click()
   await page.getByRole('tab', { name: '模型资料', exact: true }).click()
   await expect
-    .element(page.getByLabelText('模型名称 *', { exact: true }))
+    .element(page.getByLabelText('调用 ID *', { exact: true }))
     .toBeVisible()
   await page.getByRole('tab', { name: '访问管理', exact: true }).click()
   await expect

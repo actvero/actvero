@@ -112,19 +112,29 @@ export function useModelsColumns(
                   <Button
                     variant='link'
                     className='h-auto min-w-0 shrink justify-start p-0 font-mono text-sm text-foreground'
-                    title={model.model_name}
+                    title={model.display_name || model.model_name}
                     onClick={() => {
                       setCurrentRow(model)
                       setOpen('update-model')
                     }}
                   >
-                    <span className='truncate'>{model.model_name}</span>
+                    <span className='truncate'>
+                      {model.display_name || model.model_name}
+                    </span>
                   </Button>
                   <CopyButton
                     value={model.model_name}
                     className='size-6 shrink-0'
                   />
                 </div>
+                {model.display_name && (
+                  <div
+                    className='mt-1 truncate font-mono text-xs text-muted-foreground'
+                    title={model.model_name}
+                  >
+                    {model.model_name}
+                  </div>
+                )}
                 <div className='mt-1 flex min-w-0 items-center gap-2 text-xs text-muted-foreground'>
                   <span className='truncate' title={vendor?.name}>
                     {model.id > 0
