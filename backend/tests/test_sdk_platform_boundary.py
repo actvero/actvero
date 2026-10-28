@@ -79,6 +79,11 @@ async def test_meter_failure_delivers_sdk_result_but_keeps_unknown_bill_in_revie
             )
         assert result.status_code == 200 and '"error"' not in result.text, result.text
         assert "[DONE]" in result.text if stream else result.json()["usage"] is None
+        # Delivery may defer the 250ms foreground flush under database load.
+        # Check the final accounting state after replaying the durable outbox.
+        outbox = env.app.state.llm_outbox
+        for path in outbox.directory.glob("*.json"):
+            await outbox.flush_one(path)
         rows = await entries(admin)
         assert rows[0]["status"] == "review" and rows[0]["points"] is None
         log = (await admin.api.get(BASE + model["id"] + "/calls")).json()[0]
