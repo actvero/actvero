@@ -454,6 +454,14 @@ class CatalogInput(OperationParameters):
 
     @model_validator(mode="after")
     def compatible_limits(self) -> Self:
+        # Interior spaces are native gateway aliases. Direct catalog technical
+        # identifiers retain their existing contract, including nested operations.
+        if (
+            " " in self.slug
+            and self.gateway is None
+            and not any(operation.gateway for operation in self.operations or [])
+        ):
+            raise ValueError("直接管理模型的技术名称不能包含空格")
         if self.operations is None:
             self.validate_operation(
                 self.access.enabled, self.access.channel_id, self.access.upstream_id
