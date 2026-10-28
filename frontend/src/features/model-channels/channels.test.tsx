@@ -607,6 +607,7 @@ it('opens the selected model tab and preserves the page layout on narrow screens
   await expect
     .element(page.getByRole('button', { name: '移除 existing-model' }))
     .toBeVisible()
+  await waitForAnimations()
   await page.getByRole('tab', { name: '健康', exact: true }).click()
   await expect.element(page.getByText('此渠道没有关联绑定。')).toBeVisible()
   await page.getByRole('tab', { name: '连接信息' }).click()

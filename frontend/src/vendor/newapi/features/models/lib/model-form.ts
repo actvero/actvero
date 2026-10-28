@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
-
 import type { Model } from '../types'
 import { parseModelTags as parseTagsFromUtils } from './model-utils'
 
@@ -31,6 +30,11 @@ import { parseModelTags as parseTagsFromUtils } from './model-utils'
 export const modelFormSchema = z.object({
   id: z.number().optional(),
   model_name: z.string().min(1, 'Model name is required'),
+  display_name: z
+    .string()
+    .trim()
+    .max(100, '展示名称最多 100 个字符')
+    .default(''),
   description: z.string().default(''),
   icon: z.string().default(''),
   tags: z.array(z.string()).default([]),
@@ -47,6 +51,7 @@ export type ModelFormValues = z.infer<typeof modelFormSchema>
 
 export const MODEL_FORM_DEFAULT_VALUES: ModelFormValues = {
   model_name: '',
+  display_name: '',
   description: '',
   icon: '',
   tags: [],
@@ -87,6 +92,7 @@ export function transformModelToFormDefaults(model: Model): ModelFormValues {
   return {
     id: model.id,
     model_name: model.model_name,
+    display_name: model.display_name || '',
     description: model.description || '',
     icon: model.icon || '',
     tags: parseTagsFromUtils(model.tags),
@@ -109,6 +115,7 @@ export function transformFormDataToModelPayload(
   return {
     id: formData.id,
     model_name: formData.model_name,
+    display_name: formData.name_rule === 0 ? formData.display_name : '',
     description: formData.description || '',
     icon: formData.icon || '',
     tags: formatTagsArray(formData.tags),
@@ -153,4 +160,3 @@ export function validateJSON(value: string): boolean {
 export function validateEndpoints(endpoints: string): boolean {
   return validateJSON(endpoints)
 }
-
