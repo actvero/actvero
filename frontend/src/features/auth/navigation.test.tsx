@@ -12,7 +12,12 @@ import {
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
-import { AccessGate, HomeRedirect, SessionBoundary } from './gate'
+import {
+  AccessGate,
+  HomeRedirect,
+  SessionBoundary,
+  SystemAccessGate,
+} from './gate'
 import { LoginPage } from './login'
 import { loginReturnTo } from './return-to'
 import { loginUrl } from './session'
@@ -85,6 +90,15 @@ async function show(initial: string, capture = false, cached = false) {
     path: '/overview',
     component: () => <h1>概览</h1>,
   })
+  const systemSettings = createRoute({
+    getParentRoute: () => guarded,
+    path: '/system/general',
+    component: () => (
+      <SystemAccessGate>
+        <h1>品牌形象</h1>
+      </SystemAccessGate>
+    ),
+  })
   const home = createRoute({
     getParentRoute: () => root,
     path: '/console',
@@ -106,7 +120,7 @@ async function show(initial: string, capture = false, cached = false) {
   })
   const router = createRouter({
     routeTree: root.addChildren([
-      guarded.addChildren([channels, models, users, overview]),
+      guarded.addChildren([channels, models, users, overview, systemSettings]),
       home,
       login,
       setup,
@@ -132,6 +146,29 @@ function respond(body: unknown) {
     headers: { 'Content-Type': 'application/json' },
   })
 }
+it.each([
+  ['community', true, '品牌形象'],
+  ['community', false, '概览'],
+  ['saas', true, '概览'],
+] as const)(
+  '系统设置深链接按 %s 的实例权限 %s 校验',
+  async (edition, administrator, heading) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        respond({
+          ...session,
+          platform_edition: edition,
+          instance_administrator: administrator,
+        })
+      )
+    )
+    await show('/system/general')
+    await expect
+      .element(page.getByRole('heading', { name: heading, exact: true }))
+      .toBeVisible()
+  }
+)
 it('冷启动等待会话后保持目标地址，侧栏切换和重新加载仍留在目标页面', async () => {
   let resolve!: (response: Response) => void
   const delayed = new Promise<Response>((done) => {

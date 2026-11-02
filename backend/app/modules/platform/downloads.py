@@ -9,7 +9,7 @@ from app.modules.auth.router import Mutation
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, now
 from app.modules.client_distribution.models import ClientDistribution
-from app.modules.platform.access import PlatformActor, platform_access
+from app.modules.platform.access import PlatformActor, require_system_grant, system_access
 from app.modules.platform.download_models import (
     ClientRecommendation,
     ClientRelease,
@@ -31,25 +31,19 @@ from app.modules.platform.download_schemas import (
     ReleaseStatus,
     ReleaseView,
 )
-from app.modules.tenants.models import Installation, PlatformOperator
+from app.modules.tenants.models import Installation
 
 router = APIRouter(prefix="/api/v1/platform/downloads", tags=["client-downloads"])
 
 
 async def locked_actor(request: Request, db: DB) -> PlatformActor:
-    actor = await platform_access(request, db)
+    actor = await system_access(request, db)
     # Serializes unique versions and recommendations across all deployment operators.
     if await db.scalar(select(Installation).where(Installation.id == 1).with_for_update()) is None:
         raise HTTPException(503, "数据库尚未完成迁移")
     # Authentication renews and commits the browser session. Do not repeat it
     # after acquiring the mutation lock; only recheck the operator grant here.
-    active = await db.scalar(
-        select(PlatformOperator.user_id).where(
-            PlatformOperator.user_id == actor.user.id, PlatformOperator.status == "active"
-        )
-    )
-    if active is None:
-        raise HTTPException(403, "此页面仅限平台运营人员")
+    await require_system_grant(request, db, actor)
     return actor
 
 
@@ -162,7 +156,7 @@ async def list_releases(
     q: Annotated[str, Query(max_length=50)] = "",
     status: ReleaseStatus | None = None,
 ) -> ReleasePage:
-    await platform_access(request, db)
+    await system_access(request, db)
     response.headers["Cache-Control"] = "no-store"
     query = select(ClientRelease)
     if q:
@@ -188,7 +182,7 @@ async def list_releases(
 async def get_release(
     release_id: UUID, request: Request, response: Response, db: DB
 ) -> ReleaseView:
-    await platform_access(request, db)
+    await system_access(request, db)
     response.headers["Cache-Control"] = "no-store"
     return ReleaseView.model_validate(await release(db, release_id))
 
@@ -197,7 +191,7 @@ async def get_release(
 async def release_events(
     release_id: UUID, request: Request, response: Response, db: DB
 ) -> list[ReleaseEventView]:
-    await platform_access(request, db)
+    await system_access(request, db)
     response.headers["Cache-Control"] = "no-store"
     rows = (
         await db.scalars(

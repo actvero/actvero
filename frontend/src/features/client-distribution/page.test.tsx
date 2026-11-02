@@ -8,8 +8,12 @@ import { page, userEvent } from 'vitest/browser'
 import { ObjectStoragePage } from '@/features/object-storage/page'
 import { ClientDistributionPage } from './page'
 
+const session = vi.hoisted(() => ({
+  csrf: 'test-csrf',
+  platform_edition: 'saas',
+}))
 vi.mock('@/features/auth/session', () => ({
-  useSession: () => ({ data: { csrf: 'test-csrf' } }),
+  useSession: () => ({ data: session }),
 }))
 vi.mock('@/components/layout/page-shell', () => ({
   PageShell: ({
@@ -33,6 +37,7 @@ afterEach(async () => {
   await cleanup()
   clients.splice(0).forEach((c) => c.clear())
   vi.unstubAllGlobals()
+  session.platform_edition = 'saas'
 })
 async function show(component: ReactNode = <ClientDistributionPage />) {
   const client = new QueryClient({
@@ -192,28 +197,39 @@ it('shows an access failure without retaining release controls', async () => {
     .toBeDisabled()
 })
 
-it('guides missing default storage to settings and hides technical upload inputs', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) =>
-      Response.json({ items: url.endsWith('/releases') ? [release] : [] })
+it.each([
+  ['community', '/system/storage'],
+  ['saas', '/platform/settings/storage'],
+])(
+  'guides %s missing default storage to its settings page',
+  async (edition, storageUrl) => {
+    session.platform_edition = edition
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        Response.json({ items: url.endsWith('/releases') ? [release] : [] })
+      )
     )
-  )
-  await show()
-  await page.getByRole('button', { name: '添加文件' }).click()
-  await waitForAnimations()
-  await expect
-    .element(page.getByRole('link', { name: '前往设置' }))
-    .toHaveAttribute('href', '/platform/settings/storage')
-  await expect
-    .element(page.getByRole('button', { name: '提交文件' }))
-    .toBeDisabled()
-  await expect.element(page.getByLabelText('文件用途')).not.toBeInTheDocument()
-  await expect.element(page.getByLabelText('存储位置')).not.toBeInTheDocument()
-  await expect
-    .element(page.getByRole('button', { name: '刷新' }))
-    .not.toBeInTheDocument()
-})
+    await show()
+    await page.getByRole('button', { name: '添加文件' }).click()
+    await waitForAnimations()
+    await expect
+      .element(page.getByRole('link', { name: '前往设置' }))
+      .toHaveAttribute('href', storageUrl)
+    await expect
+      .element(page.getByRole('button', { name: '提交文件' }))
+      .toBeDisabled()
+    await expect
+      .element(page.getByLabelText('文件用途'))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByLabelText('存储位置'))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('button', { name: '刷新' }))
+      .not.toBeInTheDocument()
+  }
+)
 
 it.each(['Windows x64', 'Windows ARM64'])(
   'uploads %s package and blockmap together with automatic roles and default storage',

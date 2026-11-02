@@ -81,7 +81,7 @@ async def test_public_catalog_is_anonymous_offline_identity_and_has_no_private_m
 
 async def test_platform_only_csrf_community_and_revocation(env):  # noqa: F811
     admin = await env.client()
-    assert (await admin.api.get(BASE)).status_code == 404
+    assert (await admin.api.get(BASE)).status_code == 403
     actor = await operator(env)
     member = await env.client(role="member", tenant=admin.tenant)
     for other in (admin, member):

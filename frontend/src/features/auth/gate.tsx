@@ -94,6 +94,14 @@ export function PlatformAccessGate({ children }: { children: ReactNode }) {
   return children
 }
 
+export function SystemAccessGate({ children }: { children: ReactNode }) {
+  const { data } = useSession()
+  if (!data) return <LoadingState />
+  if (data.platform_edition !== 'community' || !data.instance_administrator)
+    return <Navigate to='/overview' replace />
+  return children
+}
+
 export function HomeRedirect() {
   const { data } = useSession()
   if (!data?.setup_complete) return <Navigate to='/setup' replace />

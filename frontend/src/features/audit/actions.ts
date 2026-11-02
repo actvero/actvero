@@ -56,6 +56,7 @@ export const auditActions: Record<string, string> = {
   'account.avatar': '更新头像',
   'account.avatar_removed': '移除头像',
   'enterprise.created': '初始化组织',
+  'organization.settings.updated': '修改组织设置',
   'member.created': '添加成员',
   'member.joined': '加入组织',
   'member.role': '调整角色',

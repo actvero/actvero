@@ -41,7 +41,11 @@ export function CommandMenu() {
           <CommandEmpty>没有找到匹配页面</CommandEmpty>
           {(data?.platform_operator && platform
             ? platformNavigation()
-            : navigation(data?.organization?.role === 'administrator')
+            : navigation(
+                data?.organization?.role === 'administrator',
+                data?.platform_edition === 'community' &&
+                  data?.instance_administrator
+              )
           ).map((group) => (
             <CommandGroup key={group.title} heading={group.title}>
               {group.items.map((navItem, i) => {

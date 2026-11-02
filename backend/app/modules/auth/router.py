@@ -39,6 +39,7 @@ from app.modules.auth.service import (
 )
 from app.modules.auth.session_policy import deadline, initialize
 from app.modules.members.models import Membership
+from app.modules.platform.access import community_instance_administrator
 from app.modules.platform.branding import logo_url
 from app.modules.platform.mail_settings import effective_mail
 from app.modules.platform.opening_flows import current_flow, return_path
@@ -101,6 +102,9 @@ async def context(request: Request, response: Response, db: DB, browser: Browser
                 )
             )
             is not None
+        )
+        result.instance_administrator = settings.platform_edition == "community" and (
+            await community_instance_administrator(db, user.id, session.authenticated_at)
         )
         memberships = (
             await db.execute(

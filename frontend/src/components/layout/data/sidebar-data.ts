@@ -12,7 +12,10 @@ import {
 } from 'lucide-react'
 import type { NavGroup } from '../types'
 
-export function navigation(admin: boolean): NavGroup[] {
+export function navigation(
+  admin: boolean,
+  instanceAdministrator = false
+): NavGroup[] {
   return [
     {
       title: '工作台',
@@ -61,11 +64,29 @@ export function navigation(admin: boolean): NavGroup[] {
                 title: '组织管理',
                 icon: Users,
                 items: [
+                  { title: '组织设置', url: '/organization-settings' },
                   { title: '成员管理', url: '/users' },
                   { title: '操作记录', url: '/audit' },
                   { title: '密钥管理', url: '/access-keys' },
                 ],
               },
+              ...(instanceAdministrator
+                ? [
+                    {
+                      title: '系统设置',
+                      icon: Settings,
+                      items: [
+                        { title: '品牌形象', url: '/system/general' },
+                        { title: '门户设置', url: '/system/portal' },
+                        { title: '客户端版本', url: '/system/downloads' },
+                        { title: 'CLI 接入', url: '/system/cli' },
+                        { title: '邮件服务', url: '/system/mail' },
+                        { title: '对象存储', url: '/system/storage' },
+                        { title: '邮件模板', url: '/system/templates' },
+                      ],
+                    },
+                  ]
+                : []),
             ],
           },
         ]

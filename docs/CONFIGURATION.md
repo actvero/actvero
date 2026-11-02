@@ -12,7 +12,7 @@
 | `ACTVERO_WEB_CLIENT_SECRET` / `ACTVERO_PROVISIONER_CLIENT_SECRET` | 身份客户端秘密 |
 | `ACTVERO_SMTP_*` | 应用邮件设置 |
 | `ACTVERO_WEB_SESSION_POLICY` / `ACTVERO_DESKTOP_SESSION_POLICY` | 独立 Web 与桌面会话策略 |
-| `ACTVERO_MANAGEMENT_ENABLED` | 管理 CLI 接口的部署默认值；SaaS 平台保存 CLI 接入设置后以数据库中的选择为准，见 [CLI 接入](CLI.md) |
+| `ACTVERO_MANAGEMENT_ENABLED` | 管理 CLI 接口的部署默认值；实例管理员或 SaaS 平台运营人员保存 CLI 接入设置后以数据库中的选择为准，见 [CLI 接入](CLI.md) |
 | `ACTVERO_MCP_ALLOWED_PRIVATE_ORIGINS` | MCP 内网来源白名单 |
 | `ACTVERO_NEWAPI_BASE_URL` / `ACTVERO_NEWAPI_MANAGEMENT_TOKEN` | 部署级网关地址与服务凭据，各组织自动获得独立命名空间与调用身份 |
 | `COMPOSE_PROFILES` | 默认 `gateway` 一起启动网关；清空后使用独立部署的兼容网关 |
