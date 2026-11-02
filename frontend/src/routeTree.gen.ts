@@ -26,9 +26,11 @@ import { Route as PlatformInvitationsRouteImport } from './routes/platform.invit
 import { Route as PlatformApplicationsRouteImport } from './routes/platform.applications'
 import { Route as CliAuthorizeRouteImport } from './routes/cli.authorize'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedSystemRouteImport } from './routes/_authenticated/system'
 import { Route as AuthenticatedSkillDistributionsRouteImport } from './routes/_authenticated/skill-distributions'
 import { Route as AuthenticatedQuotaPoliciesRouteImport } from './routes/_authenticated/quota-policies'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
+import { Route as AuthenticatedOrganizationSettingsRouteImport } from './routes/_authenticated/organization-settings'
 import { Route as AuthenticatedMyUsageRouteImport } from './routes/_authenticated/my-usage'
 import { Route as AuthenticatedMyModelsRouteImport } from './routes/_authenticated/my-models'
 import { Route as AuthenticatedMyAccessKeysRouteImport } from './routes/_authenticated/my-access-keys'
@@ -45,6 +47,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAccessKeysRouteImport } from './routes/_authenticated/access-keys'
 import { Route as PlatformSettingsIndexRouteImport } from './routes/platform.settings.index'
+import { Route as AuthenticatedSystemIndexRouteImport } from './routes/_authenticated/system.index'
 import { Route as AuthenticatedSkillsIndexRouteImport } from './routes/_authenticated/skills.index'
 import { Route as AuthenticatedExpertsIndexRouteImport } from './routes/_authenticated/experts.index'
 import { Route as PlatformSettingsTemplatesRouteImport } from './routes/platform.settings.templates'
@@ -55,6 +58,13 @@ import { Route as PlatformSettingsMailRouteImport } from './routes/platform.sett
 import { Route as PlatformSettingsGeneralRouteImport } from './routes/platform.settings.general'
 import { Route as PlatformSettingsDownloadsRouteImport } from './routes/platform.settings.downloads'
 import { Route as PlatformSettingsCliRouteImport } from './routes/platform.settings.cli'
+import { Route as AuthenticatedSystemTemplatesRouteImport } from './routes/_authenticated/system.templates'
+import { Route as AuthenticatedSystemStorageRouteImport } from './routes/_authenticated/system.storage'
+import { Route as AuthenticatedSystemPortalRouteImport } from './routes/_authenticated/system.portal'
+import { Route as AuthenticatedSystemMailRouteImport } from './routes/_authenticated/system.mail'
+import { Route as AuthenticatedSystemGeneralRouteImport } from './routes/_authenticated/system.general'
+import { Route as AuthenticatedSystemDownloadsRouteImport } from './routes/_authenticated/system.downloads'
+import { Route as AuthenticatedSystemCliRouteImport } from './routes/_authenticated/system.cli'
 import { Route as AuthenticatedSkillsUploadRouteImport } from './routes/_authenticated/skills.upload'
 import { Route as AuthenticatedSkillsSkillIdRouteImport } from './routes/_authenticated/skills.$skillId'
 import { Route as AuthenticatedExpertsNewRouteImport } from './routes/_authenticated/experts.new'
@@ -144,6 +154,11 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSystemRoute = AuthenticatedSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSkillDistributionsRoute =
   AuthenticatedSkillDistributionsRouteImport.update({
     id: '/skill-distributions',
@@ -161,6 +176,12 @@ const AuthenticatedOverviewRoute = AuthenticatedOverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrganizationSettingsRoute =
+  AuthenticatedOrganizationSettingsRouteImport.update({
+    id: '/organization-settings',
+    path: '/organization-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMyUsageRoute = AuthenticatedMyUsageRouteImport.update({
   id: '/my-usage',
   path: '/my-usage',
@@ -244,6 +265,12 @@ const PlatformSettingsIndexRoute = PlatformSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PlatformSettingsRoute,
 } as any)
+const AuthenticatedSystemIndexRoute =
+  AuthenticatedSystemIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
 const AuthenticatedSkillsIndexRoute =
   AuthenticatedSkillsIndexRouteImport.update({
     id: '/skills/',
@@ -299,6 +326,46 @@ const PlatformSettingsCliRoute = PlatformSettingsCliRouteImport.update({
   path: '/cli',
   getParentRoute: () => PlatformSettingsRoute,
 } as any)
+const AuthenticatedSystemTemplatesRoute =
+  AuthenticatedSystemTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
+const AuthenticatedSystemStorageRoute =
+  AuthenticatedSystemStorageRouteImport.update({
+    id: '/storage',
+    path: '/storage',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
+const AuthenticatedSystemPortalRoute =
+  AuthenticatedSystemPortalRouteImport.update({
+    id: '/portal',
+    path: '/portal',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
+const AuthenticatedSystemMailRoute = AuthenticatedSystemMailRouteImport.update({
+  id: '/mail',
+  path: '/mail',
+  getParentRoute: () => AuthenticatedSystemRoute,
+} as any)
+const AuthenticatedSystemGeneralRoute =
+  AuthenticatedSystemGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
+const AuthenticatedSystemDownloadsRoute =
+  AuthenticatedSystemDownloadsRouteImport.update({
+    id: '/downloads',
+    path: '/downloads',
+    getParentRoute: () => AuthenticatedSystemRoute,
+  } as any)
+const AuthenticatedSystemCliRoute = AuthenticatedSystemCliRouteImport.update({
+  id: '/cli',
+  path: '/cli',
+  getParentRoute: () => AuthenticatedSystemRoute,
+} as any)
 const AuthenticatedSkillsUploadRoute =
   AuthenticatedSkillsUploadRouteImport.update({
     id: '/skills/upload',
@@ -348,9 +415,11 @@ export interface FileRoutesByFullPath {
   '/my-access-keys': typeof AuthenticatedMyAccessKeysRoute
   '/my-models': typeof AuthenticatedMyModelsRoute
   '/my-usage': typeof AuthenticatedMyUsageRoute
+  '/organization-settings': typeof AuthenticatedOrganizationSettingsRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
+  '/system': typeof AuthenticatedSystemRouteWithChildren
   '/users': typeof AuthenticatedUsersRoute
   '/cli/authorize': typeof CliAuthorizeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
@@ -362,6 +431,13 @@ export interface FileRoutesByFullPath {
   '/experts/new': typeof AuthenticatedExpertsNewRoute
   '/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/system/cli': typeof AuthenticatedSystemCliRoute
+  '/system/downloads': typeof AuthenticatedSystemDownloadsRoute
+  '/system/general': typeof AuthenticatedSystemGeneralRoute
+  '/system/mail': typeof AuthenticatedSystemMailRoute
+  '/system/portal': typeof AuthenticatedSystemPortalRoute
+  '/system/storage': typeof AuthenticatedSystemStorageRoute
+  '/system/templates': typeof AuthenticatedSystemTemplatesRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -372,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/experts/': typeof AuthenticatedExpertsIndexRoute
   '/skills/': typeof AuthenticatedSkillsIndexRoute
+  '/system/': typeof AuthenticatedSystemIndexRoute
   '/platform/settings/': typeof PlatformSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -398,6 +475,7 @@ export interface FileRoutesByTo {
   '/my-access-keys': typeof AuthenticatedMyAccessKeysRoute
   '/my-models': typeof AuthenticatedMyModelsRoute
   '/my-usage': typeof AuthenticatedMyUsageRoute
+  '/organization-settings': typeof AuthenticatedOrganizationSettingsRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
@@ -411,6 +489,13 @@ export interface FileRoutesByTo {
   '/experts/new': typeof AuthenticatedExpertsNewRoute
   '/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/system/cli': typeof AuthenticatedSystemCliRoute
+  '/system/downloads': typeof AuthenticatedSystemDownloadsRoute
+  '/system/general': typeof AuthenticatedSystemGeneralRoute
+  '/system/mail': typeof AuthenticatedSystemMailRoute
+  '/system/portal': typeof AuthenticatedSystemPortalRoute
+  '/system/storage': typeof AuthenticatedSystemStorageRoute
+  '/system/templates': typeof AuthenticatedSystemTemplatesRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -421,6 +506,7 @@ export interface FileRoutesByTo {
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/experts': typeof AuthenticatedExpertsIndexRoute
   '/skills': typeof AuthenticatedSkillsIndexRoute
+  '/system': typeof AuthenticatedSystemIndexRoute
   '/platform/settings': typeof PlatformSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -450,9 +536,11 @@ export interface FileRoutesById {
   '/_authenticated/my-access-keys': typeof AuthenticatedMyAccessKeysRoute
   '/_authenticated/my-models': typeof AuthenticatedMyModelsRoute
   '/_authenticated/my-usage': typeof AuthenticatedMyUsageRoute
+  '/_authenticated/organization-settings': typeof AuthenticatedOrganizationSettingsRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/quota-policies': typeof AuthenticatedQuotaPoliciesRoute
   '/_authenticated/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
+  '/_authenticated/system': typeof AuthenticatedSystemRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/cli/authorize': typeof CliAuthorizeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
@@ -464,6 +552,13 @@ export interface FileRoutesById {
   '/_authenticated/experts/new': typeof AuthenticatedExpertsNewRoute
   '/_authenticated/skills/$skillId': typeof AuthenticatedSkillsSkillIdRoute
   '/_authenticated/skills/upload': typeof AuthenticatedSkillsUploadRoute
+  '/_authenticated/system/cli': typeof AuthenticatedSystemCliRoute
+  '/_authenticated/system/downloads': typeof AuthenticatedSystemDownloadsRoute
+  '/_authenticated/system/general': typeof AuthenticatedSystemGeneralRoute
+  '/_authenticated/system/mail': typeof AuthenticatedSystemMailRoute
+  '/_authenticated/system/portal': typeof AuthenticatedSystemPortalRoute
+  '/_authenticated/system/storage': typeof AuthenticatedSystemStorageRoute
+  '/_authenticated/system/templates': typeof AuthenticatedSystemTemplatesRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -474,6 +569,7 @@ export interface FileRoutesById {
   '/platform/settings/templates': typeof PlatformSettingsTemplatesRoute
   '/_authenticated/experts/': typeof AuthenticatedExpertsIndexRoute
   '/_authenticated/skills/': typeof AuthenticatedSkillsIndexRoute
+  '/_authenticated/system/': typeof AuthenticatedSystemIndexRoute
   '/platform/settings/': typeof PlatformSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -503,9 +599,11 @@ export interface FileRouteTypes {
     | '/my-access-keys'
     | '/my-models'
     | '/my-usage'
+    | '/organization-settings'
     | '/overview'
     | '/quota-policies'
     | '/skill-distributions'
+    | '/system'
     | '/users'
     | '/cli/authorize'
     | '/platform/applications'
@@ -517,6 +615,13 @@ export interface FileRouteTypes {
     | '/experts/new'
     | '/skills/$skillId'
     | '/skills/upload'
+    | '/system/cli'
+    | '/system/downloads'
+    | '/system/general'
+    | '/system/mail'
+    | '/system/portal'
+    | '/system/storage'
+    | '/system/templates'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -527,6 +632,7 @@ export interface FileRouteTypes {
     | '/platform/settings/templates'
     | '/experts/'
     | '/skills/'
+    | '/system/'
     | '/platform/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -553,6 +659,7 @@ export interface FileRouteTypes {
     | '/my-access-keys'
     | '/my-models'
     | '/my-usage'
+    | '/organization-settings'
     | '/overview'
     | '/quota-policies'
     | '/skill-distributions'
@@ -566,6 +673,13 @@ export interface FileRouteTypes {
     | '/experts/new'
     | '/skills/$skillId'
     | '/skills/upload'
+    | '/system/cli'
+    | '/system/downloads'
+    | '/system/general'
+    | '/system/mail'
+    | '/system/portal'
+    | '/system/storage'
+    | '/system/templates'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -576,6 +690,7 @@ export interface FileRouteTypes {
     | '/platform/settings/templates'
     | '/experts'
     | '/skills'
+    | '/system'
     | '/platform/settings'
   id:
     | '__root__'
@@ -604,9 +719,11 @@ export interface FileRouteTypes {
     | '/_authenticated/my-access-keys'
     | '/_authenticated/my-models'
     | '/_authenticated/my-usage'
+    | '/_authenticated/organization-settings'
     | '/_authenticated/overview'
     | '/_authenticated/quota-policies'
     | '/_authenticated/skill-distributions'
+    | '/_authenticated/system'
     | '/_authenticated/users'
     | '/cli/authorize'
     | '/platform/applications'
@@ -618,6 +735,13 @@ export interface FileRouteTypes {
     | '/_authenticated/experts/new'
     | '/_authenticated/skills/$skillId'
     | '/_authenticated/skills/upload'
+    | '/_authenticated/system/cli'
+    | '/_authenticated/system/downloads'
+    | '/_authenticated/system/general'
+    | '/_authenticated/system/mail'
+    | '/_authenticated/system/portal'
+    | '/_authenticated/system/storage'
+    | '/_authenticated/system/templates'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -628,6 +752,7 @@ export interface FileRouteTypes {
     | '/platform/settings/templates'
     | '/_authenticated/experts/'
     | '/_authenticated/skills/'
+    | '/_authenticated/system/'
     | '/platform/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -766,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/system': {
+      id: '/_authenticated/system'
+      path: '/system'
+      fullPath: '/system'
+      preLoaderRoute: typeof AuthenticatedSystemRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/skill-distributions': {
       id: '/_authenticated/skill-distributions'
       path: '/skill-distributions'
@@ -785,6 +917,13 @@ declare module '@tanstack/react-router' {
       path: '/overview'
       fullPath: '/overview'
       preLoaderRoute: typeof AuthenticatedOverviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/organization-settings': {
+      id: '/_authenticated/organization-settings'
+      path: '/organization-settings'
+      fullPath: '/organization-settings'
+      preLoaderRoute: typeof AuthenticatedOrganizationSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/my-usage': {
@@ -899,6 +1038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformSettingsIndexRouteImport
       parentRoute: typeof PlatformSettingsRoute
     }
+    '/_authenticated/system/': {
+      id: '/_authenticated/system/'
+      path: '/'
+      fullPath: '/system/'
+      preLoaderRoute: typeof AuthenticatedSystemIndexRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
     '/_authenticated/skills/': {
       id: '/_authenticated/skills/'
       path: '/skills'
@@ -969,6 +1115,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformSettingsCliRouteImport
       parentRoute: typeof PlatformSettingsRoute
     }
+    '/_authenticated/system/templates': {
+      id: '/_authenticated/system/templates'
+      path: '/templates'
+      fullPath: '/system/templates'
+      preLoaderRoute: typeof AuthenticatedSystemTemplatesRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/storage': {
+      id: '/_authenticated/system/storage'
+      path: '/storage'
+      fullPath: '/system/storage'
+      preLoaderRoute: typeof AuthenticatedSystemStorageRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/portal': {
+      id: '/_authenticated/system/portal'
+      path: '/portal'
+      fullPath: '/system/portal'
+      preLoaderRoute: typeof AuthenticatedSystemPortalRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/mail': {
+      id: '/_authenticated/system/mail'
+      path: '/mail'
+      fullPath: '/system/mail'
+      preLoaderRoute: typeof AuthenticatedSystemMailRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/general': {
+      id: '/_authenticated/system/general'
+      path: '/general'
+      fullPath: '/system/general'
+      preLoaderRoute: typeof AuthenticatedSystemGeneralRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/downloads': {
+      id: '/_authenticated/system/downloads'
+      path: '/downloads'
+      fullPath: '/system/downloads'
+      preLoaderRoute: typeof AuthenticatedSystemDownloadsRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
+    '/_authenticated/system/cli': {
+      id: '/_authenticated/system/cli'
+      path: '/cli'
+      fullPath: '/system/cli'
+      preLoaderRoute: typeof AuthenticatedSystemCliRouteImport
+      parentRoute: typeof AuthenticatedSystemRoute
+    }
     '/_authenticated/skills/upload': {
       id: '/_authenticated/skills/upload'
       path: '/skills/upload'
@@ -1000,6 +1195,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedSystemRouteChildren {
+  AuthenticatedSystemCliRoute: typeof AuthenticatedSystemCliRoute
+  AuthenticatedSystemDownloadsRoute: typeof AuthenticatedSystemDownloadsRoute
+  AuthenticatedSystemGeneralRoute: typeof AuthenticatedSystemGeneralRoute
+  AuthenticatedSystemMailRoute: typeof AuthenticatedSystemMailRoute
+  AuthenticatedSystemPortalRoute: typeof AuthenticatedSystemPortalRoute
+  AuthenticatedSystemStorageRoute: typeof AuthenticatedSystemStorageRoute
+  AuthenticatedSystemTemplatesRoute: typeof AuthenticatedSystemTemplatesRoute
+  AuthenticatedSystemIndexRoute: typeof AuthenticatedSystemIndexRoute
+}
+
+const AuthenticatedSystemRouteChildren: AuthenticatedSystemRouteChildren = {
+  AuthenticatedSystemCliRoute: AuthenticatedSystemCliRoute,
+  AuthenticatedSystemDownloadsRoute: AuthenticatedSystemDownloadsRoute,
+  AuthenticatedSystemGeneralRoute: AuthenticatedSystemGeneralRoute,
+  AuthenticatedSystemMailRoute: AuthenticatedSystemMailRoute,
+  AuthenticatedSystemPortalRoute: AuthenticatedSystemPortalRoute,
+  AuthenticatedSystemStorageRoute: AuthenticatedSystemStorageRoute,
+  AuthenticatedSystemTemplatesRoute: AuthenticatedSystemTemplatesRoute,
+  AuthenticatedSystemIndexRoute: AuthenticatedSystemIndexRoute,
+}
+
+const AuthenticatedSystemRouteWithChildren =
+  AuthenticatedSystemRoute._addFileChildren(AuthenticatedSystemRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccessKeysRoute: typeof AuthenticatedAccessKeysRoute
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
@@ -1016,9 +1236,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyAccessKeysRoute: typeof AuthenticatedMyAccessKeysRoute
   AuthenticatedMyModelsRoute: typeof AuthenticatedMyModelsRoute
   AuthenticatedMyUsageRoute: typeof AuthenticatedMyUsageRoute
+  AuthenticatedOrganizationSettingsRoute: typeof AuthenticatedOrganizationSettingsRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedQuotaPoliciesRoute: typeof AuthenticatedQuotaPoliciesRoute
   AuthenticatedSkillDistributionsRoute: typeof AuthenticatedSkillDistributionsRoute
+  AuthenticatedSystemRoute: typeof AuthenticatedSystemRouteWithChildren
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedExpertsExpertIdRoute: typeof AuthenticatedExpertsExpertIdRoute
   AuthenticatedExpertsNewRoute: typeof AuthenticatedExpertsNewRoute
@@ -1044,9 +1266,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyAccessKeysRoute: AuthenticatedMyAccessKeysRoute,
   AuthenticatedMyModelsRoute: AuthenticatedMyModelsRoute,
   AuthenticatedMyUsageRoute: AuthenticatedMyUsageRoute,
+  AuthenticatedOrganizationSettingsRoute:
+    AuthenticatedOrganizationSettingsRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedQuotaPoliciesRoute: AuthenticatedQuotaPoliciesRoute,
   AuthenticatedSkillDistributionsRoute: AuthenticatedSkillDistributionsRoute,
+  AuthenticatedSystemRoute: AuthenticatedSystemRouteWithChildren,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedExpertsExpertIdRoute: AuthenticatedExpertsExpertIdRoute,
   AuthenticatedExpertsNewRoute: AuthenticatedExpertsNewRoute,

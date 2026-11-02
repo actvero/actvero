@@ -9,7 +9,7 @@ from starlette.responses import FileResponse, Response
 
 from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB, limit, provider
-from app.modules.platform.access import platform_access
+from app.modules.platform.access import require_system_grant, system_access
 from app.modules.platform.brand_schemas import (
     BrandImageUpload,
     BrandingSettings,
@@ -47,7 +47,7 @@ async def public_brand(request: Request, response: Response, db: DB) -> PublicBr
 
 @router.get("/settings", response_model=BrandingSettings)
 async def brand_settings(request: Request, response: Response, db: DB) -> BrandingSettings:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.get(Installation, 1)
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -59,14 +59,14 @@ async def brand_settings(request: Request, response: Response, db: DB) -> Brandi
 async def publish_brand(
     payload: BrandingUpdate, request: Request, response: Response, db: DB, _: Mutation
 ) -> BrandingSettings:
-    actor = await platform_access(request, db)
+    actor = await system_access(request, db)
     await limit(db, "brand-publish:" + str(actor.user.id), 20, 60)
     # Decode before taking the publication lock; every image must pass before mutation.
     prepared = {}
     for slot, value in payload.assets.items():
         if isinstance(value, BrandImageUpload):
             prepared[slot] = await run_in_threadpool(normalize_brand_image, value.content)
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(
         select(Installation)
         .where(Installation.id == 1)
@@ -75,6 +75,7 @@ async def publish_brand(
     )
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
+    await require_system_grant(request, db, actor)
     if install.branding_revision != payload.revision:
         raise HTTPException(409, "品牌已由其他管理员更新，请重新载入后再保存")
     ids = asset_ids(install)

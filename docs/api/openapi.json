@@ -17374,6 +17374,54 @@
         "title": "OrganizationOverview",
         "type": "object"
       },
+      "OrganizationSettings": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at"
+        ],
+        "title": "OrganizationSettings",
+        "type": "object"
+      },
+      "OrganizationSettingsUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_name": {
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Expected Name",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 60,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "expected_name"
+        ],
+        "title": "OrganizationSettingsUpdate",
+        "type": "object"
+      },
       "OrganizationUpdate": {
         "properties": {
           "active": {
@@ -23033,6 +23081,11 @@
           "csrf": {
             "title": "Csrf",
             "type": "string"
+          },
+          "instance_administrator": {
+            "default": false,
+            "title": "Instance Administrator",
+            "type": "boolean"
           },
           "invitation_hours": {
             "anyOf": [
@@ -34120,6 +34173,100 @@
         "summary": "读取组织成员头像，权限与成员资料一致",
         "tags": [
           "members"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/settings": {
+      "get": {
+        "operationId": "settings_api_v1_enterprises__tenant_id__settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Settings",
+        "tags": [
+          "organization"
+        ]
+      },
+      "put": {
+        "operationId": "update_settings_api_v1_enterprises__tenant_id__settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Settings",
+        "tags": [
+          "organization"
         ]
       }
     },

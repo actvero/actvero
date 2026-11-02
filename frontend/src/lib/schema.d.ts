@@ -1506,6 +1506,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/enterprises/{tenant_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Settings */
+        get: operations["settings_api_v1_enterprises__tenant_id__settings_get"];
+        /** Update Settings */
+        put: operations["update_settings_api_v1_enterprises__tenant_id__settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/experts": {
         parameters: {
             query?: never;
@@ -13180,6 +13198,28 @@ export interface components {
             skill_distributions: number;
             skills: components["schemas"]["ResourceCount"];
         };
+        /** OrganizationSettings */
+        OrganizationSettings: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** OrganizationSettingsUpdate */
+        OrganizationSettingsUpdate: {
+            /** Expected Name */
+            expected_name: string;
+            /** Name */
+            name: string;
+        };
         /** OrganizationUpdate */
         OrganizationUpdate: {
             /** Active */
@@ -15217,6 +15257,11 @@ export interface components {
             authenticated: boolean;
             /** Csrf */
             csrf: string;
+            /**
+             * Instance Administrator
+             * @default false
+             */
+            instance_administrator: boolean;
             /** Invitation Hours */
             invitation_hours: number | null;
             /** Invitations Enabled */
@@ -22176,6 +22221,72 @@ export interface operations {
                 };
                 content: {
                     "image/webp": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    settings_api_v1_enterprises__tenant_id__settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_enterprises__tenant_id__settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizationSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationSettings"];
                 };
             };
             /** @description Validation Error */

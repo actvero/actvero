@@ -19,8 +19,9 @@ from app.modules.auth.service import now
 from app.modules.client_distribution.models import ClientArtifact, ClientJob, ClientStorage
 from app.modules.client_distribution.storage import ObjectStore
 from app.modules.object_storage.network import check_range, download
+from app.modules.platform.access import system_administrator
 from app.modules.platform.download_models import ClientRelease
-from app.modules.tenants.models import Installation, PlatformOperator
+from app.modules.tenants.models import Installation
 
 logger = logging.getLogger(__name__)
 MAX_FILE = 20_000_000_000
@@ -113,10 +114,13 @@ async def read_file(
 
 
 async def process(app: FastAPI, job: ClientJob, token: UUID) -> None:
+    edition = app.state.identity_provider.settings.platform_edition
     async with app.state.database.sessions() as db:
         artifact = await db.get(ClientArtifact, job.artifact_id)
-        operator = await db.get(PlatformOperator, job.actor_id)
-        if not artifact or artifact.published_at or not operator or operator.status != "active":
+        # The job was authorized at submission. A subsequent revocation must
+        # prevent both starting the transfer and accepting its completed bytes.
+        authorized = await system_administrator(db, job.actor_id, edition, job.created_at)
+        if not artifact or artifact.published_at or not authorized:
             raise HTTPException(403, "文件状态或操作人员权限已改变，请重新检查")
         profile = await db.get(ClientStorage, artifact.storage_id) if artifact.storage_id else None
     url = artifact.url or ""
@@ -168,9 +172,8 @@ async def process(app: FastAPI, job: ClientJob, token: UUID) -> None:
         current = await db.scalar(select(ClientJob).where(ClientJob.id == job.id).with_for_update())
         if not current or current.lease_token != token or current.status != "running":
             return
-        operator = await db.get(PlatformOperator, job.actor_id)
-        if not operator or operator.status != "active":
-            raise HTTPException(403, "操作人员的平台权限已撤销")
+        if not await system_administrator(db, job.actor_id, edition, job.created_at):
+            raise HTTPException(403, "操作人员的系统管理权限已撤销")
         artifact = await db.get(ClientArtifact, job.artifact_id, populate_existing=True)
         if not artifact or artifact.published_at:
             raise HTTPException(409, "文件状态已改变")

@@ -82,6 +82,36 @@ it('普通成员侧栏包含 MCP，但不包含管理员入口', () => {
   expect(items.some((item) => item.title === 'Skills')).toBe(false)
 })
 
+it('组织设置供组织管理员使用，系统设置仅供实例管理员使用', () => {
+  const adminItems = navigation(true).flatMap((group) => group.items)
+  const ownerItems = navigation(true, true).flatMap((group) => group.items)
+  expect(
+    adminItems
+      .flatMap((item) => item.items ?? [])
+      .some((item) => item.url === '/organization-settings')
+  ).toBe(true)
+  expect(adminItems.some((item) => item.title === '系统设置')).toBe(false)
+  const system = ownerItems.find((item) => item.title === '系统设置')
+  expect(system?.items?.map((item) => item.title)).toEqual([
+    '品牌形象',
+    '门户设置',
+    '客户端版本',
+    'CLI 接入',
+    '邮件服务',
+    '对象存储',
+    '邮件模板',
+  ])
+  const urls = ownerItems
+    .flatMap((item) => item.items ?? [])
+    .map((item) => item.url)
+  expect(urls.some((url) => url?.startsWith('/platform/'))).toBe(false)
+  expect(
+    navigation(false, true)
+      .flatMap((group) => group.items)
+      .some((item) => item.title === '系统设置')
+  ).toBe(false)
+})
+
 it('平台设置深链接展开父菜单，切换到组织邀请后高亮对应子项', async () => {
   await browserPage.viewport(1280, 900)
   const group = platformNavigation()[0]

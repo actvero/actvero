@@ -36,7 +36,11 @@ export function AppSidebar() {
   const platform = pathname.startsWith('/platform/')
   const groups = platform
     ? platformNavigation()
-    : navigation(session?.organization?.role === 'administrator')
+    : navigation(
+        session?.organization?.role === 'administrator',
+        session?.platform_edition === 'community' &&
+          session?.instance_administrator
+      )
   const organizations = session?.organizations ?? []
   const canSwitch = Boolean(
     session?.platform_operator || organizations.length > 1
@@ -96,9 +100,11 @@ function WorkspaceSwitcher({
     ? '平台管理'
     : session?.platform_operator
       ? '平台运营'
-      : session?.organization?.role === 'administrator'
-        ? '组织管理员'
-        : '组织成员'
+      : session?.instance_administrator
+        ? '实例管理员'
+        : session?.organization?.role === 'administrator'
+          ? '组织管理员'
+          : '组织成员'
   const button = (
     <SidebarMenuButton
       size='lg'

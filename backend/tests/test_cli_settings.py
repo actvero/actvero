@@ -61,7 +61,7 @@ async def test_default_is_preserved_and_saved_choice_controls_new_requests(env, 
 
 async def test_platform_authority_csrf_and_no_implicit_organization_access(env, monkeypatch):  # noqa: F811
     admin = await env.client()
-    assert (await admin.api.get(PATH)).status_code == 404
+    assert (await admin.api.get(PATH)).status_code == 403
     actor = await operator(env)
     member = await env.client(role="member", tenant=admin.tenant)
     for other in (admin, member):

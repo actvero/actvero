@@ -490,6 +490,7 @@ function ArtifactEditor({
   close: () => void
   changed: () => Promise<void>
 }) {
+  const { data: session } = useSession()
   const [target, setTarget] = useState<Target>(artifact?.target || 'win-x64')
   const [files, setFiles] = useState<File[]>([])
   const identifiers = useRef(new Map<string, string>())
@@ -659,7 +660,14 @@ function ArtifactEditor({
       {!storageId && (
         <p role='alert'>
           尚未设置默认对象存储。
-          <a className='underline' href='/platform/settings/storage'>
+          <a
+            className='underline'
+            href={
+              session?.platform_edition === 'community'
+                ? '/system/storage'
+                : '/platform/settings/storage'
+            }
+          >
             前往设置
           </a>
         </p>

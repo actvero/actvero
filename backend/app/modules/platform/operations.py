@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.service import mutation_session
 from app.modules.management.service import actor as management_actor
-from app.modules.platform.access import PlatformActor, platform_access
+from app.modules.platform.access import PlatformActor, require_system_grant, system_access
 from app.modules.tenants.models import Installation
 
 
@@ -22,14 +22,17 @@ async def access(
         return PlatformActor(who.user)
     if permission:
         await mutation_session(request, db)
-    return await platform_access(request, db)
+    return await system_access(request, db)
 
 
 async def locked(request: Request, db: AsyncSession, permission: str) -> PlatformActor:
-    await access(request, db, permission)
+    who = await access(request, db, permission)
     if not await db.scalar(select(Installation).where(Installation.id == 1).with_for_update()):
         raise HTTPException(503, "数据库尚未完成迁移")
-    return await access(request, db, permission)
+    if request.url.path.startswith("/api/v1/management/"):
+        return await access(request, db, permission)
+    await require_system_grant(request, db, who)
+    return who
 
 
 class RevisionConflict(HTTPException):

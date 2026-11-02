@@ -37,6 +37,7 @@ class SessionView(BaseModel):
     invitation_hours: int | None
     account_url: str | None = None
     platform_operator: bool = False
+    instance_administrator: bool = False
     platform_edition: str = "community"
     registration_mode: str = "invite"
     platform_name: str = "Actvero"

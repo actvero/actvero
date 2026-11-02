@@ -59,6 +59,7 @@ from app.modules.members.router import router as members_router
 from app.modules.model_gateway.native_router import router as model_gateway_native_router
 from app.modules.model_gateway.router import router as model_gateway_router
 from app.modules.object_storage.router import router as object_storage_router
+from app.modules.organization.router import router as organization_settings_router
 from app.modules.platform.brand_limits import BrandUploadLimit
 from app.modules.platform.brand_router import router as branding_router
 from app.modules.platform.brand_sync import monitor_branding
@@ -216,6 +217,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         account_router,
         access_keys_router,
         setup_router,
+        organization_settings_router,
         members_router,
         invitations_router,
         audit_router,

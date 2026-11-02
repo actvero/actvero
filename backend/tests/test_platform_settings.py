@@ -32,7 +32,7 @@ async def operator(env):  # noqa: F811
 
 async def test_platform_scope_and_csrf(env):  # noqa: F811
     admin = await env.client()
-    assert (await admin.api.get("/api/v1/platform/settings")).status_code == 404
+    assert (await admin.api.get("/api/v1/platform/settings")).status_code == 403
     env.provider.settings.platform_edition = "saas"
     assert (await admin.api.get("/api/v1/platform/settings")).status_code == 403
     actor = await operator(env)

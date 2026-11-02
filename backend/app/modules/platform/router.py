@@ -21,7 +21,7 @@ from app.modules.members.mail import (
     send_mail,
 )
 from app.modules.members.models import Invitation, Membership
-from app.modules.platform.access import platform_access
+from app.modules.platform.access import platform_access, system_access
 from app.modules.platform.branding import (
     DEFAULT_PLATFORM_NAME,
     asset_ids,
@@ -76,7 +76,7 @@ def cli_settings_view(request: Request, install: Installation) -> CliSettingsVie
 
 @router.get("/cli", response_model=CliSettingsView)
 async def cli_settings(request: Request, response: Response, db: DB) -> CliSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.get(Installation, 1)
     if install is None:
         raise HTTPException(503, "平台尚未初始化")
@@ -88,7 +88,7 @@ async def cli_settings(request: Request, response: Response, db: DB) -> CliSetti
 async def update_cli_settings(
     payload: CliSettingsUpdate, request: Request, response: Response, db: DB, _: Mutation
 ) -> CliSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
     if install is None:
         raise HTTPException(503, "平台尚未初始化")
@@ -168,7 +168,7 @@ async def public_site_settings(response: Response, db: DB) -> PortalSettings:
 
 @router.get("/portal", response_model=PortalSettings)
 async def portal_settings(request: Request, response: Response, db: DB) -> PortalSettings:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.get(Installation, 1)
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -180,7 +180,7 @@ async def portal_settings(request: Request, response: Response, db: DB) -> Porta
 async def update_portal_settings(
     payload: PortalSettings, request: Request, response: Response, db: DB, _: Mutation
 ) -> PortalSettings:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -192,7 +192,7 @@ async def update_portal_settings(
 
 @router.get("/settings", response_model=PlatformSettingsView)
 async def platform_settings(request: Request, db: DB) -> PlatformSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.get(Installation, 1)
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -203,7 +203,7 @@ async def platform_settings(request: Request, db: DB) -> PlatformSettingsView:
 async def update_platform_settings(
     payload: PlatformSettingsUpdate, request: Request, db: DB, _: Mutation
 ) -> PlatformSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -219,7 +219,7 @@ async def update_platform_settings(
 
 @router.get("/mail", response_model=MailSettingsView)
 async def get_mail_settings(request: Request, db: DB) -> MailSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.get(Installation, 1)
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -230,7 +230,7 @@ async def get_mail_settings(request: Request, db: DB) -> MailSettingsView:
 async def save_mail_settings(
     payload: MailSettingsUpdate, request: Request, db: DB, _: Mutation
 ) -> MailSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
@@ -263,7 +263,7 @@ async def save_mail_settings(
 
 @router.post("/mail/test", response_model=Message)
 async def test_mail(payload: MailRecipient, request: Request, db: DB, _: Mutation) -> Message:
-    actor = await platform_access(request, db)
+    actor = await system_access(request, db)
     await limit(db, "platform-mail-test:" + str(actor.user.id), 3, 60)
     settings = effective_mail(provider(request), await db.get(Installation, 1))
     if not settings.smtp_host or not settings.smtp_from:
@@ -289,7 +289,7 @@ async def preview_mail(
     db: DB,
     template: Literal["organization_invitation", "member_invitation"] = "organization_invitation",
 ) -> MailTemplateView:
-    await platform_access(request, db)
+    await system_access(request, db)
     settings = effective_mail(provider(request), await db.get(Installation, 1))
     message = (
         compose_organization_invitation(
@@ -307,7 +307,7 @@ async def preview_mail(
 
 @router.put("/settings/logo", response_model=PlatformSettingsView)
 async def upload_platform_logo(request: Request, db: DB, _: Mutation) -> PlatformSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     media_type = request.headers.get("content-type", "").split(";", 1)[0]
     if media_type not in {"image/png", "image/jpeg", "image/webp"}:
         raise HTTPException(415, "请选择 PNG、JPG 或 WebP 图片")
@@ -345,7 +345,7 @@ async def upload_platform_logo(request: Request, db: DB, _: Mutation) -> Platfor
 
 @router.delete("/settings/logo", response_model=PlatformSettingsView)
 async def remove_platform_logo(request: Request, db: DB, _: Mutation) -> PlatformSettingsView:
-    await platform_access(request, db)
+    await system_access(request, db)
     install = await db.scalar(select(Installation).where(Installation.id == 1).with_for_update())
     if install is None:
         raise HTTPException(503, "数据库尚未完成迁移")
