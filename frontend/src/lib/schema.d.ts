@@ -1347,6 +1347,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/desktop/workbenches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出当前成员可使用的工作台 */
+        get: operations["catalog_api_v1_desktop_workbenches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/desktop/workbenches/check-updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 检查已安装版本的使用权限和更新 */
+        post: operations["check_updates_api_v1_desktop_workbenches_check_updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/desktop/workbenches/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 读取当前成员获准的工作台版本运行配置 */
+        post: operations["runtime_config_api_v1_desktop_workbenches_config_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/desktop/workbenches/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 核对成员权限和发布版本摘要后发放工作台安装包 */
+        post: operations["download_api_v1_desktop_workbenches_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enterprises/{tenant_id}/events": {
         parameters: {
             query?: never;
@@ -6409,6 +6477,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workbenches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看当前组织的工作台 */
+        get: operations["list_workbenches_api_v1_workbenches_get"];
+        put?: never;
+        /** 上传工作台并创建草稿 */
+        post: operations["create_workbench_api_v1_workbenches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看工作台资料和版本历史 */
+        get: operations["detail_api_v1_workbenches__workbench_id__get"];
+        /** 更新工作台展示资料 */
+        put: operations["update_metadata_api_v1_workbenches__workbench_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/runtime-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 保存工作台的组织运行配置 */
+        put: operations["update_runtime_config_api_v1_workbenches__workbench_id__runtime_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新工作台的组织使用范围 */
+        put: operations["update_scope_api_v1_workbenches__workbench_id__scope_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 上传同一工作台的新版本草稿 */
+        post: operations["upload_version_api_v1_workbenches__workbench_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除未发布的版本草稿 */
+        delete: operations["delete_draft_api_v1_workbenches__workbench_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 发布工作台草稿 */
+        post: operations["publish_api_v1_workbenches__workbench_id__versions__version_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 下架当前发布版本 */
+        post: operations["withdraw_api_v1_workbenches__workbench_id__versions__version_id__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9042,6 +9248,68 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** DesktopWorkbenchCatalog */
+        DesktopWorkbenchCatalog: {
+            /** Items */
+            items: components["schemas"]["DesktopWorkbenchRelease"][];
+        };
+        /** DesktopWorkbenchCheck */
+        DesktopWorkbenchCheck: {
+            /** Adopted Usable */
+            adopted_usable: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "current" | "update_available" | "unavailable";
+        };
+        /** DesktopWorkbenchPin */
+        DesktopWorkbenchPin: {
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /**
+             * Workbench Id
+             * Format: uuid
+             */
+            workbench_id: string;
+        };
+        /** DesktopWorkbenchRelease */
+        DesktopWorkbenchRelease: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized";
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Dsh Requirement */
+            dsh_requirement: string;
+            /** Package Name */
+            package_name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+            /** Version */
+            version: string;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /**
+             * Workbench Id
+             * Format: uuid
+             */
+            workbench_id: string;
         };
         /** DesktopWorkspace */
         DesktopWorkspace: {
@@ -15064,7 +15332,7 @@ export interface components {
         ResourceTokenInput: {
             /**
              * Resource
-             * @description experts:catalog 用于专家目录与依赖解析；skills:catalog 用于技能目录与下载；mcp:catalog 用于连接器目录和本人连接；mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型。
+             * @description experts:catalog 用于专家目录与依赖解析；skills:catalog 用于技能目录与下载；mcp:catalog 用于连接器目录和本人连接；mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型；workbenches:config 读取已授权工作台的运行配置。
              * @example skills:catalog
              * @example mcp:catalog
              * @example llm:catalog
@@ -15095,7 +15363,7 @@ export interface components {
             resource: string;
             /**
              * Scope
-             * @description Experts 为 experts:read；Skills 为 skills:read skills:download；MCP 目录为 mcp:catalog mcp:connection，服务为 mcp:invoke；LLM 目录为 llm:catalog，单模型为 llm:invoke。
+             * @description Experts 为 experts:read；Skills 为 skills:read skills:download；MCP 目录为 mcp:catalog mcp:connection，服务为 mcp:invoke；LLM 目录为 llm:catalog，单模型为 llm:invoke；工作台为 workbenches:config。
              */
             scope: string;
             /**
@@ -16496,6 +16764,227 @@ export interface components {
             started_at: string | null;
             /** Used */
             used: string;
+        };
+        /** WorkbenchConfigField */
+        WorkbenchConfigField: {
+            /** Default */
+            default?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @default text
+             * @enum {string}
+             */
+            kind: "text" | "url";
+            /** Label */
+            label: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** WorkbenchConfigRequest */
+        WorkbenchConfigRequest: {
+            /** Package Name */
+            package_name: string;
+            /** Version */
+            version: string;
+        };
+        /** WorkbenchConfigUpdate */
+        WorkbenchConfigUpdate: {
+            /** Revision */
+            revision: number;
+            /** Values */
+            values: {
+                [key: string]: string;
+            };
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+        };
+        /** WorkbenchMetadata */
+        WorkbenchMetadata: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized";
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Revision */
+            revision: number;
+        };
+        /** WorkbenchPage */
+        WorkbenchPage: {
+            /** Items */
+            items: components["schemas"]["WorkbenchSummary"][];
+            /** Total */
+            total: number;
+        };
+        /** WorkbenchPublish */
+        WorkbenchPublish: {
+            /**
+             * Release Notes
+             * @default
+             */
+            release_notes: string;
+            /** Revision */
+            revision: number;
+        };
+        /** WorkbenchRevision */
+        WorkbenchRevision: {
+            /** Revision */
+            revision: number;
+        };
+        /** WorkbenchRuntimeConfig */
+        WorkbenchRuntimeConfig: {
+            /** Values */
+            values: {
+                [key: string]: string;
+            };
+        };
+        /** WorkbenchScope */
+        WorkbenchScope: {
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "administrators" | "selected" | "organization";
+            /** Member Ids */
+            member_ids?: string[];
+            /** Revision */
+            revision: number;
+        };
+        /** WorkbenchSummary */
+        WorkbenchSummary: {
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "administrators" | "selected" | "organization";
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized";
+            /** Current Version */
+            current_version: string | null;
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Has Draft */
+            has_draft: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Package Name */
+            package_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "withdrawn";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WorkbenchVersionView */
+        WorkbenchVersionView: {
+            /** Config Fields */
+            config_fields: components["schemas"]["WorkbenchConfigField"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dsh Requirement */
+            dsh_requirement: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Published At */
+            published_at: string | null;
+            /** Release Notes */
+            release_notes: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "superseded" | "withdrawn";
+            /** Uploader Name */
+            uploader_name: string;
+            /** Version */
+            version: string;
+        };
+        /** WorkbenchView */
+        WorkbenchView: {
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "administrators" | "selected" | "organization";
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized";
+            /** Config Values */
+            config_values: {
+                [key: string]: string;
+            };
+            /** Current Version */
+            current_version: string | null;
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Has Draft */
+            has_draft: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Member Ids */
+            member_ids: string[];
+            /** Package Name */
+            package_name: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "withdrawn";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Versions */
+            versions: components["schemas"]["WorkbenchVersionView"][];
         };
         /** WorkspaceSelection */
         WorkspaceSelection: {
@@ -21809,6 +22298,305 @@ export interface operations {
                 };
             };
             /** @description 身份服务暂不可用；保留登录，稍后重试。 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+        };
+    };
+    catalog_api_v1_desktop_workbenches_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopWorkbenchCatalog"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+        };
+    };
+    check_updates_api_v1_desktop_workbenches_check_updates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesktopWorkbenchPin"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopWorkbenchCheck"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+        };
+    };
+    runtime_config_api_v1_desktop_workbenches_config_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchRuntimeConfig"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+        };
+    };
+    download_api_v1_desktop_workbenches_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesktopWorkbenchPin"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/gzip": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -33239,6 +34027,343 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_workbenches_api_v1_workbenches_get: {
+        parameters: {
+            query?: {
+                category?: ("office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized") | null;
+                status?: ("draft" | "published" | "withdrawn") | null;
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_workbench_api_v1_workbenches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+        };
+    };
+    detail_api_v1_workbenches__workbench_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_metadata_api_v1_workbenches__workbench_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchMetadata"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_runtime_config_api_v1_workbenches__workbench_id__runtime_config_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchConfigUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_scope_api_v1_workbenches__workbench_id__scope_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchScope"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_version_api_v1_workbenches__workbench_id__versions_post: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header?: never;
+            path: {
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_draft_api_v1_workbenches__workbench_id__versions__version_id__delete: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header?: never;
+            path: {
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_api_v1_workbenches__workbench_id__versions__version_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchPublish"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_api_v1_workbenches__workbench_id__versions__version_id__withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbenchView"];
                 };
             };
             /** @description Validation Error */

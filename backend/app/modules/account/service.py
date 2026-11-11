@@ -13,7 +13,13 @@ MAX_AVATAR_BYTES = 2 * 1024 * 1024
 MAX_AVATAR_PIXELS = 16_000_000
 
 
-async def own_access(request: Request, db: AsyncSession, *, write: bool = False) -> Access:
+async def own_access(
+    request: Request,
+    db: AsyncSession,
+    *,
+    write: bool = False,
+    allow_platform_elevation: bool = True,
+) -> Access:
     session, _, _ = await authenticate(request, db)
     tenant_id = session.tenant_id
     install = await db.get(Installation, 1)
@@ -21,7 +27,14 @@ async def own_access(request: Request, db: AsyncSession, *, write: bool = False)
         tenant_id = install.tenant_id if install else None
     if tenant_id is None:
         raise HTTPException(403, "请先加入组织")
-    return await access(request, db, tenant_id, admin=False, write=write)
+    return await access(
+        request,
+        db,
+        tenant_id,
+        admin=False,
+        write=write,
+        allow_platform_elevation=allow_platform_elevation,
+    )
 
 
 def normalize_avatar(data: bytes) -> bytes:

@@ -35,7 +35,13 @@ class ManagementBusinessActor(BusinessActor):
 
 
 async def access(
-    request: Request, db: AsyncSession, tenant_id: UUID, admin: bool = True, write: bool = False
+    request: Request,
+    db: AsyncSession,
+    tenant_id: UUID,
+    admin: bool = True,
+    write: bool = False,
+    *,
+    allow_platform_elevation: bool = True,
 ) -> Access:
     session, _, user = await authenticate(request, db)
     installation = await db.get(Installation, 1)
@@ -61,7 +67,7 @@ async def access(
                 PlatformOperator.user_id == user.id, PlatformOperator.status == "active"
             )
         )
-        if settings.platform_edition == "saas"
+        if allow_platform_elevation and settings.platform_edition == "saas"
         else None
     )
     if operator and tenant and member:

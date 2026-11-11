@@ -47,6 +47,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAccessKeysRouteImport } from './routes/_authenticated/access-keys'
 import { Route as PlatformSettingsIndexRouteImport } from './routes/platform.settings.index'
+import { Route as AuthenticatedWorkbenchesIndexRouteImport } from './routes/_authenticated/workbenches.index'
 import { Route as AuthenticatedSystemIndexRouteImport } from './routes/_authenticated/system.index'
 import { Route as AuthenticatedSkillsIndexRouteImport } from './routes/_authenticated/skills.index'
 import { Route as AuthenticatedExpertsIndexRouteImport } from './routes/_authenticated/experts.index'
@@ -58,6 +59,7 @@ import { Route as PlatformSettingsMailRouteImport } from './routes/platform.sett
 import { Route as PlatformSettingsGeneralRouteImport } from './routes/platform.settings.general'
 import { Route as PlatformSettingsDownloadsRouteImport } from './routes/platform.settings.downloads'
 import { Route as PlatformSettingsCliRouteImport } from './routes/platform.settings.cli'
+import { Route as AuthenticatedWorkbenchesWorkbenchIdRouteImport } from './routes/_authenticated/workbenches.$workbenchId'
 import { Route as AuthenticatedSystemTemplatesRouteImport } from './routes/_authenticated/system.templates'
 import { Route as AuthenticatedSystemStorageRouteImport } from './routes/_authenticated/system.storage'
 import { Route as AuthenticatedSystemPortalRouteImport } from './routes/_authenticated/system.portal'
@@ -265,6 +267,12 @@ const PlatformSettingsIndexRoute = PlatformSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PlatformSettingsRoute,
 } as any)
+const AuthenticatedWorkbenchesIndexRoute =
+  AuthenticatedWorkbenchesIndexRouteImport.update({
+    id: '/workbenches/',
+    path: '/workbenches/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSystemIndexRoute =
   AuthenticatedSystemIndexRouteImport.update({
     id: '/',
@@ -326,6 +334,12 @@ const PlatformSettingsCliRoute = PlatformSettingsCliRouteImport.update({
   path: '/cli',
   getParentRoute: () => PlatformSettingsRoute,
 } as any)
+const AuthenticatedWorkbenchesWorkbenchIdRoute =
+  AuthenticatedWorkbenchesWorkbenchIdRouteImport.update({
+    id: '/workbenches/$workbenchId',
+    path: '/workbenches/$workbenchId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSystemTemplatesRoute =
   AuthenticatedSystemTemplatesRouteImport.update({
     id: '/templates',
@@ -438,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/system/portal': typeof AuthenticatedSystemPortalRoute
   '/system/storage': typeof AuthenticatedSystemStorageRoute
   '/system/templates': typeof AuthenticatedSystemTemplatesRoute
+  '/workbenches/$workbenchId': typeof AuthenticatedWorkbenchesWorkbenchIdRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -449,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/experts/': typeof AuthenticatedExpertsIndexRoute
   '/skills/': typeof AuthenticatedSkillsIndexRoute
   '/system/': typeof AuthenticatedSystemIndexRoute
+  '/workbenches/': typeof AuthenticatedWorkbenchesIndexRoute
   '/platform/settings/': typeof PlatformSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -496,6 +512,7 @@ export interface FileRoutesByTo {
   '/system/portal': typeof AuthenticatedSystemPortalRoute
   '/system/storage': typeof AuthenticatedSystemStorageRoute
   '/system/templates': typeof AuthenticatedSystemTemplatesRoute
+  '/workbenches/$workbenchId': typeof AuthenticatedWorkbenchesWorkbenchIdRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -507,6 +524,7 @@ export interface FileRoutesByTo {
   '/experts': typeof AuthenticatedExpertsIndexRoute
   '/skills': typeof AuthenticatedSkillsIndexRoute
   '/system': typeof AuthenticatedSystemIndexRoute
+  '/workbenches': typeof AuthenticatedWorkbenchesIndexRoute
   '/platform/settings': typeof PlatformSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -559,6 +577,7 @@ export interface FileRoutesById {
   '/_authenticated/system/portal': typeof AuthenticatedSystemPortalRoute
   '/_authenticated/system/storage': typeof AuthenticatedSystemStorageRoute
   '/_authenticated/system/templates': typeof AuthenticatedSystemTemplatesRoute
+  '/_authenticated/workbenches/$workbenchId': typeof AuthenticatedWorkbenchesWorkbenchIdRoute
   '/platform/settings/cli': typeof PlatformSettingsCliRoute
   '/platform/settings/downloads': typeof PlatformSettingsDownloadsRoute
   '/platform/settings/general': typeof PlatformSettingsGeneralRoute
@@ -570,6 +589,7 @@ export interface FileRoutesById {
   '/_authenticated/experts/': typeof AuthenticatedExpertsIndexRoute
   '/_authenticated/skills/': typeof AuthenticatedSkillsIndexRoute
   '/_authenticated/system/': typeof AuthenticatedSystemIndexRoute
+  '/_authenticated/workbenches/': typeof AuthenticatedWorkbenchesIndexRoute
   '/platform/settings/': typeof PlatformSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -622,6 +642,7 @@ export interface FileRouteTypes {
     | '/system/portal'
     | '/system/storage'
     | '/system/templates'
+    | '/workbenches/$workbenchId'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -633,6 +654,7 @@ export interface FileRouteTypes {
     | '/experts/'
     | '/skills/'
     | '/system/'
+    | '/workbenches/'
     | '/platform/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -680,6 +702,7 @@ export interface FileRouteTypes {
     | '/system/portal'
     | '/system/storage'
     | '/system/templates'
+    | '/workbenches/$workbenchId'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -691,6 +714,7 @@ export interface FileRouteTypes {
     | '/experts'
     | '/skills'
     | '/system'
+    | '/workbenches'
     | '/platform/settings'
   id:
     | '__root__'
@@ -742,6 +766,7 @@ export interface FileRouteTypes {
     | '/_authenticated/system/portal'
     | '/_authenticated/system/storage'
     | '/_authenticated/system/templates'
+    | '/_authenticated/workbenches/$workbenchId'
     | '/platform/settings/cli'
     | '/platform/settings/downloads'
     | '/platform/settings/general'
@@ -753,6 +778,7 @@ export interface FileRouteTypes {
     | '/_authenticated/experts/'
     | '/_authenticated/skills/'
     | '/_authenticated/system/'
+    | '/_authenticated/workbenches/'
     | '/platform/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -1038,6 +1064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformSettingsIndexRouteImport
       parentRoute: typeof PlatformSettingsRoute
     }
+    '/_authenticated/workbenches/': {
+      id: '/_authenticated/workbenches/'
+      path: '/workbenches'
+      fullPath: '/workbenches/'
+      preLoaderRoute: typeof AuthenticatedWorkbenchesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/system/': {
       id: '/_authenticated/system/'
       path: '/'
@@ -1114,6 +1147,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/settings/cli'
       preLoaderRoute: typeof PlatformSettingsCliRouteImport
       parentRoute: typeof PlatformSettingsRoute
+    }
+    '/_authenticated/workbenches/$workbenchId': {
+      id: '/_authenticated/workbenches/$workbenchId'
+      path: '/workbenches/$workbenchId'
+      fullPath: '/workbenches/$workbenchId'
+      preLoaderRoute: typeof AuthenticatedWorkbenchesWorkbenchIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/system/templates': {
       id: '/_authenticated/system/templates'
@@ -1246,8 +1286,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpertsNewRoute: typeof AuthenticatedExpertsNewRoute
   AuthenticatedSkillsSkillIdRoute: typeof AuthenticatedSkillsSkillIdRoute
   AuthenticatedSkillsUploadRoute: typeof AuthenticatedSkillsUploadRoute
+  AuthenticatedWorkbenchesWorkbenchIdRoute: typeof AuthenticatedWorkbenchesWorkbenchIdRoute
   AuthenticatedExpertsIndexRoute: typeof AuthenticatedExpertsIndexRoute
   AuthenticatedSkillsIndexRoute: typeof AuthenticatedSkillsIndexRoute
+  AuthenticatedWorkbenchesIndexRoute: typeof AuthenticatedWorkbenchesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1277,8 +1319,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpertsNewRoute: AuthenticatedExpertsNewRoute,
   AuthenticatedSkillsSkillIdRoute: AuthenticatedSkillsSkillIdRoute,
   AuthenticatedSkillsUploadRoute: AuthenticatedSkillsUploadRoute,
+  AuthenticatedWorkbenchesWorkbenchIdRoute:
+    AuthenticatedWorkbenchesWorkbenchIdRoute,
   AuthenticatedExpertsIndexRoute: AuthenticatedExpertsIndexRoute,
   AuthenticatedSkillsIndexRoute: AuthenticatedSkillsIndexRoute,
+  AuthenticatedWorkbenchesIndexRoute: AuthenticatedWorkbenchesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

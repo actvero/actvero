@@ -9,11 +9,12 @@ from app.modules.mcp.schemas import InputModel
 
 class ResourceTokenInput(InputModel):
     resource: str = Field(
-        pattern=r"^((mcp|llm):(catalog|[0-9a-fA-F-]{36})|(skills|experts):catalog)$",
+        pattern=r"^((mcp|llm):(catalog|[0-9a-fA-F-]{36})|(skills|experts):catalog|workbenches:config)$",
         description=(
             "experts:catalog 用于专家目录与依赖解析；skills:catalog 用于技能目录与下载；"
             "mcp:catalog 用于连接器目录和本人连接；"
-            "mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型。"
+            "mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型；"
+            "workbenches:config 读取已授权工作台的运行配置。"
         ),
         examples=["skills:catalog", "mcp:catalog", "llm:catalog"],
     )
@@ -28,7 +29,7 @@ class ResourceTokenView(BaseModel):
     scope: str = Field(
         description="Experts 为 experts:read；Skills 为 skills:read skills:download；"
         "MCP 目录为 mcp:catalog mcp:connection，服务为 mcp:invoke；"
-        "LLM 目录为 llm:catalog，单模型为 llm:invoke。"
+        "LLM 目录为 llm:catalog，单模型为 llm:invoke；工作台为 workbenches:config。"
     )
     expires_in: int = Field(description="剩余有效期，秒。最长 600 秒；不超过设备绝对期限。")
     endpoint: str = Field(description="该资源唯一适用的完整平台地址，不是上游地址。")

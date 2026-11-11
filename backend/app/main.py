@@ -73,6 +73,8 @@ from app.modules.skills.limits import SkillUploadLimit
 from app.modules.skills.router import router as skills_router
 from app.modules.tenants.models import Installation
 from app.modules.tenants.router import router as setup_router
+from app.modules.workbenches.desktop import router as desktop_workbenches_router
+from app.modules.workbenches.router import router as workbenches_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -246,6 +248,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         llm_member_router,
         llm_reference_router,
         skills_router,
+        workbenches_router,
+        desktop_workbenches_router,
         desktop_mcp_router,
         desktop_skills_router,
         experts_router,

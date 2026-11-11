@@ -67,8 +67,12 @@ from app.modules.tenants.models import (
     Tenant,
 )
 from app.modules.users.models import LoginIdentity, User
+from app.modules.workbenches.models import Workbench, WorkbenchPackage, WorkbenchVersion
 
 __all__ = [
+    "Workbench",
+    "WorkbenchPackage",
+    "WorkbenchVersion",
     "ClientArtifact",
     "ClientDistribution",
     "ClientJob",

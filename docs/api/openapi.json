@@ -7157,6 +7157,144 @@
         "title": "DesktopTokens",
         "type": "object"
       },
+      "DesktopWorkbenchCatalog": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DesktopWorkbenchRelease"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "DesktopWorkbenchCatalog",
+        "type": "object"
+      },
+      "DesktopWorkbenchCheck": {
+        "properties": {
+          "adopted_usable": {
+            "title": "Adopted Usable",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "current",
+              "update_available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "adopted_usable"
+        ],
+        "title": "DesktopWorkbenchCheck",
+        "type": "object"
+      },
+      "DesktopWorkbenchPin": {
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          },
+          "workbench_id": {
+            "format": "uuid",
+            "title": "Workbench Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workbench_id",
+          "version_id",
+          "sha256"
+        ],
+        "title": "DesktopWorkbenchPin",
+        "type": "object"
+      },
+      "DesktopWorkbenchRelease": {
+        "properties": {
+          "category": {
+            "enum": [
+              "office",
+              "engineering",
+              "design",
+              "content",
+              "data",
+              "education",
+              "lifestyle",
+              "general",
+              "uncategorized"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "dsh_requirement": {
+            "title": "Dsh Requirement",
+            "type": "string"
+          },
+          "package_name": {
+            "title": "Package Name",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          },
+          "workbench_id": {
+            "format": "uuid",
+            "title": "Workbench Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workbench_id",
+          "version_id",
+          "package_name",
+          "display_name",
+          "description",
+          "category",
+          "version",
+          "dsh_requirement",
+          "size",
+          "sha256"
+        ],
+        "title": "DesktopWorkbenchRelease",
+        "type": "object"
+      },
       "DesktopWorkspace": {
         "additionalProperties": false,
         "properties": {
@@ -22705,13 +22843,13 @@
         "additionalProperties": false,
         "properties": {
           "resource": {
-            "description": "experts:catalog 用于专家目录与依赖解析；skills:catalog 用于技能目录与下载；mcp:catalog 用于连接器目录和本人连接；mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型。",
+            "description": "experts:catalog 用于专家目录与依赖解析；skills:catalog 用于技能目录与下载；mcp:catalog 用于连接器目录和本人连接；mcp:<服务UUID> 用于该服务；llm:catalog 获取模型目录，llm:<模型UUID> 调用模型；workbenches:config 读取已授权工作台的运行配置。",
             "examples": [
               "skills:catalog",
               "mcp:catalog",
               "llm:catalog"
             ],
-            "pattern": "^((mcp|llm):(catalog|[0-9a-fA-F-]{36})|(skills|experts):catalog)$",
+            "pattern": "^((mcp|llm):(catalog|[0-9a-fA-F-]{36})|(skills|experts):catalog|workbenches:config)$",
             "title": "Resource",
             "type": "string"
           }
@@ -22745,7 +22883,7 @@
             "type": "string"
           },
           "scope": {
-            "description": "Experts 为 experts:read；Skills 为 skills:read skills:download；MCP 目录为 mcp:catalog mcp:connection，服务为 mcp:invoke；LLM 目录为 llm:catalog，单模型为 llm:invoke。",
+            "description": "Experts 为 experts:read；Skills 为 skills:read skills:download；MCP 目录为 mcp:catalog mcp:connection，服务为 mcp:invoke；LLM 目录为 llm:catalog，单模型为 llm:invoke；工作台为 workbenches:config。",
             "title": "Scope",
             "type": "string"
           },
@@ -26232,6 +26370,561 @@
         "title": "WindowView",
         "type": "object"
       },
+      "WorkbenchConfigField": {
+        "additionalProperties": false,
+        "properties": {
+          "default": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 240,
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "default": "text",
+            "enum": [
+              "text",
+              "url"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "WorkbenchConfigField",
+        "type": "object"
+      },
+      "WorkbenchConfigRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "package_name": {
+            "maxLength": 214,
+            "minLength": 1,
+            "title": "Package Name",
+            "type": "string"
+          },
+          "version": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "package_name",
+          "version"
+        ],
+        "title": "WorkbenchConfigRequest",
+        "type": "object"
+      },
+      "WorkbenchConfigUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "values": {
+            "maxProperties": 32,
+            "patternProperties": {
+              "^[A-Z][A-Z0-9_]{0,63}$": {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            },
+            "title": "Values",
+            "type": "object"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "version_id",
+          "values"
+        ],
+        "title": "WorkbenchConfigUpdate",
+        "type": "object"
+      },
+      "WorkbenchMetadata": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "office",
+              "engineering",
+              "design",
+              "content",
+              "data",
+              "education",
+              "lifestyle",
+              "general",
+              "uncategorized"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 1024,
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "display_name",
+          "description",
+          "category"
+        ],
+        "title": "WorkbenchMetadata",
+        "type": "object"
+      },
+      "WorkbenchPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "WorkbenchPage",
+        "type": "object"
+      },
+      "WorkbenchPublish": {
+        "additionalProperties": false,
+        "properties": {
+          "release_notes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Release Notes",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "WorkbenchPublish",
+        "type": "object"
+      },
+      "WorkbenchRevision": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "WorkbenchRevision",
+        "type": "object"
+      },
+      "WorkbenchRuntimeConfig": {
+        "properties": {
+          "values": {
+            "patternProperties": {
+              "^[A-Z][A-Z0-9_]{0,63}$": {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "values"
+        ],
+        "title": "WorkbenchRuntimeConfig",
+        "type": "object"
+      },
+      "WorkbenchScope": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "enum": [
+              "administrators",
+              "selected",
+              "organization"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "audience"
+        ],
+        "title": "WorkbenchScope",
+        "type": "object"
+      },
+      "WorkbenchSummary": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "administrators",
+              "selected",
+              "organization"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "office",
+              "engineering",
+              "design",
+              "content",
+              "data",
+              "education",
+              "lifestyle",
+              "general",
+              "uncategorized"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "has_draft": {
+            "title": "Has Draft",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "package_name": {
+            "title": "Package Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "package_name",
+          "display_name",
+          "description",
+          "category",
+          "audience",
+          "status",
+          "current_version",
+          "has_draft",
+          "updated_at"
+        ],
+        "title": "WorkbenchSummary",
+        "type": "object"
+      },
+      "WorkbenchVersionView": {
+        "properties": {
+          "config_fields": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchConfigField"
+            },
+            "title": "Config Fields",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dsh_requirement": {
+            "title": "Dsh Requirement",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "release_notes": {
+            "title": "Release Notes",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published",
+              "superseded",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "uploader_name": {
+            "title": "Uploader Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "status",
+          "dsh_requirement",
+          "size",
+          "sha256",
+          "release_notes",
+          "uploader_name",
+          "created_at",
+          "published_at",
+          "config_fields"
+        ],
+        "title": "WorkbenchVersionView",
+        "type": "object"
+      },
+      "WorkbenchView": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "administrators",
+              "selected",
+              "organization"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "office",
+              "engineering",
+              "design",
+              "content",
+              "data",
+              "education",
+              "lifestyle",
+              "general",
+              "uncategorized"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "config_values": {
+            "patternProperties": {
+              "^[A-Z][A-Z0-9_]{0,63}$": {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            },
+            "title": "Config Values",
+            "type": "object"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "has_draft": {
+            "title": "Has Draft",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "package_name": {
+            "title": "Package Name",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchVersionView"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "package_name",
+          "display_name",
+          "description",
+          "category",
+          "audience",
+          "status",
+          "current_version",
+          "has_draft",
+          "updated_at",
+          "revision",
+          "member_ids",
+          "versions",
+          "config_values"
+        ],
+        "title": "WorkbenchView",
+        "type": "object"
+      },
       "WorkspaceSelection": {
         "properties": {
           "tenant_id": {
@@ -26414,6 +27107,11 @@
       },
       "SkillsResource": {
         "description": "由 /api/v1/desktop/resource-tokens 申请 skills:catalog；拒绝 Cookie/Origin。",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "WorkbenchConfigResource": {
+        "description": "使用 workbenches:config 资源令牌。",
         "scheme": "bearer",
         "type": "http"
       }
@@ -33366,6 +34064,371 @@
         "summary": "按详情版本 ID 预览包内文本文件",
         "tags": [
           "desktop-skills"
+        ]
+      }
+    },
+    "/api/v1/desktop/workbenches": {
+      "get": {
+        "operationId": "catalog_api_v1_desktop_workbenches_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopWorkbenchCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "WorkbenchConfigResource": []
+          }
+        ],
+        "summary": "列出当前成员可使用的工作台",
+        "tags": [
+          "desktop-workbenches"
+        ]
+      }
+    },
+    "/api/v1/desktop/workbenches/check-updates": {
+      "post": {
+        "operationId": "check_updates_api_v1_desktop_workbenches_check_updates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopWorkbenchPin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopWorkbenchCheck"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "WorkbenchConfigResource": []
+          }
+        ],
+        "summary": "检查已安装版本的使用权限和更新",
+        "tags": [
+          "desktop-workbenches"
+        ]
+      }
+    },
+    "/api/v1/desktop/workbenches/config": {
+      "post": {
+        "operationId": "runtime_config_api_v1_desktop_workbenches_config_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchRuntimeConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "WorkbenchConfigResource": []
+          }
+        ],
+        "summary": "读取当前成员获准的工作台版本运行配置",
+        "tags": [
+          "desktop-workbenches"
+        ]
+      }
+    },
+    "/api/v1/desktop/workbenches/download": {
+      "post": {
+        "operationId": "download_api_v1_desktop_workbenches_download_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopWorkbenchPin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "WorkbenchConfigResource": []
+          }
+        ],
+        "summary": "核对成员权限和发布版本摘要后发放工作台安装包",
+        "tags": [
+          "desktop-workbenches"
         ]
       }
     },
@@ -52572,6 +53635,593 @@
         "summary": "Overview",
         "tags": [
           "skills"
+        ]
+      }
+    },
+    "/api/v1/workbenches": {
+      "get": {
+        "operationId": "list_workbenches_api_v1_workbenches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "office",
+                    "engineering",
+                    "design",
+                    "content",
+                    "data",
+                    "education",
+                    "lifestyle",
+                    "general",
+                    "uncategorized"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "published",
+                    "withdrawn"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "查看当前组织的工作台",
+        "tags": [
+          "workbenches"
+        ]
+      },
+      "post": {
+        "operationId": "create_workbench_api_v1_workbenches_post",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "上传工作台并创建草稿",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}": {
+      "get": {
+        "operationId": "detail_api_v1_workbenches__workbench_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "查看工作台资料和版本历史",
+        "tags": [
+          "workbenches"
+        ]
+      },
+      "put": {
+        "operationId": "update_metadata_api_v1_workbenches__workbench_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchMetadata"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "更新工作台展示资料",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/runtime-config": {
+      "put": {
+        "operationId": "update_runtime_config_api_v1_workbenches__workbench_id__runtime_config_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchConfigUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "保存工作台的组织运行配置",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/scope": {
+      "put": {
+        "operationId": "update_scope_api_v1_workbenches__workbench_id__scope_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchScope"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "更新工作台的组织使用范围",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/versions": {
+      "post": {
+        "operationId": "upload_version_api_v1_workbenches__workbench_id__versions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "上传同一工作台的新版本草稿",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}": {
+      "delete": {
+        "operationId": "delete_draft_api_v1_workbenches__workbench_id__versions__version_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "删除未发布的版本草稿",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}/publish": {
+      "post": {
+        "operationId": "publish_api_v1_workbenches__workbench_id__versions__version_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchPublish"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "发布工作台草稿",
+        "tags": [
+          "workbenches"
+        ]
+      }
+    },
+    "/api/v1/workbenches/{workbench_id}/versions/{version_id}/withdraw": {
+      "post": {
+        "operationId": "withdraw_api_v1_workbenches__workbench_id__versions__version_id__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchRevision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "下架当前发布版本",
+        "tags": [
+          "workbenches"
         ]
       }
     }

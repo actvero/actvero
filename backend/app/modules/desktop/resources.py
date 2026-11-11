@@ -29,9 +29,12 @@ SKILLS_CATALOG = "skills:catalog"
 SKILLS_SCOPE = "skills:read skills:download"
 EXPERTS_CATALOG = "experts:catalog"
 EXPERTS_SCOPE = "experts:read"
+WORKBENCH_CONFIG = "workbenches:config"
 
 
 def resource_scope(resource: str) -> str:
+    if resource == WORKBENCH_CONFIG:
+        return WORKBENCH_CONFIG
     if resource == EXPERTS_CATALOG:
         return EXPERTS_SCOPE
     if resource == SKILLS_CATALOG:
@@ -45,6 +48,8 @@ class NativeActor(BusinessActor):
 
 
 def endpoint(request: Request, resource: str) -> str:
+    if resource == WORKBENCH_CONFIG:
+        return provider(request).settings.app_url.rstrip("/") + "/api/v1/desktop/workbenches/config"
     if resource == EXPERTS_CATALOG:
         return provider(request).settings.app_url.rstrip("/") + "/api/v1/desktop/experts"
     if resource == SKILLS_CATALOG:
@@ -73,7 +78,7 @@ async def issue(request: Request, db: AsyncSession, resource: str) -> ResourceTo
     await limit(db, "mcp-resource:" + str(actor.device.id), 120, 60)
     native = await desktop.desktop_actor(request, db)
     actor = await business_actor(db, native, platform_edition=edition)
-    if resource not in {CATALOG, SKILLS_CATALOG, EXPERTS_CATALOG}:
+    if resource not in {CATALOG, SKILLS_CATALOG, EXPERTS_CATALOG, WORKBENCH_CONFIG}:
         from app.modules.desktop_mcp.service import get_service
 
         try:
@@ -82,12 +87,12 @@ async def issue(request: Request, db: AsyncSession, resource: str) -> ResourceTo
             fail(
                 422,
                 "invalid_resource",
-                "资源格式应为 skills:catalog、mcp:catalog 或 mcp:<服务UUID>",
+                "资源格式不受支持",
             )
         await get_service(db, actor, service_id)
         resource = "mcp:" + str(service_id)
-    prefix = (
-        "avx_" if resource == EXPERTS_CATALOG else "avs_" if resource == SKILLS_CATALOG else "avm_"
+    prefix = {EXPERTS_CATALOG: "avx_", SKILLS_CATALOG: "avs_", WORKBENCH_CONFIG: "avw_"}.get(
+        resource, "avm_"
     )
     raw = prefix + secrets.token_urlsafe(32)
     expiry = min(now() + timedelta(seconds=600), actor.device.expires_at)
@@ -118,7 +123,10 @@ async def authorize(
     desktop.native_request(request)
     header = request.headers.get("authorization", "")
     raw = header.removeprefix("Bearer ")
-    if not header.startswith(("Bearer avm_", "Bearer avs_", "Bearer avx_")) or len(raw) > 200:
+    if (
+        not header.startswith(("Bearer avm_", "Bearer avs_", "Bearer avx_", "Bearer avw_"))
+        or len(raw) > 200
+    ):
         fail(401, "invalid_resource_token", "请使用此资源的访问令牌")
     token = await db.get(ResourceToken, digest(raw))
     if not token or token.expires_at <= now():

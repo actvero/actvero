@@ -9,6 +9,7 @@ import {
   Settings,
   Bot,
   LayoutDashboard,
+  LayoutTemplate,
 } from 'lucide-react'
 import type { NavGroup } from '../types'
 
@@ -55,6 +56,7 @@ export function navigation(
                   { title: '连接日志', url: '/mcp-logs' },
                 ],
               },
+              { title: '工作台', icon: LayoutTemplate, url: '/workbenches' },
             ],
           },
           {
