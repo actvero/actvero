@@ -17,9 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
-
 import { ConfirmDialog } from '@newapi/components/confirm-dialog'
 import { ErrorState } from '@newapi/components/error-state'
 import { LoadingState } from '@newapi/components/loading-state'
@@ -38,7 +35,9 @@ import {
 import { handleServerError } from '@newapi/lib/handle-server-error'
 import { usePricingPreferencesStore } from '@newapi/stores/pricing-preferences-store'
 import { useSystemConfigStore } from '@newapi/stores/system-config-store'
-
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import type { ReferencePricingDraft } from '@/features/model-gateway/reference-pricing'
 import {
   useCanEditModelPricing,
   useModelPricing,
@@ -55,6 +54,8 @@ import { modelPricingDisplay, pricingFromDraft, pricingRow } from './pricing'
 export function ModelPricingPanel(props: {
   modelName: string
   onDirtyChange?: (dirty: boolean) => void
+  referenceDraft?: ReferencePricingDraft
+  onReferenceSaved?: () => void
 }) {
   const { t } = useTranslation()
   const currencyConfig = useSystemConfigStore((state) => state.config.currency)
@@ -69,10 +70,11 @@ export function ModelPricingPanel(props: {
   const [dirty, setDirty] = useState(false)
   const onDirtyChange = useCallback(
     (value: boolean) => {
-      setDirty(value)
-      props.onDirtyChange?.(value)
+      const unsaved = value || !!props.referenceDraft
+      setDirty(unsaved)
+      props.onDirtyChange?.(unsaved)
     },
-    [props.onDirtyChange]
+    [props.onDirtyChange, props.referenceDraft]
   )
   const display = entry ? modelPricingDisplay(entry) : null
   const hasEffectivePricing = Boolean(
@@ -84,6 +86,8 @@ export function ModelPricingPanel(props: {
   const editor = useRef<ModelPricingEditorPanelHandle>(null)
   const editData = useMemo(() => {
     if (!entry) return null
+    if (props.referenceDraft)
+      return pricingRow(entry.model_name, props.referenceDraft.pricing)
     const values = { ...entry.configured }
     if (entry.effective['billing_setting.billing_mode'] === 'tiered_expr') {
       values['billing_setting.billing_mode'] = 'tiered_expr'
@@ -91,7 +95,7 @@ export function ModelPricingPanel(props: {
         entry.effective['billing_setting.billing_expr']
     }
     return pricingRow(entry.model_name, values)
-  }, [entry])
+  }, [entry, props.referenceDraft])
 
   useEffect(() => {
     const loaded = query.data?.entries.find(
@@ -108,7 +112,7 @@ export function ModelPricingPanel(props: {
 
   const persist = async (reset = false) => {
     if (!entry) return
-    if (!reset && !hasEffectivePricing && !dirty) {
+    if (!reset && !hasEffectivePricing && !dirty && !props.referenceDraft) {
       toast.warning('请先填写模型价格，再保存。')
       return
     }
@@ -118,7 +122,9 @@ export function ModelPricingPanel(props: {
       await save.mutateAsync([
         {
           model_name: entry.model_name,
-          expected_version: entry.version,
+          expected_version: reset
+            ? entry.version
+            : (props.referenceDraft?.expectedVersion ?? entry.version),
           pricing: draft ? pricingFromDraft(draft) : {},
           reset,
         },
@@ -130,6 +136,7 @@ export function ModelPricingPanel(props: {
         ) ?? null
       )
       setResetOpen(false)
+      props.onReferenceSaved?.()
       toast.success(t('Model pricing saved'))
     } catch (error) {
       handleServerError(error)
@@ -138,7 +145,7 @@ export function ModelPricingPanel(props: {
 
   if (!canEdit) {
     return (
-      <div className='text-muted-foreground p-6 text-sm'>
+      <div className='p-6 text-sm text-muted-foreground'>
         {t('Model pricing is managed by a super administrator.')}
       </div>
     )
@@ -201,12 +208,14 @@ export function ModelPricingPanel(props: {
           <>
             <div className='flex flex-wrap items-center justify-between gap-2'>
               <div className='min-w-0 flex-1 break-words'>
-                <p className='text-muted-foreground text-xs'>
-                  {!hasEffectivePricing
-                    ? '未配置计费价格'
-                    : Object.keys(entry.configured).length
-                      ? t('Stored configuration with effective defaults')
-                      : t('Using built-in or default pricing')}
+                <p className='text-xs text-muted-foreground'>
+                  {props.referenceDraft
+                    ? '已应用远程报价，请核对后保存定价。'
+                    : !hasEffectivePricing
+                      ? '未配置计费价格'
+                      : Object.keys(entry.configured).length
+                        ? t('Stored configuration with effective defaults')
+                        : t('Using built-in or default pricing')}
                 </p>
               </div>
               <Button
@@ -219,7 +228,7 @@ export function ModelPricingPanel(props: {
               </Button>
             </div>
             {entry.pricing_reference && (
-              <p className='text-muted-foreground text-xs'>
+              <p className='text-xs text-muted-foreground'>
                 <a
                   className='underline underline-offset-4'
                   href={entry.pricing_reference.url}
@@ -239,7 +248,7 @@ export function ModelPricingPanel(props: {
               aria-label={t('Current Billing')}
               className='space-y-3 border-b pb-3'
             >
-              <h3 className='text-muted-foreground text-xs'>
+              <h3 className='text-xs text-muted-foreground'>
                 {!effectivePricing.billing_usage_schema &&
                 entry.plugin_variants?.length ? (
                   <>{t('Ordinary OpenAI')} · </>
@@ -278,7 +287,7 @@ export function ModelPricingPanel(props: {
             </section>
             {save.isError && (
               <div>
-                <p role='alert' className='text-destructive mb-2 text-sm'>
+                <p role='alert' className='mb-2 text-sm text-destructive'>
                   {save.error?.message}
                 </p>
                 <Button
@@ -316,4 +325,3 @@ export function ModelPricingPanel(props: {
     </div>
   )
 }
-

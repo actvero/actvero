@@ -41,7 +41,7 @@ export function useAccessColumns(onManage: (model: Model) => void) {
     staleTime: 10000,
     refetchOnWindowFocus: true,
   })
-  const { data, isError, refetch } = query
+  const { data } = query
   const accessColumns = useMemo<ColumnDef<Model>[]>(() => {
     const statuses = new Map(data?.items.map((item) => [item.model_name, item]))
     return [
@@ -50,7 +50,6 @@ export function useAccessColumns(onManage: (model: Model) => void) {
         header: '开放范围',
         size: 105,
         enableSorting: false,
-        meta: { mobileBadge: true },
         cell: ({ row }) => {
           const state = statuses.get(row.original.model_name)
           if (row.original.name_rule !== 0)
@@ -69,6 +68,9 @@ export function useAccessColumns(onManage: (model: Model) => void) {
             <Button
               variant='link'
               className='h-auto justify-start p-0'
+              aria-label={
+                state ? undefined : `查看 ${row.original.model_name} 的使用设置`
+              }
               onClick={() => onManage(row.original)}
             >
               {state
@@ -79,92 +81,46 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                     : state.audience === 'selected'
                       ? `指定 ${state.member_count} 人`
                       : '仅管理员'
-                : isError
-                  ? '读取失败'
-                  : '读取中…'}
+                : '—'}
             </Button>
           )
         },
       },
       {
         id: 'access_readiness',
-        header: '接入检查',
-        size: 170,
+        header: '状态',
+        size: 100,
         enableSorting: false,
+        meta: { mobileBadge: true },
         cell: ({ row }) => {
           const state = statuses.get(row.original.model_name)
-          if (row.original.name_rule !== 0)
-            return (
-              <span className='text-xs text-muted-foreground'>
-                资料匹配规则
-              </span>
-            )
-          if (!supportsMemberAccess(row.original.model_name))
-            return (
-              <span className='text-xs text-muted-foreground'>
-                调用名称需为 128 字符以内的英文标识，可含内部空格
-              </span>
-            )
-          if (isError)
-            return (
-              <Button variant='link' size='sm' onClick={() => void refetch()}>
-                检查失败 · 重试
-              </Button>
-            )
-          if (!state)
-            return (
-              <span className='text-xs text-muted-foreground'>检查中…</span>
-            )
-          const price = state.checks.find((check) => check.key === 'pricing')
-          const parameters = state.checks.find(
-            (check) => check.key === 'parameters'
-          )
-          const problems = state.checks.filter(
-            (check) => check.status !== 'ready'
-          )
+          if (!state || row.original.name_rule !== 0)
+            return <span className='text-muted-foreground'>—</span>
+          const status = !state.enabled
+            ? '未发布'
+            : state.checks.some((check) => check.status === 'blocked')
+              ? '待维护'
+              : '已发布'
           return (
-            <button
+            <Button
               type='button'
-              className='flex min-w-0 flex-col items-start gap-1 text-left'
+              variant='ghost'
+              size='sm'
+              className='-mx-2 px-2'
+              aria-label={`${row.original.model_name} · ${status}，查看使用设置`}
               onClick={() => onManage(row.original)}
             >
-              <div className='flex flex-wrap gap-1'>
-                <Badge variant='outline'>
-                  资料：{row.original.has_metadata ? '已登记' : '待补充'}
-                </Badge>
-                <Badge variant='outline'>
-                  参数：
-                  {parameters?.status === 'ready'
-                    ? '就绪'
-                    : parameters?.status === 'unknown'
-                      ? '待确认'
-                      : '待补充'}
-                </Badge>
-                <Badge variant='outline'>
-                  价格：
-                  {price?.status === 'ready'
-                    ? '已配置'
-                    : price?.status === 'unknown'
-                      ? '待确认'
-                      : '待配置'}
-                </Badge>
-                <Badge variant={state.ready ? 'secondary' : 'outline'}>
-                  {state.ready ? '可开放' : '开放待完善'}
-                </Badge>
-              </div>
-              <span
-                className='max-w-64 text-xs text-muted-foreground'
-                title={problems.map((c) => c.message).join('；')}
+              <Badge
+                variant={status === '已发布' ? 'secondary' : 'outline'}
+                dot={status === '待维护'}
               >
-                {state.ready
-                  ? `${state.active_channels} 个可用渠道`
-                  : problems.map((c) => c.message).join('；')}
-              </span>
-            </button>
+                {status}
+              </Badge>
+            </Button>
           )
         },
       },
     ]
-  }, [data, isError, refetch, onManage])
+  }, [data, onManage])
   return { accessColumns, onModelsVisible }
 }

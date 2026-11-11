@@ -49,15 +49,7 @@ type DialogType =
 type ModelsContextType = {
   renderParameters?: (
     model: Model,
-    controls: {
-      onDescription?: (description: string) => void
-      onPricing?: () => void
-      onChange: (state: {
-        draft: Record<string, unknown>
-        dirty: boolean
-        valid: boolean
-      }) => void
-    }
+    controls: import('./drawers/model-mutate-drawer').ModelParameterControls
   ) => React.ReactNode
   onManageAccess?: (model: Model) => void
   accessColumns?: ColumnDef<Model>[]

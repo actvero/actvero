@@ -115,5 +115,6 @@ export function policyInput(v: PolicyValues): Schema['QuotaPolicyInput'] {
   }
 }
 export function ruleLabel(r: QuotaRule) {
-  return `${r.hours} 小时 · ${r.points} 积分`
+  const duration = r.hours === 168 ? '7 天' : `${r.hours} 小时`
+  return `${duration} ${r.points} 积分`
 }

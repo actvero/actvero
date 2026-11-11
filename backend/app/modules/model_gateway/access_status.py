@@ -22,6 +22,7 @@ from app.modules.llm.settlement import snapshot
 from app.modules.members.models import Membership
 from app.modules.members.service import BusinessActor
 from app.modules.model_gateway import client, publication, service
+from app.modules.model_gateway.capabilities import channel_provider
 from app.modules.users.models import User
 
 ModelName = Annotated[ModelIdentifier, Field(max_length=128)]
@@ -62,6 +63,7 @@ class PublicationStatus(BaseModel):
     active_channels: int
     latest_test_at: int | None = None
     automatic: dict[str, Any] = Field(default_factory=dict)
+    transport_provider: str = ""
     kind: OperationKind
     context_window: int | None = None
     max_output: int | None = None
@@ -170,6 +172,7 @@ async def inspect(
             and name in (c.get("models") or "").split(",")
             and connection.relay_group in (c.get("group") or "").split(",")
         ]
+        providers = {channel_provider(channel) for channel in routes}
         add(
             "channels",
             "渠道映射",
@@ -265,6 +268,7 @@ async def inspect(
                 latest_test_at=max((int(c.get("test_time") or 0) for c in routes), default=0)
                 or None,
                 automatic=automatic,
+                transport_provider=next(iter(providers)) if len(providers) == 1 else "",
                 kind=resolved_body.kind,
                 context_window=resolved_body.context_window,
                 max_output=resolved_body.max_output,

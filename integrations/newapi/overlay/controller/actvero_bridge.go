@@ -242,7 +242,7 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 	if len(parts) >= 3 && parts[0] == "api" {
 		kind := parts[1]
 		idPosition := 2
-		if kind == "channel" && len(parts) == 4 && (parts[2] == "test" || parts[2] == "fetch_models" || parts[2] == "metadata") {
+		if kind == "channel" && len(parts) == 4 && (parts[2] == "test" || parts[2] == "fetch_models") {
 			idPosition = 3
 		}
 		if id, err := strconv.Atoi(parts[idPosition]); err == nil && id > 0 {
@@ -260,9 +260,6 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 					q.Set("model", prefix+q.Get("model"))
 				}
 				return TestChannel, nil
-			case kind == "channel" && len(parts) == 4 && parts[2] == "metadata" && method == "GET":
-				q.Set("model", prefix+q.Get("model"))
-				return ActveroBailianMetadata, nil
 			case kind == "channel" && len(parts) == 4 && parts[2] == "fetch_models" && method == "GET":
 				return FetchUpstreamModels, nil
 			case kind == "channel" && len(parts) == 4 && parts[3] == "status" && method == "POST":

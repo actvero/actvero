@@ -16,31 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowRight,
-  ArrowLeft,
-  ArrowRightLeft,
-  PanelLeftOpen,
-  AlertCircle,
-  ChevronDown,
-  ClipboardPaste,
-  Loader2,
-  Server,
-  Sparkles,
-  Trash2,
-  Copy,
-  FileText,
-  Eraser,
-  Eye,
-  RefreshCw,
-  Code,
-  Route,
-  Settings,
-  SlidersHorizontal,
-  Wand2,
-} from 'lucide-react'
 import {
   type ComponentProps,
   type ReactNode,
@@ -51,9 +26,8 @@ import {
   useRef,
 } from 'react'
 import { type SubmitErrorHandler, useForm } from 'react-hook-form'
-import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
-
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
@@ -126,7 +100,31 @@ import {
 } from '@newapi/lib/server-error-message'
 import { cn } from '@newapi/lib/utils'
 import { useAuthStore } from '@newapi/stores/auth-store'
-
+import {
+  ArrowRight,
+  ArrowLeft,
+  ArrowRightLeft,
+  PanelLeftOpen,
+  AlertCircle,
+  ChevronDown,
+  ChevronLeft,
+  ClipboardPaste,
+  Loader2,
+  Sparkles,
+  Trash2,
+  Copy,
+  FileText,
+  Eraser,
+  Eye,
+  RefreshCw,
+  Code,
+  Route,
+  Settings,
+  SlidersHorizontal,
+  Wand2,
+} from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import {
   getAllModels,
   getChannel,
@@ -353,9 +351,9 @@ function channelConfigurationBlockClassName(
   className?: string
 ) {
   return cn(
-    'border-border/60 rounded-lg border p-4 transition-colors',
-    status === 'configured' && 'border-primary/35 ring-primary/20 ring-1',
-    status === 'error' && 'border-destructive/50 ring-destructive/20 ring-1',
+    'rounded-lg border border-border/60 p-4 transition-colors',
+    status === 'configured' && 'border-primary/35 ring-1 ring-primary/20',
+    status === 'error' && 'border-destructive/50 ring-1 ring-destructive/20',
     className
   )
 }
@@ -396,7 +394,7 @@ function SubHeading(props: {
           {props.icon}
         </IconBadge>
       )}
-      <h4 className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+      <h4 className='text-xs font-medium tracking-wide text-muted-foreground uppercase'>
         {props.title}
       </h4>
       {props.status && (
@@ -2344,7 +2342,7 @@ export function ChannelMutateDrawer({
         disabled={sensitiveLocked}
         className='space-y-4 disabled:opacity-60'
       >
-        <div className='divide-border space-y-0 divide-y border-y'>
+        <div className='space-y-0 divide-y divide-border border-y'>
           <FormField
             control={form.control}
             name='upstream_model_update_check_enabled'
@@ -2416,15 +2414,15 @@ export function ChannelMutateDrawer({
             </FormItem>
           )}
         />
-        <div className='text-muted-foreground space-y-2 border-t pt-3 text-xs'>
+        <div className='space-y-2 border-t pt-3 text-xs text-muted-foreground'>
           <div>
-            <span className='text-foreground font-medium'>
+            <span className='font-medium text-foreground'>
               {t('Last check time')}:
             </span>{' '}
             {formatUnixTime(upstreamUpdateMeta.lastCheckTime)}
           </div>
           <div>
-            <span className='text-foreground font-medium'>
+            <span className='font-medium text-foreground'>
               {t('Last detected addable models')}:
             </span>{' '}
             {upstreamUpdateMeta.detectedModels.length === 0 ? (
@@ -2730,7 +2728,7 @@ export function ChannelMutateDrawer({
       />
 
       {sensitiveLocked && (
-        <p className='text-muted-foreground text-xs'>
+        <p className='text-xs text-muted-foreground'>
           {t('No permission to perform this action')}
         </p>
       )}
@@ -2896,11 +2894,11 @@ export function ChannelMutateDrawer({
               </FormControl>
               <FormDescription className='text-xs'>
                 {t('Supported variables')}:{' '}
-                <code className='bg-muted rounded px-1 py-0.5'>
+                <code className='rounded bg-muted px-1 py-0.5'>
                   {'{api_key}'}
                 </code>{' '}
                 — {t('Channel key')},{' '}
-                <code className='bg-muted rounded px-1 py-0.5'>
+                <code className='rounded bg-muted px-1 py-0.5'>
                   {'{client_header:NAME}'}
                 </code>{' '}
                 — {t('Client header value')}
@@ -2929,7 +2927,7 @@ export function ChannelMutateDrawer({
         iconTone='chart-4'
       />
       <fieldset disabled={sensitiveLocked} className='disabled:opacity-60'>
-        <div className='divide-border space-y-0 divide-y border-y'>
+        <div className='space-y-0 divide-y divide-border border-y'>
           <FormField
             control={form.control}
             name='allow_service_tier'
@@ -3152,7 +3150,7 @@ export function ChannelMutateDrawer({
     <div className='scroll-mt-4'>
       <ChannelModelsSection>
         <div className='space-y-5'>
-          <div className='border-border/60 bg-muted/10 rounded-lg border p-4'>
+          <div className='rounded-lg border border-border/60 bg-muted/10 p-4'>
             {currentType === CHANNEL_TYPE_NEW_API &&
               canBindTaskPlugin &&
               taskPluginOptionsQuery.isSuccess &&
@@ -3229,7 +3227,7 @@ export function ChannelMutateDrawer({
                       copyChipOnClick
                     />
                   </FormControl>
-                  <div className='text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs'>
+                  <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
                     <Route className='size-3.5 shrink-0' aria-hidden='true' />
                     {mappingCount > 0 && (
                       <span>
@@ -3407,7 +3405,7 @@ export function ChannelMutateDrawer({
                         aliases={upstreamAliases}
                       />
                       <div className='flex flex-wrap items-center justify-between gap-2'>
-                        <p className='text-muted-foreground text-xs'>
+                        <p className='text-xs text-muted-foreground'>
                           {t(
                             'Redirect fetched upstream names to the names your users call.'
                           )}
@@ -3448,14 +3446,14 @@ export function ChannelMutateDrawer({
                     </div>
                   )}
                 {isEditing && !previewModels && (
-                  <p className='text-muted-foreground text-xs'>
+                  <p className='text-xs text-muted-foreground'>
                     {t(
                       'Model discovery uses the saved channel connection settings.'
                     )}
                   </p>
                 )}
                 {!isEditing && isBatchMode && (
-                  <p className='text-muted-foreground text-xs'>
+                  <p className='text-xs text-muted-foreground'>
                     {t(
                       'Model discovery uses the first key; other keys are not tested.'
                     )}
@@ -3469,7 +3467,7 @@ export function ChannelMutateDrawer({
             <div className='space-y-3'>
               <div>
                 <p className='text-sm font-medium'>{t('Quick actions')}</p>
-                <p className='text-muted-foreground text-xs'>
+                <p className='text-xs text-muted-foreground'>
                   {t(
                     'Use presets or upstream discovery to populate the model list faster.'
                   )}
@@ -3503,7 +3501,7 @@ export function ChannelMutateDrawer({
                         : t('Fetch from Upstream')}
                     </Button>
                     {!canDiscoverModels && (
-                      <span className='text-muted-foreground basis-full text-xs'>
+                      <span className='basis-full text-xs text-muted-foreground'>
                         {t('No permission to perform this action')}
                       </span>
                     )}
@@ -3532,7 +3530,7 @@ export function ChannelMutateDrawer({
               </div>
               {prefillGroups.length > 0 && (
                 <div className='flex flex-wrap items-center gap-2'>
-                  <span className='text-muted-foreground text-xs'>
+                  <span className='text-xs text-muted-foreground'>
                     {t('Preset groups')}:
                   </span>
                   {prefillGroups.map((group) => (
@@ -3551,7 +3549,7 @@ export function ChannelMutateDrawer({
             </div>
           </div>
 
-          <div className='border-border/60 rounded-lg border p-4'>
+          <div className='rounded-lg border border-border/60 p-4'>
             <FormField
               control={form.control}
               name='group'
@@ -3604,7 +3602,7 @@ export function ChannelMutateDrawer({
           </Alert>
         )}
 
-        <div className='border-border/60 bg-muted/10 rounded-lg border p-4'>
+        <div className='rounded-lg border border-border/60 bg-muted/10 p-4'>
           <fieldset
             disabled={sensitiveLocked}
             className='space-y-4 disabled:opacity-60'
@@ -4378,7 +4376,7 @@ export function ChannelMutateDrawer({
                   name='multi_key_mode'
                   render={({ field }) => (
                     <FormItem className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                      <FormLabel className='text-muted-foreground text-xs font-medium'>
+                      <FormLabel className='text-xs font-medium text-muted-foreground'>
                         {t('Add Mode')}
                       </FormLabel>
                       <Select
@@ -4461,7 +4459,7 @@ export function ChannelMutateDrawer({
                           'Enter new key to update, or leave empty to keep current key'
                         )}
                         {isMultiKeyChannel && (
-                          <span className='text-warning mt-1 block'>
+                          <span className='mt-1 block text-warning'>
                             {keyModeDescription}
                           </span>
                         )}
@@ -4500,13 +4498,13 @@ export function ChannelMutateDrawer({
                         </span>
                       </FormDescription>
                       {isEditing && canRevealChannelKey && (
-                        <div className='border-border/60 mt-4 flex flex-col gap-3 border-y border-dashed py-4'>
+                        <div className='mt-4 flex flex-col gap-3 border-y border-dashed border-border/60 py-4'>
                           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
                             <div>
                               <p className='text-sm font-medium'>
                                 {t('Current key')}
                               </p>
-                              <p className='text-muted-foreground text-xs'>
+                              <p className='text-xs text-muted-foreground'>
                                 {t(
                                   'Verification required to reveal the saved key.'
                                 )}
@@ -4561,9 +4559,9 @@ export function ChannelMutateDrawer({
               />
 
               {currentType === 57 && (
-                <div className='border-border/60 flex flex-col gap-3 border-y py-4'>
+                <div className='flex flex-col gap-3 border-y border-border/60 py-4'>
                   <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                    <div className='text-muted-foreground text-xs'>
+                    <div className='text-xs text-muted-foreground'>
                       {t(
                         'Codex channels use an OAuth JSON credential as the key.'
                       )}
@@ -4851,25 +4849,40 @@ export function ChannelMutateDrawer({
   } else if (showProviderPicker) {
     description = t('Choose a provider or plugin to configure your channel.')
   }
+  const channelTitle = isEditing
+    ? channelData?.data?.name || t('Edit Channel')
+    : t('Create Channel')
 
   return (
     <>
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent
           side={drawerSide}
+          showCloseButton={false}
           className={sideDrawerContentClassName('sm:max-w-none')}
         >
-          <SheetHeader className={sideDrawerHeaderClassName('pr-12 sm:pr-14')}>
+          <SheetHeader className={sideDrawerHeaderClassName()}>
             <div className='flex flex-col gap-2'>
               <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex min-w-0 items-center gap-2 sm:gap-3'>
-                  <SheetTitle className='flex shrink-0 items-center gap-2 sm:gap-3'>
-                    <IconBadge tone='info' size='title'>
-                      <Server className='size-5' />
-                    </IconBadge>
-                    <span>
-                      {isEditing ? t('Edit Channel') : t('Create Channel')}
-                    </span>
+                  <SheetTitle
+                    aria-label={channelTitle}
+                    className='max-w-full min-w-0'
+                  >
+                    <SheetClose
+                      disabled={isSubmitting}
+                      render={
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          className='max-w-full justify-start'
+                        />
+                      }
+                    >
+                      <ChevronLeft data-icon='inline-start' />
+                      <span className='truncate'>{channelTitle}</span>
+                      <span className='sr-only'>返回渠道列表</span>
+                    </SheetClose>
                   </SheetTitle>
                   {(!showProviderPicker || providerTarget) && (
                     <Button
@@ -5060,13 +5073,7 @@ export function ChannelMutateDrawer({
               >
                 {t('Cancel')}
               </Button>
-            ) : (
-              <SheetClose
-                render={<Button variant='outline' disabled={isSubmitting} />}
-              >
-                {t('Cancel')}
-              </SheetClose>
-            )}
+            ) : null}
             {!showProviderPicker && (
               <Button
                 form='channel-form'
@@ -5203,4 +5210,3 @@ export function ChannelMutateDrawer({
     </>
   )
 }
-

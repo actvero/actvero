@@ -1,12 +1,11 @@
 import { useEffect, useId, useState } from 'react'
-import { FormProvider, useForm, useWatch } from 'react-hook-form'
+import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Schema } from '@/lib/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Field,
@@ -21,12 +20,9 @@ import { MemberPicker } from '@/components/member-picker'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { ChatPolicyFields } from '@/features/model-catalog/chat-policy-fields'
+import { chatPolicyInput } from '@/features/model-catalog/chat-policy-form'
 import { gateway, useGateway, useGatewayRefresh } from './api'
-import {
-  parameterInput,
-  parameterSchema,
-  parameterValues,
-} from './terminal-parameter-form'
+import { parameterSchema, parameterValues } from './terminal-parameter-form'
 import {
   usePublicationPreview,
   type PublicationDraft,
@@ -70,7 +66,6 @@ const modalityLabels: Record<string, string> = { text: '文本', image: '图片'
 const declarationLabels: Record<string, string> = {
   supported: '支持',
   unsupported: '不支持',
-  unknown: '未识别',
 }
 
 export function ModelPublication({
@@ -85,11 +80,19 @@ export function ModelPublication({
     return (
       <RequestError error={query.error} retry={() => void query.refetch()} />
     )
+  const saved = query.data
   return (
     <PublicationForm
-      key={`${model}:${query.data.version ?? 0}`}
+      key={JSON.stringify([
+        model,
+        saved.kind ?? 'chat',
+        saved.enabled ?? false,
+        saved.audience ?? 'administrators',
+        saved.member_ids ?? [],
+        saved.chat_policy,
+      ])}
       model={model}
-      saved={query.data}
+      saved={saved}
       {...controls}
     />
   )
@@ -111,18 +114,21 @@ function PublicationForm({
   const [audience, setAudience] = useState(saved.audience ?? 'administrators')
   const [members, setMembers] = useState(saved.member_ids ?? [])
   const kind = saved.kind ?? 'chat'
+  const formValues = parameterValues({
+    ...(saved.capability_mode !== 'manual' &&
+    saved.automatic?.status === 'resolved'
+      ? saved.automatic
+      : {}),
+    ...saved,
+  })
   const form = useForm({
     resolver: zodResolver(parameterSchema),
-    defaultValues: parameterValues({
-      ...(saved.capability_mode !== 'manual' &&
-      saved.automatic?.status === 'resolved'
-        ? saved.automatic
-        : {}),
-      ...saved,
-    }),
+    defaultValues: formValues,
+    values: formValues,
+    resetOptions: { keepDirtyValues: true },
   })
-  const parameters = useWatch({ control: form.control })
-  const mode = parameters.capability_mode ?? saved.capability_mode ?? 'auto'
+  const mode = saved.capability_mode ?? 'manual'
+  const policyDirty = !!form.formState.dirtyFields.chat_policy
   // Access-only edits preserve the stored mode and operation settings exactly.
   const draft: PublicationDraft = {
     model_name: model,
@@ -132,21 +138,22 @@ function PublicationForm({
     audience,
     member_ids: audience === 'selected' ? members : [],
     kind,
-    capability_mode: saved.capability_mode ?? 'auto',
+    capability_mode: saved.capability_mode ?? 'manual',
     context_window: saved.context_window,
     max_output: saved.max_output,
     capabilities: saved.capabilities,
     reasoning_options: saved.reasoning_options,
-    chat_policy: saved.chat_policy,
+    chat_policy: policyDirty
+      ? chatPolicyInput(form.getValues('chat_policy'))
+      : saved.chat_policy,
     retrieval: saved.retrieval,
     image: saved.image,
     speech: saved.speech,
     transcription: saved.transcription,
-    ...(form.formState.isDirty ? parameterInput(form.getValues()) : {}),
   }
   const checks = usePublicationPreview(draft)
   const dirty =
-    form.formState.isDirty ||
+    policyDirty ||
     enabled !== (saved.enabled ?? false) ||
     audience !== (saved.audience ?? 'administrators') ||
     (audience === 'selected' &&
@@ -191,6 +198,37 @@ function PublicationForm({
       : detected
   const capabilities = automatic?.capabilities ?? status?.capabilities
   const policy = automatic?.chat_policy ?? status?.chat_policy
+  const limits = [
+    automatic?.context_window &&
+      `上下文 ${automatic.context_window.toLocaleString()} Token`,
+    automatic?.max_output &&
+      `最大输出 ${automatic.max_output.toLocaleString()} Token`,
+  ].filter(Boolean)
+  const defaults = [
+    policy?.default_max_output &&
+      `默认输出 ${policy.default_max_output.toLocaleString()} Token`,
+    policy?.default_reasoning_effort &&
+      `默认推理 ${effortLabels[policy.default_reasoning_effort] ?? policy.default_reasoning_effort}`,
+  ].filter(Boolean)
+  const declarations = (
+    [
+      ['tools', '工具调用'],
+      ['structured_output', '结构化输出'],
+    ] as const
+  ).flatMap(([key, label]) => {
+    const declaration = declarationLabels[capabilities?.[key] ?? 'unknown']
+    return declaration ? [`${label}：${declaration}`] : []
+  })
+  const efforts = automatic?.reasoning_options
+    ?.flatMap((option) => (option.type === 'effort' ? option.values : []))
+    .map((value) => (value === null ? '默认' : (effortLabels[value] ?? value)))
+  const hasParameters = Boolean(
+    limits.length ||
+    defaults.length ||
+    declarations.length ||
+    efforts?.length ||
+    capabilities?.vision === 'supported'
+  )
   return (
     <FormProvider {...form}>
       <form
@@ -255,9 +293,6 @@ function PublicationForm({
           <div className='flex flex-col gap-2 border-t pt-4 text-sm'>
             <div className='flex items-center gap-2'>
               <span className='font-medium'>模型参数</span>
-              <Badge variant='secondary'>
-                {mode === 'manual' ? '管理员填写' : '自动识别'}
-              </Badge>
               {section === 'access' && onParameters && (
                 <Button
                   type='button'
@@ -269,23 +304,10 @@ function PublicationForm({
                 </Button>
               )}
             </div>
-            {automatic?.status === 'resolved' ? (
+            {automatic?.status === 'resolved' && hasParameters ? (
               <div className='text-muted-foreground'>
-                <p>
-                  上下文 {automatic.context_window?.toLocaleString()} · 最大输出{' '}
-                  {automatic.max_output?.toLocaleString()} Token
-                </p>
-                <p>
-                  默认输出{' '}
-                  {policy?.default_max_output?.toLocaleString() ?? '未指定'}{' '}
-                  Token · 默认推理{' '}
-                  {policy?.default_reasoning_effort
-                    ? (effortLabels[policy.default_reasoning_effort] ??
-                      policy.default_reasoning_effort)
-                    : automatic.reasoning_options?.length
-                      ? '供应商默认'
-                      : '无'}
-                </p>
+                {!!limits.length && <p>{limits.join(' · ')}</p>}
+                {!!defaults.length && <p>{defaults.join(' · ')}</p>}
                 <p>
                   输入：
                   {automatic.input_modalities
@@ -296,31 +318,8 @@ function PublicationForm({
                     ?.map((value) => modalityLabels[value] ?? value)
                     .join('、') || '未识别'}
                 </p>
-                <p>
-                  {[
-                    ['tools', '工具调用'],
-                    ['streaming', '流式输出'],
-                    ['structured_output', '结构化输出'],
-                  ]
-                    .map(
-                      ([key, label]) =>
-                        `${label}：${declarationLabels[capabilities?.[key as keyof Schema['ModelCapabilities']] ?? 'unknown']}`
-                    )
-                    .join(' · ')}
-                </p>
-                <p>
-                  推理档位：
-                  {automatic.reasoning_options
-                    ?.flatMap((option) =>
-                      option.type === 'effort' ? option.values : []
-                    )
-                    .map((value) =>
-                      value === null
-                        ? '默认'
-                        : (effortLabels[String(value)] ?? String(value))
-                    )
-                    .join('、') || '无'}
-                </p>
+                {!!declarations.length && <p>{declarations.join(' · ')}</p>}
+                {!!efforts?.length && <p>推理档位：{efforts.join('、')}</p>}
                 <p className='mt-1 text-xs'>
                   当前对话通道未接入音频、视频输入。
                 </p>

@@ -24,6 +24,10 @@ PROVIDERS = {
 LEVELS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 
 
+def channel_provider(channel: dict[str, Any]) -> str:
+    return str(channel.get("capability_provider") or PROVIDERS.get(channel.get("type", 0), ""))
+
+
 @lru_cache(maxsize=1)
 def reference() -> list[dict[str, Any]]:
     return cast(
@@ -79,6 +83,7 @@ def profile(model: dict[str, Any]) -> dict[str, Any]:
         "max_output": output,
         "capabilities": {
             **features(model),
+            "streaming": "supported",
             "vision": "supported" if "image" in model["input"] else "unsupported",
             "reasoning": "supported" if levels else "unsupported",
         },
@@ -115,7 +120,7 @@ def resolve(
         except (ValueError, AttributeError):
             return {"status": "unresolved", "reason": "渠道模型映射无效"}
         resolved = lookup(
-            channel.get("capability_provider") or PROVIDERS.get(channel.get("type", 0)),
+            channel_provider(channel) or None,
             reference_model or upstream,
         )
         if resolved is None:
@@ -176,7 +181,8 @@ async def effective(
                         "capability_source": {
                             **config.gateway.capability_source,
                             **resolved["source"],
-                        }
+                        },
+                        "transport_provider": resolved["source"]["provider"],
                     }
                 ),
             }
@@ -186,7 +192,7 @@ async def effective(
     assert config.gateway is not None
     output_parameter = (
         "max_completion_tokens"
-        if config.gateway.capability_source.get("provider") == ark_capabilities.PROVIDER
+        if config.gateway.native_provider == ark_capabilities.PROVIDER
         else "max_tokens"
     )
     return config.model_copy(

@@ -8,7 +8,6 @@ from typing import Any
 FIELDS = {
     "tools": "supports_function_calling",
     "structured_output": "supports_response_schema",
-    "streaming": "supports_native_streaming",
 }
 NAMESPACES = {
     "openai": ("openai/", ""),
@@ -53,11 +52,13 @@ def features(model: dict[str, Any]) -> dict[str, str]:
             if declarations and all(value is False for value in declarations)
             else "unknown"
         )
-    # The pinned native DSH adapter explicitly implements both features for these entries.
-    if model.get("source_version") == "dsh-v0.2.1-rc.2" and model["provider"] == "deepseek":
-        for field in ("tools", "streaming"):
-            if values[field] == "unknown":
-                values[field] = "supported"
+    # The pinned native DSH adapter implements tool calling for these entries.
+    if (
+        model.get("source_version") == "dsh-v0.2.1-rc.2"
+        and model["provider"] == "deepseek"
+        and values["tools"] == "unknown"
+    ):
+        values["tools"] = "supported"
     return values
 
 

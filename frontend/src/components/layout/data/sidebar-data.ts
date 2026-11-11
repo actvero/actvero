@@ -36,7 +36,6 @@ export function navigation(
                   { title: '渠道', url: '/model-channels' },
                   { title: '模型', url: '/models' },
                   { title: '额度策略', url: '/quota-policies' },
-                  { title: '调用记录', url: '/llm-calls' },
                 ],
               },
               {

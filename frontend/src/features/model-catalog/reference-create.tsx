@@ -1,4 +1,4 @@
-import { useDeferredValue, useState } from 'react'
+import { useDeferredValue, useState, type ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -27,19 +27,49 @@ import { emptyReferenceFilters } from './reference-filter-values'
 import { ReferenceFilterBar } from './reference-filters'
 import type { ReferenceModel } from './reference-models'
 
+type SelectionPreview = {
+  content: ReactNode
+  actions: {
+    label: string
+    variant?: 'outline'
+    enabled: boolean
+    apply: () => void
+  }[]
+}
+
+type Props = {
+  close: () => void
+  restoreFocus?: () => void
+  initialSearch?: string
+  returnLabel?: string
+  pending?: boolean
+  footer?: ReactNode
+} & (
+  | {
+      manual: () => void
+      select: (model: ReferenceModel) => void
+      preview?: never
+    }
+  | {
+      manual?: never
+      select?: never
+      preview: (model: ReferenceModel) => SelectionPreview
+    }
+)
+
 export function ReferenceCreate({
   close,
   restoreFocus,
   manual,
   select,
-}: {
-  close: () => void
-  restoreFocus?: () => void
-  manual: () => void
-  select: (model: ReferenceModel) => void
-}) {
+  preview,
+  initialSearch = '',
+  returnLabel,
+  pending = false,
+  footer,
+}: Props) {
   const { organization } = useOrganization()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch.slice(0, 100))
   const [filters, setFilters] = useState({ ...emptyReferenceFilters })
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<ReferenceModel | null>(null)
@@ -70,6 +100,8 @@ export function ReferenceCreate({
     placeholderData: keepPreviousData,
   })
   const updating = query.isFetching || serialized !== deferred
+  const selectedPreview = selected && preview?.(selected)
+  const canApply = !!selected && !updating && !query.isError && !pending
   const pages = Math.max(
     1,
     Math.ceil((query.data?.total ?? 0) / (query.data?.page_size ?? 20))
@@ -82,11 +114,12 @@ export function ReferenceCreate({
     <Sheet
       open
       onOpenChange={(open) => {
-        if (!open) close()
+        if (!open && !pending) close()
       }}
     >
       <SheetContent
         className='w-full gap-0 sm:max-w-6xl'
+        showCloseButton={!returnLabel}
         aria-describedby={undefined}
         onCloseAutoFocus={
           restoreFocus
@@ -98,22 +131,40 @@ export function ReferenceCreate({
         }
       >
         <SheetHeader className='shrink-0 px-4 pr-12 sm:px-6'>
-          <SheetTitle>添加模型</SheetTitle>
-          <div className='flex flex-wrap items-center justify-between gap-3'>
-            <div>
-              <h3 className='font-medium'>从公共库创建</h3>
-              <p className='text-sm text-muted-foreground'>
-                搜索模型并带入参数，渠道可稍后关联。
-              </p>
-            </div>
-            <Button variant='outline' onClick={manual}>
-              <PencilLine data-icon='inline-start' />
-              手动创建
+          {returnLabel && (
+            <Button
+              variant='ghost'
+              className='w-fit max-w-full justify-start'
+              onClick={close}
+              disabled={pending}
+            >
+              <ChevronLeft data-icon='inline-start' />
+              <span className='truncate'>{returnLabel}</span>
+              <span className='sr-only'>返回模型详情</span>
             </Button>
-          </div>
+          )}
+          <SheetTitle>{manual ? '添加模型' : 'Models.dev 模型资料'}</SheetTitle>
+          {manual && (
+            <div className='flex flex-wrap items-center justify-between gap-3'>
+              <div>
+                <h3 className='font-medium'>从公共库创建</h3>
+                <p className='text-sm text-muted-foreground'>
+                  搜索模型并带入参数，渠道可稍后关联。
+                </p>
+              </div>
+              <Button variant='outline' onClick={manual}>
+                <PencilLine data-icon='inline-start' />
+                手动创建
+              </Button>
+            </div>
+          )}
         </SheetHeader>
         <Separator />
-        <div className='flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6'>
+        <div
+          className='flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6'
+          inert={pending}
+          aria-busy={pending}
+        >
           <div
             className={cn(
               'max-h-[36dvh] shrink-0 overflow-y-auto',
@@ -178,10 +229,16 @@ export function ReferenceCreate({
                     role='status'
                     className='flex flex-col items-start gap-3 p-4 text-sm'
                   >
-                    <p>没有找到匹配的模型，可调整搜索条件或手动创建。</p>
-                    <Button variant='outline' onClick={manual}>
-                      改为手动创建
-                    </Button>
+                    <p>
+                      {manual
+                        ? '没有找到匹配的模型，可调整搜索条件或手动创建。'
+                        : '没有找到匹配的模型，可调整搜索条件。'}
+                    </p>
+                    {manual && (
+                      <Button variant='outline' onClick={manual}>
+                        改为手动创建
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className='flex flex-col gap-1'>
@@ -277,37 +334,66 @@ export function ReferenceCreate({
                     <ArrowLeft data-icon='inline-start' />
                     返回搜索结果
                   </Button>
-                  <ReferenceDetail
-                    key={`${selected.provider}/${selected.model_id}`}
-                    model={selected}
-                    mode='metadata'
-                  />
+                  {selectedPreview ? (
+                    selectedPreview.content
+                  ) : (
+                    <ReferenceDetail
+                      key={`${selected.provider}/${selected.model_id}`}
+                      model={selected}
+                      mode='metadata'
+                    />
+                  )}
                 </>
               ) : (
                 <p className='text-sm text-muted-foreground'>
-                  选择模型，查看参数与参考报价。
+                  {manual
+                    ? '选择模型，查看参数与参考报价。'
+                    : '选择模型，预览可应用的资料。'}
                 </p>
               )}
             </div>
           </div>
         </div>
-        <Separator />
-        <SheetFooter className='shrink-0 flex-row flex-wrap items-center justify-end px-4 sm:px-6'>
-          <p className='mr-auto text-xs text-muted-foreground'>
-            参数可在下一步修改，收费价格单独配置。
-          </p>
-          <Button variant='outline' onClick={close}>
-            取消
-          </Button>
-          <Button
-            disabled={!selected || updating || query.isError}
-            onClick={() => {
-              if (selected && !updating && !query.isError) select(selected)
-            }}
-          >
-            使用此模型
-          </Button>
-        </SheetFooter>
+        {(manual || selectedPreview) && (
+          <>
+            <Separator
+              className={cn(preview && !detail && 'hidden lg:block')}
+            />
+            <SheetFooter
+              className={cn(
+                'shrink-0 flex-row flex-wrap items-center justify-end px-4 sm:px-6',
+                preview && !detail && 'hidden lg:flex'
+              )}
+            >
+              <div className='mr-auto text-xs text-muted-foreground'>
+                {footer ?? '参数可在下一步修改，收费价格单独配置。'}
+              </div>
+              {select && (
+                <>
+                  <Button variant='outline' onClick={close}>
+                    取消
+                  </Button>
+                  <Button
+                    disabled={!canApply}
+                    onClick={() => selected && select(selected)}
+                  >
+                    使用此模型
+                  </Button>
+                </>
+              )}
+              {selectedPreview?.actions.map((action) => (
+                <Button
+                  key={action.label}
+                  variant={action.variant}
+                  disabled={!canApply || !action.enabled}
+                  onClick={action.apply}
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </SheetFooter>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   )

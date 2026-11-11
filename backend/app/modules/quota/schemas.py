@@ -59,8 +59,12 @@ class QuotaPolicyView(QuotaPolicyInput):
     updated_at: datetime
 
 
+class QuotaPolicyListItem(QuotaPolicyView):
+    active_member_count: int = Field(ge=0)
+
+
 class QuotaPolicyPage(BaseModel):
-    items: list[QuotaPolicyView]
+    items: list[QuotaPolicyListItem]
     total: int
     has_default: bool
     default_timezone: str | None = None

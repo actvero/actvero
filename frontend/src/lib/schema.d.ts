@@ -4790,23 +4790,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/model-gateway/parameters/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Discover Model Parameters */
-        post: operations["discover_model_parameters_api_v1_model_gateway_parameters_discover_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/model-gateway/prices": {
         parameters: {
             query?: never;
@@ -10661,6 +10644,8 @@ export interface components {
              * @default 0.01
              */
             reserve_usd: string;
+            /** Transport Provider */
+            transport_provider?: string | null;
         };
         /** GatewayMappingInput */
         GatewayMappingInput: {
@@ -13071,7 +13056,7 @@ export interface components {
             capabilities?: components["schemas"]["ModelCapabilities"];
             /**
              * Capability Mode
-             * @default auto
+             * @default manual
              * @enum {string}
              */
             capability_mode: "auto" | "manual";
@@ -13902,23 +13887,6 @@ export interface components {
              */
             enabled: boolean;
         };
-        /** ProviderMetadataInput */
-        ProviderMetadataInput: {
-            /** Channel Id */
-            channel_id: number;
-            /** Model Name */
-            model_name: string;
-            /**
-             * Reference Model
-             * @default
-             */
-            reference_model: string;
-            /**
-             * Workspace Id
-             * @default
-             */
-            workspace_id: string;
-        };
         /** ProviderView */
         ProviderView: {
             /** Aliases */
@@ -14289,7 +14257,7 @@ export interface components {
             capabilities?: components["schemas"]["ModelCapabilities"];
             /**
              * Capability Mode
-             * @default auto
+             * @default manual
              * @enum {string}
              */
             capability_mode: "auto" | "manual";
@@ -14399,6 +14367,11 @@ export interface components {
             ready: boolean;
             /** Reasoning Options */
             reasoning_options?: (components["schemas"]["ReasoningToggle"] | components["schemas"]["ReasoningEffort"] | components["schemas"]["ReasoningBudget"])[];
+            /**
+             * Transport Provider
+             * @default
+             */
+            transport_provider: string;
         };
         /** PublicationStatuses */
         PublicationStatuses: {
@@ -14508,6 +14481,41 @@ export interface components {
             /** Rules */
             rules?: components["schemas"]["FixedHours"][];
         };
+        /** QuotaPolicyListItem */
+        QuotaPolicyListItem: {
+            /** Active Member Count */
+            active_member_count: number;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Default */
+            is_default: boolean;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "limited" | "unlimited";
+            /** Name */
+            name: string;
+            /** Rules */
+            rules: components["schemas"]["FixedHours"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
         /** QuotaPolicyPage */
         QuotaPolicyPage: {
             /** Default Timezone */
@@ -14521,7 +14529,7 @@ export interface components {
             /** Has Default */
             has_default: boolean;
             /** Items */
-            items: components["schemas"]["QuotaPolicyView"][];
+            items: components["schemas"]["QuotaPolicyListItem"][];
             /** Total */
             total: number;
         };
@@ -30613,6 +30621,7 @@ export interface operations {
         parameters: {
             query: {
                 model: string;
+                include_reference?: boolean;
             };
             header?: never;
             path?: never;
@@ -30652,39 +30661,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ModelParametersInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GatewayResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    discover_model_parameters_api_v1_model_gateway_parameters_discover_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProviderMetadataInput"];
             };
         };
         responses: {
@@ -33448,6 +33424,7 @@ export interface operations {
         parameters: {
             query?: {
                 q?: string;
+                assigned_only?: boolean;
                 page?: number;
             };
             header?: never;

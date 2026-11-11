@@ -10475,6 +10475,17 @@
             "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{1,8})?$",
             "title": "Reserve Usd",
             "type": "string"
+          },
+          "transport_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport Provider"
           }
         },
         "required": [
@@ -16452,7 +16463,7 @@
             "$ref": "#/components/schemas/ModelCapabilities"
           },
           "capability_mode": {
-            "default": "auto",
+            "default": "manual",
             "enum": [
               "auto",
               "manual"
@@ -18603,41 +18614,6 @@
         "title": "ProtectionSettings",
         "type": "object"
       },
-      "ProviderMetadataInput": {
-        "additionalProperties": false,
-        "properties": {
-          "channel_id": {
-            "exclusiveMinimum": 0.0,
-            "title": "Channel Id",
-            "type": "integer"
-          },
-          "model_name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
-            "title": "Model Name",
-            "type": "string"
-          },
-          "reference_model": {
-            "default": "",
-            "maxLength": 128,
-            "title": "Reference Model",
-            "type": "string"
-          },
-          "workspace_id": {
-            "default": "",
-            "pattern": "^[A-Za-z0-9-]{0,64}$",
-            "title": "Workspace Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "model_name",
-          "channel_id"
-        ],
-        "title": "ProviderMetadataInput",
-        "type": "object"
-      },
       "ProviderView": {
         "properties": {
           "aliases": {
@@ -19652,7 +19628,7 @@
             "$ref": "#/components/schemas/ModelCapabilities"
           },
           "capability_mode": {
-            "default": "auto",
+            "default": "manual",
             "enum": [
               "auto",
               "manual"
@@ -20035,6 +20011,11 @@
             },
             "title": "Reasoning Options",
             "type": "array"
+          },
+          "transport_provider": {
+            "default": "",
+            "title": "Transport Provider",
+            "type": "string"
           }
         },
         "required": [
@@ -20327,6 +20308,78 @@
         "title": "QuotaPolicyInput",
         "type": "object"
       },
+      "QuotaPolicyListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "active_member_count": {
+            "minimum": 0.0,
+            "title": "Active Member Count",
+            "type": "integer"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/FixedHours"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "is_default",
+          "mode",
+          "rules",
+          "id",
+          "archived",
+          "version",
+          "created_at",
+          "updated_at",
+          "active_member_count"
+        ],
+        "title": "QuotaPolicyListItem",
+        "type": "object"
+      },
       "QuotaPolicyPage": {
         "properties": {
           "default_timezone": {
@@ -20352,7 +20405,7 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/QuotaPolicyView"
+              "$ref": "#/components/schemas/QuotaPolicyListItem"
             },
             "title": "Items",
             "type": "array"
@@ -48752,6 +48805,16 @@
               "title": "Model",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "include_reference",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Reference",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -48828,47 +48891,6 @@
           }
         },
         "summary": "Save Model Parameters",
-        "tags": [
-          "model-gateway"
-        ]
-      }
-    },
-    "/api/v1/model-gateway/parameters/discover": {
-      "post": {
-        "operationId": "discover_model_parameters_api_v1_model_gateway_parameters_discover_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProviderMetadataInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GatewayResult"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Discover Model Parameters",
         "tags": [
           "model-gateway"
         ]
@@ -52669,6 +52691,16 @@
               "maxLength": 200,
               "title": "Q",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Assigned Only",
+              "type": "boolean"
             }
           },
           {

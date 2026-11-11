@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactElement } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -54,27 +54,56 @@ const schema = z.object({
 
 export function PointConversionButton() {
   const [open, setOpen] = useState(false)
+  return (
+    <PointConversionDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <Button type='button' variant='outline'>
+          <ArrowRightLeft />
+          积分换算
+        </Button>
+      }
+    />
+  )
+}
+
+export function PointConversionDialog({
+  open,
+  onOpenChange,
+  trigger,
+  restoreFocus,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  trigger?: ReactElement
+  restoreFocus?: () => void
+}) {
   const [pending, setPending] = useState(false)
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!pending) setOpen(v)
+        if (!pending) onOpenChange(v)
       }}
     >
-      <DialogTrigger asChild>
-        <Button type='button' variant='outline'>
-          <ArrowRightLeft />
-          积分换算
-        </Button>
-      </DialogTrigger>
-      <DialogContent aria-describedby={undefined}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent
+        aria-describedby={undefined}
+        onCloseAutoFocus={
+          restoreFocus &&
+          ((event) => {
+            event.preventDefault()
+            restoreFocus()
+          })
+        }
+      >
         <DialogHeader>
           <DialogTitle>模型积分换算</DialogTitle>
         </DialogHeader>
         {open && (
           <ConversionLoader
-            close={() => setOpen(false)}
+            close={() => onOpenChange(false)}
             pendingChanged={setPending}
           />
         )}

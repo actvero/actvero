@@ -49,7 +49,7 @@ class PublicationInput(Input):
     image: ImageOptions = Field(default_factory=ImageOptions)
     speech: SpeechOptions = Field(default_factory=SpeechOptions)
     transcription: TranscriptionOptions = Field(default_factory=TranscriptionOptions)
-    capability_mode: Literal["auto", "manual"] = "auto"
+    capability_mode: Literal["auto", "manual"] = "manual"
     chat_policy: ChatPolicy = Field(default_factory=ChatPolicy)
     reserve_usd: str = Field(
         default="0.01",
@@ -175,6 +175,8 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
         transport.models = [*transport.models, {"id": body.model_name}]
     await db.flush()
     config = configuration(actor.tenant.id, connection.base_url, body, auto)
+    assert config.gateway is not None
+    config.gateway.transport_provider = status.transport_provider
     if facts and config.gateway:
         config.gateway.capability_source = {
             **config.gateway.capability_source,

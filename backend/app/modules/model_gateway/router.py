@@ -18,7 +18,7 @@ from app.modules.model_gateway.access_status import (
 from app.modules.model_gateway.authorization import administrator
 from app.modules.model_gateway.connection_templates import is_ark_plan_template
 from app.modules.model_gateway.models import GatewayDirectory
-from app.modules.model_gateway.parameters import ModelParametersInput, ProviderMetadataInput
+from app.modules.model_gateway.parameters import ModelParametersInput
 from app.modules.model_gateway.publication import PublicationInput
 from app.modules.model_gateway.schemas import (
     GatewayChannelInput,
@@ -596,47 +596,22 @@ async def save_model_parameters(
     return GatewayResult(data=await parameters.view(db, actor.tenant.id, model))
 
 
-@router.post("/parameters/discover")
-async def discover_model_parameters(
-    request: Request, db: DB, body: ProviderMetadataInput
-) -> GatewayResult:
-    from app.modules.model_gateway.parameters import provider_profile
-
-    actor = await administrator(request, db, write=True)
-    raw = await client.call(
-        request,
-        actor.tenant.id,
-        "GET",
-        f"/api/channel/metadata/{body.channel_id}",
-        params={
-            "model": body.model_name,
-            "reference_model": body.reference_model,
-            "workspace_id": body.workspace_id,
-        },
-    )
-    if not isinstance(raw, dict):
-        raise HTTPException(502, "供应商资料格式暂不支持")
-    return GatewayResult(
-        data={
-            "profile": provider_profile(raw),
-            "description": raw.get("description", ""),
-            "prices": raw.get("prices", []),
-            "model": raw.get("model"),
-            "fetched_at": now().isoformat(),
-        }
-    )
-
-
 @router.get("/parameters")
 async def model_parameters(
-    request: Request, db: DB, model: str = Query(max_length=128)
+    request: Request,
+    db: DB,
+    model: str = Query(max_length=128),
+    include_reference: bool = Query(default=True),
 ) -> GatewayResult:
     from app.modules.model_gateway import parameters
 
     actor = await administrator(request, db)
+    data = await parameters.view(db, actor.tenant.id, model)
+    if not include_reference:
+        return GatewayResult(data=data)
+
     from app.modules.model_gateway.capabilities import resolve
 
-    data = await parameters.view(db, actor.tenant.id, model)
     try:
         connection = await client.relay_connection(request, actor.tenant.id)
         channels = await service.all_channels(request, actor.tenant.id)
@@ -671,18 +646,20 @@ async def publication_view(
     if facts:
         data.update({k: v for k, v in facts.configuration.items() if k in parameters.FACT_FIELDS})
         data["capability_source"] = facts.configuration.get("source", {})
-    try:
-        automatic = resolve(
-            model,
-            config.relay_group,
-            await service.all_channels(request, actor.tenant.id),
-            reference_model=facts.configuration.get("reference_model", "") if facts else "",
-        )
-    except HTTPException:
-        automatic = {
-            "status": "unavailable",
-            "reason": "暂时无法读取渠道资料，可由管理员填写参数",
-        }
+    automatic: dict[str, Any] = {}
+    if data.get("capability_mode") == "auto":
+        try:
+            automatic = resolve(
+                model,
+                config.relay_group,
+                await service.all_channels(request, actor.tenant.id),
+                reference_model=facts.configuration.get("reference_model", "") if facts else "",
+            )
+        except HTTPException:
+            automatic = {
+                "status": "unavailable",
+                "reason": "暂时无法读取渠道资料，可由管理员填写参数",
+            }
     return GatewayResult(
         data={
             **data,

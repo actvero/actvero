@@ -65,7 +65,7 @@ export type Parameters = Pick<
 export function parameterValues(saved: Partial<Parameters>): ParameterValues {
   const defaults = values()
   return {
-    capability_mode: saved.capability_mode ?? 'auto',
+    capability_mode: saved.capability_mode ?? 'manual',
     kind: saved.kind ?? 'chat',
     context_window: saved.context_window?.toString() ?? '',
     max_output: saved.max_output?.toString() ?? '',
@@ -111,7 +111,10 @@ export function parameterInput(value: ParameterValues): Parameters {
     kind: value.kind,
     context_window: input.context_window,
     max_output: input.max_output,
-    capabilities: input.capabilities,
+    capabilities:
+      value.kind === 'chat'
+        ? { ...input.capabilities, streaming: 'supported' }
+        : input.capabilities,
     reasoning_options: input.reasoning_options,
     chat_policy: chatPolicyInput(value.chat_policy),
     retrieval: input.retrieval,

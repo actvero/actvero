@@ -17,7 +17,6 @@ from app.modules.llm.catalog_schemas import (
     RetrievalOptions,
 )
 from app.modules.llm.image_schemas import ImageOptions
-from app.modules.llm.model_identifier import ModelIdentifier
 from app.modules.llm.schemas import Input
 from app.modules.members.service import Access
 from app.modules.model_gateway.models import GatewayModelParameters
@@ -37,56 +36,6 @@ FACT_FIELDS = {
 }
 
 
-class ProviderMetadataInput(Input):
-    model_name: ModelIdentifier
-    channel_id: int = Field(gt=0)
-    reference_model: str = Field(default="", max_length=128)
-    workspace_id: str = Field(default="", pattern=r"^[A-Za-z0-9-]{0,64}$")
-
-
-def provider_profile(raw: dict[str, Any]) -> dict[str, Any]:
-    info = raw.get("model_info")
-    info = info if isinstance(info, dict) else {}
-    features = raw.get("features")
-    features = features if isinstance(features, list) else []
-    metadata = raw.get("inference_metadata")
-    modalities = metadata.get("request_modality") if isinstance(metadata, dict) else []
-    modalities = (
-        [str(value).lower() for value in modalities] if isinstance(modalities, list) else []
-    )
-    capabilities = raw.get("capabilities")
-    capabilities = capabilities if isinstance(capabilities, list) else []
-
-    def limit(key: str) -> int | None:
-        value = info.get(key)
-        return value if type(value) is int and 0 < value <= 100000000 else None
-
-    context, output = limit("context_window"), limit("max_output_tokens")
-    return {
-        "capability_mode": "manual",
-        "context_window": context,
-        "max_output": output if not context or not output else min(output, context - 1),
-        "capabilities": {
-            "tools": "supported" if "function-calling" in features else "unknown",
-            "structured_output": "supported" if "structured-outputs" in features else "unknown",
-            "vision": "supported"
-            if "image" in modalities
-            else "unsupported"
-            if modalities
-            else "unknown",
-            "reasoning": "supported"
-            if limit("max_reasoning_tokens") or "Reasoning" in capabilities
-            else "unknown",
-        },
-        "source": {
-            "provider": "aliyun-bailian",
-            "model": str(raw.get("model", "")),
-            "verified_at": now().isoformat(),
-            "url": "https://help.aliyun.com/zh/model-studio/list-models",
-        },
-    }
-
-
 class ModelParametersInput(Input):
     version: int = Field(default=0, ge=0)
     kind: OperationKind = "chat"
@@ -98,7 +47,7 @@ class ModelParametersInput(Input):
     image: ImageOptions = Field(default_factory=ImageOptions)
     speech: SpeechOptions = Field(default_factory=SpeechOptions)
     transcription: TranscriptionOptions = Field(default_factory=TranscriptionOptions)
-    capability_mode: Literal["auto", "manual"] = "auto"
+    capability_mode: Literal["auto", "manual"] = "manual"
     reference_model: str = Field(default="", max_length=128)
     source: dict[str, str] = Field(default_factory=dict, max_length=12)
 
@@ -161,6 +110,7 @@ def project(configuration: dict[str, Any], body: ModelParametersInput) -> dict[s
     data["gateway"] = {
         **data["gateway"],
         "capability_mode": body.capability_mode,
+        "transport_provider": previous.gateway.native_provider if previous.gateway else None,
         "capability_source": {
             **body.source,
             "reference_model": body.reference_model,

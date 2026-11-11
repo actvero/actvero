@@ -48,6 +48,10 @@ async def test_facts_save_without_routes_prices_or_publication_and_enforce_versi
     assert response.json()["data"]["version"] == 1
     assert (await admin.api.put(path, json=FACTS)).status_code == 409
     native.assert_not_awaited()
+    editor_data = (await admin.api.get(path + "&include_reference=false")).json()["data"]
+    assert editor_data["context_window"] == 64000
+    assert "automatic" not in editor_data and "sources" not in editor_data
+    native.assert_not_awaited()
     async with env.sessions() as db:
         assert await db.scalar(select(CatalogModel)) is None
         saved = await db.scalar(select(GatewayModelParameters))
@@ -166,41 +170,3 @@ async def test_archived_publication_reuses_identity_and_facts_after_channel_repl
         assert row.configuration["context_window"] == 64000
         assert row.configuration["access"]["enabled"]
         assert len((await db.scalars(select(GatewayModelParameters))).all()) == 1
-
-
-async def test_bailian_preview_uses_owned_native_credentials_without_writing_configuration(
-    env, monkeypatch
-):
-    admin = await env.client()
-    bind(env, admin)
-    native = AsyncMock(
-        return_value={
-            "model": "kimi-k3.1-pro",
-            "description": "Official description",
-            "model_info": {"context_window": 128000, "max_output_tokens": 16000},
-            "features": ["function-calling"],
-            "inference_metadata": {"request_modality": ["Text"]},
-            "prices": [{"unit": "tokens", "price": "1"}],
-        }
-    )
-    monkeypatch.setattr(client, "call", native)
-    response = await admin.api.post(
-        BASE + "/discover",
-        json={
-            "model_name": "kimi/kimi-k3.1-pro",
-            "channel_id": 2,
-            "reference_model": "kimi-k3.1-pro",
-            "workspace_id": "workspace-fixture",
-        },
-    )
-    assert response.status_code == 200, response.text
-    data = response.json()["data"]
-    assert data["profile"]["context_window"] == 128000
-    assert data["profile"]["capabilities"]["tools"] == "supported"
-    assert data["profile"]["capabilities"]["structured_output"] == "unknown"
-    assert data["profile"]["source"]["provider"] == "aliyun-bailian"
-    assert native.await_args.args[2:4] == ("GET", "/api/channel/metadata/2")
-    assert native.await_args.kwargs["params"]["model"] == "kimi/kimi-k3.1-pro"
-    async with env.sessions() as db:
-        assert await db.scalar(select(GatewayModelParameters)) is None
-        assert await db.scalar(select(CatalogModel)) is None

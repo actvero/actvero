@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ServerTable } from '@/components/data-table/server-table'
+import { FilterSelect } from '@/components/filter-select'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
@@ -34,28 +35,17 @@ const columns: ColumnDef<MemberMatch>[] = [
   },
   {
     id: 'policy',
-    header: '采用策略',
+    header: '生效策略',
     cell: ({ row: { original: m } }) =>
       m.selected ? (
-        <div className='flex min-w-28 flex-col items-start gap-1'>
-          <span>{m.selected.name}</span>
-          <Badge variant='secondary'>
-            {m.assigned ? '指定策略' : '继承默认'}
-          </Badge>
-        </div>
+        m.assigned ? (
+          m.selected.name
+        ) : (
+          <span className='text-muted-foreground'>继承组织默认</span>
+        )
       ) : (
         '未配置'
       ),
-  },
-  {
-    id: 'mode',
-    header: '额度方式',
-    cell: ({ row }) =>
-      row.original.selected?.mode === 'unlimited'
-        ? '不限额度'
-        : row.original.selected
-          ? '周期限额'
-          : '—',
   },
   {
     id: 'usage',
@@ -81,19 +71,22 @@ export function MemberMatches() {
   const client = useQueryClient()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [scope, setScope] = useState('members')
   const q = useDeferredValue(search)
-  const params = new URLSearchParams({ q, page: String(page) }).toString()
+  const params = new URLSearchParams({ q, page: String(page) })
+  if (scope === 'assigned') params.set('assigned_only', 'true')
+  const searchParams = params.toString()
   const query = useQuery({
     queryKey: [
       'organization',
       organization.tenant_id,
       'quota',
       'matches',
-      params,
+      searchParams,
     ],
     queryFn: ({ signal }) =>
       api<Schema['QuotaMatchPage']>(
-        '/quota/matches?' + params,
+        '/quota/matches?' + searchParams,
         'GET',
         undefined,
         undefined,
@@ -102,19 +95,33 @@ export function MemberMatches() {
   })
   return (
     <div className='flex min-w-0 flex-col gap-4'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
+      <div className='flex flex-wrap items-center gap-3'>
         <Input
           className='max-w-sm'
           value={search}
           maxLength={200}
-          aria-label='搜索成员匹配'
+          aria-label='搜索成员'
           placeholder='搜索姓名或邮箱…'
           onChange={(e) => {
             setSearch(e.target.value)
             setPage(1)
           }}
         />
+        <FilterSelect
+          label='成员范围'
+          value={scope}
+          allowAll={false}
+          options={[
+            { value: 'members', label: '全部成员' },
+            { value: 'assigned', label: '仅看单独分配' },
+          ]}
+          onChange={(value) => {
+            setScope(value)
+            setPage(1)
+          }}
+        />
         <Button
+          className='ml-auto'
           variant='outline'
           onClick={() =>
             void client.invalidateQueries({
@@ -137,7 +144,9 @@ export function MemberMatches() {
           total={query.data.total}
           page={page}
           onPage={setPage}
-          empty='没有匹配的成员'
+          empty={
+            scope === 'assigned' ? '没有匹配的单独分配成员' : '没有匹配的成员'
+          }
         />
       )}
     </div>

@@ -59,16 +59,21 @@ import {
 } from '@newapi/components/ui/sheet'
 import { Switch } from '@newapi/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@newapi/components/ui/tabs'
-import { Textarea } from '@newapi/components/ui/textarea'
+import {
+  invalidateModelPricing,
+  saveModelPricing,
+} from '@newapi/features/model-pricing/api'
 import { ModelPricingPanel } from '@newapi/features/model-pricing/model-pricing-panel'
 import {
   requireServerSuccess,
   createServerError,
   getServerErrorMessage,
 } from '@newapi/lib/server-error-message'
+import { ChevronLeft, Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Field, FieldLabel } from '@/components/ui/field'
+import type { ReferencePricingDraft } from '@/features/model-gateway/reference-pricing'
 import { createModel, updateModel, getModel, getVendors } from '../../api'
 import { getNameRuleOptions, ENDPOINT_TEMPLATES } from '../../constants'
 import { modelsQueryKeys, vendorsQueryKeys } from '../../lib'
@@ -82,6 +87,20 @@ import {
 import type { Model } from '../../types'
 import { ModelConnections } from '../model-connections'
 
+export type ModelParameterControls = {
+  onChange: (state: {
+    draft: Record<string, unknown>
+    dirty: boolean
+    valid: boolean
+  }) => void
+  referenceOpen: boolean
+  closeReference: () => void
+  restoreReferenceFocus: () => void
+  pricingDirty: boolean
+  onReferencePricing?: (draft: ReferencePricingDraft) => void
+  onReferenceOverwritePricing?: (draft: ReferencePricingDraft) => Promise<void>
+}
+
 export function ModelMutateDrawer(props: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -89,15 +108,7 @@ export function ModelMutateDrawer(props: {
   initialSection?: 'metadata' | 'pricing' | 'access'
   renderParameters?: (
     model: Model,
-    controls: {
-      onDescription?: (description: string) => void
-      onPricing?: () => void
-      onChange: (state: {
-        draft: Record<string, unknown>
-        dirty: boolean
-        valid: boolean
-      }) => void
-    }
+    controls: ModelParameterControls
   ) => ReactNode
   renderAccess?: (
     model: Model,
@@ -135,6 +146,11 @@ export function ModelMutateDrawer(props: {
     props.initialSection === 'pricing'
   )
   const [pricingDirty, setPricingDirty] = useState(false)
+  const [pricingRevision, setPricingRevision] = useState(0)
+  const [referenceOpen, setReferenceOpen] = useState(false)
+  const [referencePricing, setReferencePricing] =
+    useState<ReferencePricingDraft>()
+  const referenceButton = useRef<HTMLButtonElement>(null)
   const [accessDirty, setAccessDirty] = useState(false)
   const [accessSaving, setAccessSaving] = useState(false)
   const [accessVisited, setAccessVisited] = useState(
@@ -181,6 +197,8 @@ export function ModelMutateDrawer(props: {
     setPricingVisited(props.initialSection === 'pricing')
     setPricingName('')
     setPricingDirty(false)
+    setReferenceOpen(false)
+    setReferencePricing(undefined)
     setAccessDirty(false)
     setAccessSaving(false)
     setAccessVisited(props.initialSection === 'access')
@@ -276,7 +294,7 @@ export function ModelMutateDrawer(props: {
         queryClient.invalidateQueries({ queryKey: vendorsQueryKeys.all }),
       ])
       toast.success(t('Model metadata saved'))
-      if (!pricingDirty && !accessDirty && !accessSaving)
+      if (!pricingDirty && !referencePricing && !accessDirty && !accessSaving)
         props.onOpenChange(false)
     },
     onError: (error) => {
@@ -299,7 +317,11 @@ export function ModelMutateDrawer(props: {
     if (!open && (isSubmitting || accessSaving)) return
     if (
       !open &&
-      (metadataDirty || parameterState?.dirty || pricingDirty || accessDirty)
+      (metadataDirty ||
+        parameterState?.dirty ||
+        pricingDirty ||
+        referencePricing ||
+        accessDirty)
     ) {
       setCloseConfirm(true)
       return
@@ -310,11 +332,47 @@ export function ModelMutateDrawer(props: {
   return (
     <>
       <Sheet open={props.open} onOpenChange={close}>
-        <SheetContent className={sideDrawerContentClassName('sm:max-w-none')}>
+        <SheetContent
+          showCloseButton={false}
+          className={sideDrawerContentClassName('sm:max-w-none')}
+        >
           <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle className='pr-6 break-all'>
-              {hasModelName ? currentRow?.model_name : t('Create Model')}
-            </SheetTitle>
+            <div className='flex min-w-0 items-center justify-between gap-2'>
+              <SheetTitle className='min-w-0'>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  className='max-w-full justify-start'
+                  onClick={() => close(false)}
+                  disabled={isSubmitting || accessSaving}
+                >
+                  <ChevronLeft data-icon='inline-start' />
+                  <span className='truncate'>
+                    {currentRow?.model_name ||
+                      form.watch('model_name') ||
+                      t('Create Model')}
+                  </span>
+                  <span className='sr-only'>返回模型列表</span>
+                </Button>
+              </SheetTitle>
+              {props.renderParameters &&
+                form.watch('name_rule') === 0 &&
+                form.watch('model_name') &&
+                (!parameterState || parameterState.draft.kind === 'chat') && (
+                  <Button
+                    ref={referenceButton}
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='shrink-0'
+                    onClick={() => setReferenceOpen(true)}
+                    disabled={!parameterState || isSubmitting || accessSaving}
+                  >
+                    <Download data-icon='inline-start' />
+                    从远程拉取
+                  </Button>
+                )}
+            </div>
             <SheetDescription
               className={props.renderAccess ? 'sr-only' : undefined}
             >
@@ -484,24 +542,6 @@ export function ModelMutateDrawer(props: {
 
                       <FormField
                         control={form.control}
-                        name='description'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('Description')}</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder={t('Describe this model...')}
-                                rows={3}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
                         name='icon'
                         render={({ field }) => (
                           <FormItem>
@@ -582,16 +622,35 @@ export function ModelMutateDrawer(props: {
                               } as Model),
                             {
                               onChange: setParameterState,
-                              onDescription: (description) => {
-                                if (!form.getValues('description'))
-                                  form.setValue('description', description, {
-                                    shouldDirty: true,
-                                  })
-                              },
-                              onPricing: () => {
-                                setSection('pricing')
-                                setPricingVisited(true)
-                              },
+                              referenceOpen,
+                              closeReference: () => setReferenceOpen(false),
+                              restoreReferenceFocus: () =>
+                                referenceButton.current?.focus(),
+                              pricingDirty: pricingDirty || !!referencePricing,
+                              onReferencePricing: hasModelName
+                                ? (draft) => {
+                                    setReferencePricing(draft)
+                                    setSection('pricing')
+                                    setPricingVisited(true)
+                                  }
+                                : undefined,
+                              onReferenceOverwritePricing: currentRow
+                                ? async (draft) => {
+                                    await saveModelPricing([
+                                      {
+                                        model_name: currentRow.model_name,
+                                        expected_version: draft.expectedVersion,
+                                        pricing: draft.pricing,
+                                      },
+                                    ])
+                                    setReferencePricing(undefined)
+                                    setPricingDirty(false)
+                                    setPricingRevision(
+                                      (revision) => revision + 1
+                                    )
+                                    await invalidateModelPricing(queryClient)
+                                  }
+                                : undefined,
                             }
                           )}
                         </SideDrawerSection>
@@ -767,13 +826,6 @@ export function ModelMutateDrawer(props: {
                   </Alert>
                 )}
                 <Button
-                  variant='outline'
-                  onClick={() => close(false)}
-                  disabled={isSubmitting}
-                >
-                  {t('Close')}
-                </Button>
-                <Button
                   form='model-form'
                   type='submit'
                   disabled={
@@ -825,11 +877,9 @@ export function ModelMutateDrawer(props: {
               {(savedModel.name_rule === 0 || pricingName) && (
                 <ModelPricingPanel
                   onDirtyChange={setPricingDirty}
-                  key={
-                    savedModel.name_rule === 0
-                      ? savedModel.model_name
-                      : pricingName
-                  }
+                  referenceDraft={referencePricing}
+                  onReferenceSaved={() => setReferencePricing(undefined)}
+                  key={`${savedModel.name_rule === 0 ? savedModel.model_name : pricingName}:${pricingRevision}`}
                   modelName={
                     savedModel.name_rule === 0
                       ? savedModel.model_name

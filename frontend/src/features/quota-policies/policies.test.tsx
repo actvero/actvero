@@ -143,7 +143,9 @@ it('shows inherited and assigned policies and saves a versioned member assignmen
         assigned = true
         return Response.json({})
       }
-      if (url.includes('/quota/matches'))
+      if (url.includes('/quota/matches')) {
+        if (url.includes('assigned_only=true') && !assigned)
+          return Response.json({ items: [], total: 0, enforcement: 'active' })
         return Response.json({
           items: [
             {
@@ -162,12 +164,18 @@ it('shows inherited and assigned policies and saves a versioned member assignmen
           total: 1,
           enforcement: 'active',
         })
+      }
       if (url.includes('/quota/policies'))
         return Response.json({
-          items: [base, unlimited],
+          items: [
+            { ...base, active_member_count: assigned ? 0 : 1 },
+            { ...unlimited, active_member_count: assigned ? 1 : 0 },
+          ],
           total: 2,
           has_default: true,
         })
+      if (url.endsWith('/llm/point-conversion'))
+        return Response.json({ conversion: null })
       if (url.includes('/members/member-one/quota'))
         return Response.json({
           status: 'unlimited',
@@ -178,17 +186,42 @@ it('shows inherited and assigned policies and saves a versioned member assignmen
     })
   )
   await show(<QuotaPoliciesPage />)
+  await expect
+    .element(page.getByRole('row').filter({ hasText: '标准额度' }))
+    .toHaveTextContent(/5 小时 1000 积分.*1 人/)
+  await expect
+    .element(page.getByRole('columnheader', { name: '重置规则' }))
+    .not.toBeInTheDocument()
+  await page.getByRole('button', { name: '更多额度操作' }).click()
+  await page.getByRole('menuitem', { name: '积分换算' }).click()
+  await expect
+    .element(page.getByRole('dialog', { name: '模型积分换算' }))
+    .toBeVisible()
+  await page
+    .getByRole('dialog', { name: '模型积分换算' })
+    .getByRole('button', { name: 'Close', exact: true })
+    .click()
   await page.getByRole('tab', { name: '成员分配' }).click()
   await expect
-    .element(page.getByText('继承默认', { exact: true }))
+    .element(page.getByText('继承组织默认', { exact: true }))
     .toBeVisible()
+  await page.getByRole('combobox', { name: '成员范围' }).click()
+  await page.getByRole('option', { name: '仅看单独分配', exact: true }).click()
+  await expect.element(page.getByText('没有匹配的单独分配成员')).toBeVisible()
+  await page.getByRole('combobox', { name: '成员范围' }).click()
+  await page.getByRole('option', { name: '全部成员', exact: true }).click()
   await page.getByRole('button', { name: '分配策略', exact: true }).click()
   await page.getByRole('radio', { name: /团队不限额/ }).click()
   await page.getByRole('button', { name: '保存分配', exact: true }).click()
   await expect.element(page.getByRole('dialog')).not.toBeInTheDocument()
   expect(sent).toEqual([{ policy_id: 'unlimited', version: 3 }])
   await expect
-    .element(page.getByText('指定策略', { exact: true }))
+    .element(
+      page
+        .getByRole('row')
+        .filter({ hasText: '测试成员' })
+        .getByText('团队不限额', { exact: true })
+    )
     .toBeVisible()
   await expect
     .element(page.getByText('其他命中', { exact: true }))
@@ -249,21 +282,36 @@ it('lets a paused member return to inheritance without granting another policy',
         sent.push(JSON.parse(String(init.body)))
         return Response.json({})
       }
-      return Response.json({ items: [base, unlimited], total: 2, has_default: true })
+      return Response.json({
+        items: [base, unlimited],
+        total: 2,
+        has_default: true,
+      })
     })
   )
   await show(
     <AssignmentButton
       member={{
-        member_id: 'paused', name: '暂停成员', email: null, role: 'member',
-        status: 'paused', avatar_url: null, assigned: unlimited, selected: unlimited,
-        assignment_version: 5, rules: [],
+        member_id: 'paused',
+        name: '暂停成员',
+        email: null,
+        role: 'member',
+        status: 'paused',
+        avatar_url: null,
+        assigned: unlimited,
+        selected: unlimited,
+        assignment_version: 5,
+        rules: [],
       }}
     />
   )
   await page.getByRole('button', { name: '分配策略', exact: true }).click()
-  await expect.element(page.getByRole('radio', { name: /团队不限额/ })).toBeDisabled()
-  await expect.element(page.getByRole('button', { name: '保存分配' })).toBeDisabled()
+  await expect
+    .element(page.getByRole('radio', { name: /团队不限额/ }))
+    .toBeDisabled()
+  await expect
+    .element(page.getByRole('button', { name: '保存分配' }))
+    .toBeDisabled()
   await page.getByRole('radio', { name: '继承组织默认策略' }).click()
   await page.getByRole('button', { name: '保存分配' }).click()
   await expect.element(page.getByRole('dialog')).not.toBeInTheDocument()
