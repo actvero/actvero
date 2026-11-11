@@ -25,6 +25,7 @@ import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { useAccessColumns } from './access-columns'
 import type { GatewayState } from './api'
+import { ModelParameters } from './model-parameters'
 import { bindNativeAdministrator } from './native-session'
 import { ModelPublication } from './publication'
 
@@ -87,6 +88,11 @@ export function NativeModelManagement() {
           onManageAccess={setAccessRequest}
           accessColumns={accessColumns}
           onModelsVisible={onModelsVisible}
+          renderParameters={(model, controls) => (
+            <QueryClientProvider client={hostClient}>
+              <ModelParameters model={model.model_name} {...controls} />
+            </QueryClientProvider>
+          )}
           renderAccess={(model, controls) => (
             <QueryClientProvider client={hostClient}>
               <ModelPublication model={model.model_name} {...controls} />
@@ -131,7 +137,7 @@ function NativeModelsContent() {
       <PageShell
         compact
         fixedContent
-        title={section === 'vendors' ? '供应商管理' : '模型管理'}
+        title={section === 'vendors' ? '供应商' : '模型'}
         action={
           <div className='flex flex-wrap items-center gap-2'>
             {section === 'vendors' ? (

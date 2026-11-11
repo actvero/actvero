@@ -23,7 +23,10 @@ import { effortLabels, type ModelValues } from './model-form'
 
 export function ChatPolicyFields({ disabled }: { disabled: boolean }) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const form = useFormContext<ModelValues>()
+  const form =
+    useFormContext<
+      Pick<ModelValues, 'kind' | 'capabilities' | 'reasoning' | 'chat_policy'>
+    >()
   const draft = useWatch({ control: form.control })
   if (draft.kind !== 'chat') return null
   return (

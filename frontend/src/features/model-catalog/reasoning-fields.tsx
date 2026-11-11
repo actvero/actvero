@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { effortLabels, effortLevels, type ModelValues } from './model-form'
 
 export function ReasoningFields({ disabled }: { disabled: boolean }) {
-  const form = useFormContext<ModelValues>()
+  const form = useFormContext<Pick<ModelValues, 'capabilities' | 'reasoning'>>()
   const support = useWatch({
     control: form.control,
     name: 'capabilities.reasoning',

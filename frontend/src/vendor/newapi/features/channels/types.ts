@@ -197,6 +197,11 @@ export interface ChannelOpsResponse {
 
 export interface ChannelTestResponse {
   success: boolean
+  pricing_status?: 'unpriced'
+  model_name?: string
+  endpoint_type?: string
+  prompt_tokens?: number
+  completion_tokens?: number
   message?: string
   error_code?: string
   time?: number
@@ -392,4 +397,3 @@ export interface AddChannelRequest {
   batch_add_set_key_prefix_2_name?: boolean
   channel: Partial<Channel>
 }
-

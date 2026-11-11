@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import type { ModelValues } from './model-form'
 
 export function SpeechFields({ disabled }: { disabled: boolean }) {
-  const form = useFormContext<ModelValues>()
+  const form = useFormContext<Pick<ModelValues, 'speech'>>()
   return (
     <Card>
       <CardHeader>

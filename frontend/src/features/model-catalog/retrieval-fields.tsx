@@ -21,7 +21,7 @@ import { MemberPicker } from '@/components/member-picker'
 import type { ModelValues } from './model-form'
 
 export function RetrievalFields({ disabled }: { disabled: boolean }) {
-  const form = useFormContext<ModelValues>()
+  const form = useFormContext<Pick<ModelValues, 'kind' | 'retrieval'>>()
   const kind = useWatch({ control: form.control, name: 'kind' })
   const fields = [
     ...(kind === 'embedding'

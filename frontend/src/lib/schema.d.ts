@@ -4704,6 +4704,41 @@ export interface paths {
         patch: operations["model_gateway_native_model_patch"];
         trace?: never;
     };
+    "/api/v1/model-gateway/parameters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Model Parameters */
+        get: operations["model_parameters_api_v1_model_gateway_parameters_get"];
+        /** Save Model Parameters */
+        put: operations["save_model_parameters_api_v1_model_gateway_parameters_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/model-gateway/parameters/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discover Model Parameters */
+        post: operations["discover_model_parameters_api_v1_model_gateway_parameters_discover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/model-gateway/prices": {
         parameters: {
             query?: never;
@@ -12763,6 +12798,46 @@ export interface components {
              */
             upstream_id: string;
         };
+        /** ModelParametersInput */
+        ModelParametersInput: {
+            capabilities?: components["schemas"]["ModelCapabilities"];
+            /**
+             * Capability Mode
+             * @default auto
+             * @enum {string}
+             */
+            capability_mode: "auto" | "manual";
+            /** Context Window */
+            context_window?: number | null;
+            image?: components["schemas"]["ImageOptions"];
+            /**
+             * Kind
+             * @default chat
+             * @enum {string}
+             */
+            kind: "chat" | "embedding" | "rerank" | "image_generation" | "speech" | "transcription";
+            /** Max Output */
+            max_output?: number | null;
+            /** Reasoning Options */
+            reasoning_options?: (components["schemas"]["ReasoningToggle"] | components["schemas"]["ReasoningEffort"] | components["schemas"]["ReasoningBudget"])[];
+            /**
+             * Reference Model
+             * @default
+             */
+            reference_model: string;
+            retrieval?: components["schemas"]["RetrievalOptions"];
+            /** Source */
+            source?: {
+                [key: string]: string;
+            };
+            speech?: components["schemas"]["SpeechOptions"];
+            transcription?: components["schemas"]["TranscriptionOptions"];
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+        };
         /** ModelsInput */
         ModelsInput: {
             /** Models */
@@ -13558,6 +13633,23 @@ export interface components {
              * @default true
              */
             enabled: boolean;
+        };
+        /** ProviderMetadataInput */
+        ProviderMetadataInput: {
+            /** Channel Id */
+            channel_id: number;
+            /** Model Name */
+            model_name: string;
+            /**
+             * Reference Model
+             * @default
+             */
+            reference_model: string;
+            /**
+             * Workspace Id
+             * @default
+             */
+            workspace_id: string;
         };
         /** ProviderView */
         ProviderView: {
@@ -29716,6 +29808,105 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_parameters_api_v1_model_gateway_parameters_get: {
+        parameters: {
+            query: {
+                model: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_model_parameters_api_v1_model_gateway_parameters_put: {
+        parameters: {
+            query: {
+                model: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelParametersInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_model_parameters_api_v1_model_gateway_parameters_discover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderMetadataInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayResult"];
                 };
             };
             /** @description Validation Error */

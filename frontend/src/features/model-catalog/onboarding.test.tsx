@@ -133,7 +133,7 @@ it('does not reactivate a globally stopped channel', async () => {
   await page.getByRole('button', { name: '保存并启用' }).click()
   await expect
     .element(
-      page.getByText('渠道“来源渠道”已停用或归档，请在渠道管理中恢复后重试。')
+      page.getByText('渠道“来源渠道”已停用或归档，请在渠道页恢复后重试。')
     )
     .toBeVisible()
   expect(writes).toHaveLength(0)

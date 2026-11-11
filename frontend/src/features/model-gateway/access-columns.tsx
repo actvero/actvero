@@ -8,26 +8,6 @@ import { Button } from '@/components/ui/button'
 import { useOrganization } from '@/features/auth/session'
 import { supportsMemberAccess } from './model-name'
 
-function problemLabel(state: Schema['PublicationStatus']) {
-  const problem = state.checks.find((check) => check.status !== 'ready')
-  if (state.checks.some((check) => check.status === 'unknown'))
-    return '状态待确认'
-  if (problem?.key === 'parameters') {
-    if (state.automatic?.status === 'conflict') return '能力冲突'
-    if (state.automatic?.status === 'unresolved') return '缺少能力资料'
-    return '参数不完整'
-  }
-  const labels: Record<Schema['PublicationCheck']['key'], string> = {
-    relay: '调用未配置',
-    channels: '未关联渠道',
-    pricing: '未配置价格',
-    conversion: '未配置积分换算',
-    parameters: '参数不完整',
-    members: '成员未配置',
-  }
-  return problem ? labels[problem.key] : '配置不完整'
-}
-
 export function useAccessColumns(onManage: (model: Model) => void) {
   const { organization, csrf } = useOrganization()
   const [names, setNames] = useState<string[]>([])
@@ -135,6 +115,10 @@ export function useAccessColumns(onManage: (model: Model) => void) {
             return (
               <span className='text-xs text-muted-foreground'>检查中…</span>
             )
+          const price = state.checks.find((check) => check.key === 'pricing')
+          const parameters = state.checks.find(
+            (check) => check.key === 'parameters'
+          )
           const problems = state.checks.filter(
             (check) => check.status !== 'ready'
           )
@@ -144,16 +128,37 @@ export function useAccessColumns(onManage: (model: Model) => void) {
               className='flex min-w-0 flex-col items-start gap-1 text-left'
               onClick={() => onManage(row.original)}
             >
-              <Badge variant={state.ready ? 'secondary' : 'outline'}>
-                {state.ready ? '配置就绪' : problemLabel(state)}
-              </Badge>
+              <div className='flex flex-wrap gap-1'>
+                <Badge variant='outline'>
+                  资料：{row.original.has_metadata ? '已登记' : '待补充'}
+                </Badge>
+                <Badge variant='outline'>
+                  参数：
+                  {parameters?.status === 'ready'
+                    ? '就绪'
+                    : parameters?.status === 'unknown'
+                      ? '待确认'
+                      : '待补充'}
+                </Badge>
+                <Badge variant='outline'>
+                  价格：
+                  {price?.status === 'ready'
+                    ? '已配置'
+                    : price?.status === 'unknown'
+                      ? '待确认'
+                      : '待配置'}
+                </Badge>
+                <Badge variant={state.ready ? 'secondary' : 'outline'}>
+                  {state.ready ? '可开放' : '开放待完善'}
+                </Badge>
+              </div>
               <span
-                className='max-w-48 truncate text-xs text-muted-foreground'
+                className='max-w-64 text-xs text-muted-foreground'
                 title={problems.map((c) => c.message).join('；')}
               >
                 {state.ready
                   ? `${state.active_channels} 个可用渠道`
-                  : problems[0]?.message}
+                  : problems.map((c) => c.message).join('；')}
               </span>
             </button>
           )

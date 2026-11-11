@@ -17,6 +17,13 @@ from app.modules.model_gateway.router import audit
 from app.modules.tenants.models import Tenant
 
 READS = {
+    "api/data": "/api/data",
+    "api/data/self": "/api/data/self",
+    "api/data/users": "/api/data/users",
+    "api/data/flow": "/api/data/flow",
+    "api/data/flow/self": "/api/data/flow/self",
+    "api/perf-metrics/summary": "/api/perf-metrics/summary",
+    "api/perf-metrics": "/api/perf-metrics",
     "api/models": "/api/models/",
     "api/models/search": "/api/models/search",
     "api/models/missing": "/api/models/missing",
@@ -28,6 +35,13 @@ READS = {
     "api/pricing": "/api/pricing",
 }
 QUERY_FIELDS = {
+    "start_timestamp",
+    "end_timestamp",
+    "default_time",
+    "username",
+    "hours",
+    "recent_model",
+    "group",
     "p",
     "page_size",
     "keyword",
@@ -87,7 +101,7 @@ def query_params(request: Request) -> dict[str, str | int | list[str]]:
                 1000 if key == "page_size" else 1000000
             ):
                 raise HTTPException(422, "分页参数无效")
-        if key == "model":
+        if key in {"model", "recent_model"}:
             names = result.setdefault(key, [])
             if isinstance(names, list):
                 names.append(value)
@@ -174,6 +188,28 @@ async def mutate(
     if payload is not None and (len(payload) > 100 or len(json.dumps(payload)) > 2000000):
         raise HTTPException(422, "模型配置超过大小上限")
     params: dict[str, str | int] = {}
+    parameter_change = None
+    parameter_name = None
+    if (
+        path == "api/models"
+        and method in {"POST", "PUT"}
+        and payload is not None
+        and "actvero_parameters" in payload
+    ):
+        from pydantic import ValidationError
+
+        from app.modules.model_gateway import parameters
+
+        try:
+            parameter_change = parameters.ModelParametersInput.model_validate(
+                payload.pop("actvero_parameters")
+            )
+        except ValidationError as exc:
+            raise HTTPException(422, "模型参数格式无效") from exc
+        parameter_name = str(payload.get("model_name", ""))
+        if payload.get("name_rule", 0) != 0:
+            raise HTTPException(422, "能力参数按具体模型维护")
+        await parameters.validate(db, actor.tenant.id, parameter_name, parameter_change)
     display_name = None
     change = None
     if path == "api/models" and method in {"POST", "PUT"} and payload is not None:
@@ -209,6 +245,8 @@ async def mutate(
     )
     if change is not None and payload is not None:
         await presentation.save(db, actor.tenant.id, str(payload["model_name"]), change)
+    if parameter_change is not None and parameter_name is not None:
+        await parameters.save(request, db, actor, parameter_name, parameter_change)
     if path == "api/models" and isinstance(result, dict) and result.get("model_name"):
         result = service.model_view(result)
         await presentation.enrich(db, actor.tenant.id, [result])

@@ -26,6 +26,10 @@ for relative, old, new in [
 
 # These anchors target the checksummed release, never an unpinned working tree.
 patches = [
+ ("controller/perf_metrics.go", 'activeGroups := append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")', 'activeGroups := actveroMetricGroups(c,append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto"))'),
+ ("controller/perf_metrics.go", 'AllowedGroups: append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto"),', 'AllowedGroups: actveroMetricGroups(c,append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")),'),
+ ("controller/channel-test.go", 'helper.ModelPriceHelper(c, info, 0, request.GetTokenCountMeta())', 'actveroTestPrice(c, info, 0, request.GetTokenCountMeta())'),
+ ("controller/channel-test.go", 'model.RecordConsumeLog(c, testUserID, model.RecordConsumeLogParams{', 'actveroRecordTestLog(c, testUserID, model.RecordConsumeLogParams{'),
  ("setting/ratio_setting/model_ratio.go", 'func FormatMatchingModelName(name string) string {', 'func FormatMatchingModelName(name string) string {\n namespace,publicName:=common.ActveroSplitName(name);name=publicName'),
  ("setting/ratio_setting/model_ratio.go", 'return name\n}\n\n// result: 倍率or价格， usePrice， exist', 'return namespace+name\n}\n\n// result: 倍率or价格， usePrice， exist'),
  ("setting/ratio_setting/model_ratio.go", 'func ResolveCompletionRatio(name string, configured *float64) CompletionRatioInfo {', 'func ResolveCompletionRatio(name string, configured *float64) CompletionRatioInfo {\n _,name=common.ActveroSplitName(name)'),

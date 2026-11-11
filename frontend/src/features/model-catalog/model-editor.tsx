@@ -364,7 +364,7 @@ export function ModelEditor({
         if (unavailable) {
           setTab('bindings')
           throw new Error(
-            `渠道“${unavailable.name}”已停用或归档，请在渠道管理中恢复后重试。`
+            `渠道“${unavailable.name}”已停用或归档，请在渠道页恢复后重试。`
           )
         }
         if (!data.budget_price.enabled) {

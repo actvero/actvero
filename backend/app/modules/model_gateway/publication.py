@@ -115,7 +115,7 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
     if row and not row.configuration.get("gateway"):
         raise HTTPException(409, "已有同名旧模型，请先为旧模型改名，再开放网关模型")
     if body.version != (row.version if row else 0):
-        raise HTTPException(409, "成员访问配置已变化，请刷新后重试")
+        raise HTTPException(409, "模型参数或访问配置已变化，请刷新后重试")
     if body.audience == "selected":
         members = set(
             await db.scalars(
@@ -128,13 +128,21 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
         )
         if not members or members != set(body.member_ids):
             raise HTTPException(422, "请选择本组织的有效成员")
+    from app.modules.model_gateway import parameters
+
+    facts = await parameters.get(db, actor.tenant.id, body.model_name)
+    if facts:
+        body = PublicationInput.model_validate(
+            body.model_dump()
+            | {k: v for k, v in facts.configuration.items() if k in parameters.FACT_FIELDS}
+        )
     from app.modules.model_gateway.access_status import inspect
 
     status = (await inspect(request, db, actor, [body.model_name], body))[0]
     if body.enabled and not status.ready:
         raise HTTPException(409, next(c.message for c in status.checks if c.status != "ready"))
     auto = status.automatic
-    body = apply_profile(body, auto)
+    body = apply_profile(body, auto, preserve_policy=facts is not None)
     channel_id = uuid5(NAMESPACE_URL, f"actvero:newapi:{actor.tenant.id}")
     transport = await db.get(ModelChannel, channel_id)
     if transport is None:
@@ -167,6 +175,13 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
         transport.models = [*transport.models, {"id": body.model_name}]
     await db.flush()
     config = configuration(actor.tenant.id, connection.base_url, body, auto)
+    if facts and config.gateway:
+        config.gateway.capability_source = {
+            **config.gateway.capability_source,
+            **facts.configuration.get("source", {}),
+            "reference_model": facts.configuration.get("reference_model", ""),
+            "independent_parameters": "true",
+        }
     if row is None:
         row = CatalogModel(
             tenant_id=actor.tenant.id,
@@ -188,7 +203,9 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
     return row
 
 
-def apply_profile(body: PublicationInput, auto: dict[str, Any]) -> PublicationInput:
+def apply_profile(
+    body: PublicationInput, auto: dict[str, Any], preserve_policy: bool = False
+) -> PublicationInput:
     if body.kind != "chat" or body.capability_mode != "auto" or auto.get("status") != "resolved":
         return body
     values = {
@@ -201,20 +218,26 @@ def apply_profile(body: PublicationInput, auto: dict[str, Any]) -> PublicationIn
             "reasoning_options",
         )
     }
+    if preserve_policy:
+        values.pop("chat_policy", None)
     return PublicationInput.model_validate(body.model_dump() | values)
 
 
 def resolve_body(
-    body: PublicationInput, group: str, channels: list[dict[str, Any]]
+    body: PublicationInput,
+    group: str,
+    channels: list[dict[str, Any]],
+    reference_model: str = "",
+    preserve_policy: bool = False,
 ) -> tuple[PublicationInput, dict[str, Any]]:
     from app.modules.model_gateway.capabilities import resolve
 
     automatic = (
-        resolve(body.model_name, group, channels)
+        resolve(body.model_name, group, channels, reference_model=reference_model)
         if body.kind == "chat" and body.capability_mode == "auto"
         else {}
     )
-    return apply_profile(body, automatic), automatic
+    return apply_profile(body, automatic, preserve_policy=preserve_policy), automatic
 
 
 def configuration(

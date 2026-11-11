@@ -19,3 +19,14 @@ class GatewayDirectory(Base):
     models: Mapped[list[str]] = mapped_column(JSONB, default=list)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     channel_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
+
+class GatewayModelParameters(Base):
+    """Model facts independent of member publication and native route lifecycle."""
+
+    __tablename__ = "newapi_model_parameters"
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), primary_key=True)
+    model_name: Mapped[str] = mapped_column(String(128), primary_key=True)
+    version: Mapped[int] = mapped_column(default=1)
+    configuration: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -31,18 +31,18 @@ export function navigation(
                 title: '模型网关',
                 icon: Network,
                 items: [
-                  { title: '渠道管理', url: '/model-channels' },
-                  { title: '模型管理', url: '/models' },
+                  { title: '数据看板', url: '/llm-usage' },
+                  { title: '渠道', url: '/model-channels' },
+                  { title: '模型', url: '/models' },
                   { title: '额度策略', url: '/quota-policies' },
                   { title: '调用记录', url: '/llm-calls' },
-                  { title: '数据看板', url: '/llm-usage' },
                 ],
               },
               {
                 title: 'Skills',
                 icon: PackageOpen,
                 items: [
-                  { title: '技能管理', url: '/skills' },
+                  { title: '技能', url: '/skills' },
                   { title: '分发记录', url: '/skill-distributions' },
                 ],
               },
@@ -50,7 +50,7 @@ export function navigation(
                 title: 'MCP',
                 icon: Plug,
                 items: [
-                  { title: '服务管理', url: '/mcp' },
+                  { title: '服务', url: '/mcp' },
                   { title: '调用记录', url: '/mcp-calls' },
                   { title: '连接日志', url: '/mcp-logs' },
                 ],

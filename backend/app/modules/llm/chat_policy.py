@@ -28,7 +28,7 @@ def resolve(body: ChatInput, config: CatalogInput, version: int) -> ChatInput:
         if value is None and rule.default is not None:
             updates[name] = rule.default
     effort = body.reasoning_effort
-    if config.gateway and config.gateway.capability_mode == "auto" and effort is not None:
+    if config.gateway and effort is not None:
         allowed = [
             value
             for option in config.reasoning_options
@@ -39,9 +39,9 @@ def resolve(body: ChatInput, config: CatalogInput, version: int) -> ChatInput:
             fail(422, "parameter_not_allowed", "当前模型不支持所选推理档位，请刷新模型目录")
     if (
         config.gateway
-        and config.gateway.capability_mode == "auto"
         and body.thinking is not None
         and body.thinking.type == "disabled"
+        and not any(option.type == "toggle" for option in config.reasoning_options)
         and not any(
             value in ("none", "minimal")
             for option in config.reasoning_options

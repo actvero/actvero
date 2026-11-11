@@ -423,7 +423,7 @@ export function ModelChannelsPage() {
   }
   return (
     <PageShell
-      title='渠道管理'
+      title='渠道'
       action={
         <Button
           ref={addButton}
@@ -704,7 +704,7 @@ export function ModelChannelsPage() {
             void client.invalidateQueries({
               queryKey: ['organization', organization.tenant_id, 'llm-models'],
             })
-            toast.success('模型已保存，可在模型管理中查看调用状态')
+            toast.success('模型已保存，可在模型页查看调用状态')
           }}
         />
       )}

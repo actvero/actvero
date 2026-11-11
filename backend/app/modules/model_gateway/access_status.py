@@ -143,6 +143,14 @@ async def inspect(
                 )
             )
         )
+        from app.modules.model_gateway import parameters
+
+        facts = await parameters.get(db, actor.tenant.id, name)
+        if facts:
+            body = publication.PublicationInput.model_validate(
+                body.model_dump()
+                | {k: v for k, v in facts.configuration.items() if k in parameters.FACT_FIELDS}
+            )
         checks = Checks()
 
         add = checks.add
@@ -193,7 +201,11 @@ async def inspect(
             "quota",
         )
         resolved_body, automatic = publication.resolve_body(
-            body, connection.relay_group, channels or []
+            body,
+            connection.relay_group,
+            channels or [],
+            reference_model=facts.configuration.get("reference_model", "") if facts else "",
+            preserve_policy=facts is not None,
         )
         try:
             publication.configuration(
