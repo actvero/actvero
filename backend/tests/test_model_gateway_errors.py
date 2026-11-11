@@ -81,3 +81,35 @@ async def test_successful_channel_test_still_filters_native_response(monkeypatch
     assert await client.call(Request({"type": "http"}), uuid4(), "GET", "/api/channel/test/1") == {
         "time": 0.5
     }
+
+
+async def test_diagnostic_usage_is_returned_without_raw_native_packets(monkeypatch):
+    monkeypatch.setattr(
+        client,
+        "send",
+        AsyncMock(
+            return_value=httpx2.Response(
+                200,
+                json={
+                    "success": True,
+                    "time": 0.5,
+                    "model_name": "actual/model",
+                    "endpoint_type": "openai",
+                    "pricing_status": "unpriced",
+                    "prompt_tokens": 7,
+                    "completion_tokens": 3,
+                    "message": "private-secret",
+                    "data": {"key": "secret"},
+                },
+            )
+        ),
+    )
+    result = await client.call(Request({"type": "http"}), uuid4(), "GET", "/api/channel/test/1")
+    assert result == {
+        "time": 0.5,
+        "model_name": "actual/model",
+        "endpoint_type": "openai",
+        "pricing_status": "unpriced",
+        "prompt_tokens": 7,
+        "completion_tokens": 3,
+    }

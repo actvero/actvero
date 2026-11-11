@@ -44,7 +44,7 @@ from app.modules.mcp.models import (
     McpSnapshot,
 )
 from app.modules.members.models import Invitation, MemberCreation, Membership
-from app.modules.model_gateway.models import GatewayDirectory
+from app.modules.model_gateway.models import GatewayDirectory, GatewayModelParameters
 from app.modules.platform.download_models import (
     ClientRecommendation,
     ClientRelease,
@@ -81,6 +81,7 @@ __all__ = [
     "ClientUpdateHead",
     "ClientUpload",
     "GatewayDirectory",
+    "GatewayModelParameters",
     "ManagementCommand",
     "BrandAsset",
     "ClientRelease",

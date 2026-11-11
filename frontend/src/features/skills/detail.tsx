@@ -312,7 +312,7 @@ function DetailContent({ skill }: { skill: Skill }) {
         <Button variant='ghost' asChild>
           <Link to='/skills'>
             <ArrowLeft />
-            返回技能管理
+            返回技能
           </Link>
         </Button>
       </div>

@@ -34,6 +34,7 @@ export function ModelsDialogs() {
     descriptionData,
     setDescriptionData,
     renderAccess,
+    renderParameters,
   } = useModels()
 
   return (
@@ -58,6 +59,7 @@ export function ModelsDialogs() {
               : 'metadata'
         }
         renderAccess={renderAccess}
+        renderParameters={renderParameters}
         onOpenChange={(v) => !v && setOpen(null)}
         currentRow={currentRow}
       />

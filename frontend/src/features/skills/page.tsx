@@ -223,7 +223,7 @@ export function SkillsPage() {
       : '还没有技能，点击“上传技能”从 ZIP 或文件夹开始'
   return (
     <PageShell
-      title='技能管理'
+      title='技能'
       description='维护团队共享的技能，发布经过确认的版本。'
       action={
         <div className='flex flex-wrap gap-2'>

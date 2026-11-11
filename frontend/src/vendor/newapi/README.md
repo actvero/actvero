@@ -24,3 +24,9 @@ Actvero modifications:
 - The provider picker adds an Ark Agent Plan preset backed by native Advanced Custom routes. It fills connection paths without supplying a model inventory, recognizes the preset again when editing, and reports the result of server-side ordinary Ark list-price initialization.
 
 The upstream form schema, provider selection, conditional fields, model mapping, validation, and create/update payload transformations remain the source of behavior. Changes to these files should be compared against the pinned upstream version rather than independently redesigning the flow.
+
+## 模型资料与原生统计适配
+
+模型窗口保留原生资料、定价和渠道关联组件，Actvero 将能力与限制加入资料保存，并提供独立的使用设置。管理员测试保留原生请求适配，展示诊断用途、未计价状态和已返回用量。
+
+数据看板的模型调用分析、分流与用户统计组件同样取自上述固定版本。路由、登录身份及查询缓存由 Actvero 提供，主题读取宿主主题；图表使用原生 VChart 依赖。前端不提供跨组织用户名筛选，后端桥接始终限定当前组织的调用身份与分组。源码及相关许可证保留于本目录。

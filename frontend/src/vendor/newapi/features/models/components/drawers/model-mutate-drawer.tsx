@@ -87,9 +87,23 @@ export function ModelMutateDrawer(props: {
   onOpenChange: (open: boolean) => void
   currentRow?: Model | null
   initialSection?: 'metadata' | 'pricing' | 'access'
+  renderParameters?: (
+    model: Model,
+    controls: {
+      onDescription?: (description: string) => void
+      onPricing?: () => void
+      onChange: (state: {
+        draft: Record<string, unknown>
+        dirty: boolean
+        valid: boolean
+      }) => void
+    }
+  ) => ReactNode
   renderAccess?: (
     model: Model,
     controls: {
+      section: 'parameters' | 'access'
+      onParameters: () => void
       onPricing: () => void
       onDirtyChange: (dirty: boolean) => void
       onSavingChange: (saving: boolean) => void
@@ -111,6 +125,11 @@ export function ModelMutateDrawer(props: {
   const [section, setSection] = useState<string>(
     props.initialSection ?? 'metadata'
   )
+  const [parameterState, setParameterState] = useState<{
+    draft: Record<string, unknown>
+    dirty: boolean
+    valid: boolean
+  }>()
   const [pricingName, setPricingName] = useState('')
   const [pricingVisited, setPricingVisited] = useState(
     props.initialSection === 'pricing'
@@ -157,6 +176,7 @@ export function ModelMutateDrawer(props: {
 
   useEffect(() => {
     if (!props.open) return
+    setParameterState(undefined)
     setSection(props.initialSection ?? 'metadata')
     setPricingVisited(props.initialSection === 'pricing')
     setPricingName('')
@@ -206,7 +226,7 @@ export function ModelMutateDrawer(props: {
         (accessDirty || accessSaving) &&
         values.display_name !== (savedModel?.display_name ?? '')
       ) {
-        throw new Error('请先保存或放弃访问管理的修改，再修改展示名称。')
+        throw new Error('请先保存或放弃使用设置的修改，再修改展示名称。')
       }
       if (
         (pricingDirty || accessDirty || accessSaving) &&
@@ -214,11 +234,18 @@ export function ModelMutateDrawer(props: {
       ) {
         throw new Error(
           accessDirty || accessSaving
-            ? '请先保存或放弃访问管理的修改，再修改模型名称。'
+            ? '请先保存或放弃使用设置的修改，再修改模型名称。'
             : t('Save or discard pricing changes before renaming metadata.')
         )
       }
-      const payload = transformFormDataToModelPayload(values)
+      if (parameterState?.dirty && !parameterState.valid)
+        throw new Error('请核对模型能力参数')
+      const payload = {
+        ...transformFormDataToModelPayload(values),
+        ...(parameterState?.dirty
+          ? { actvero_parameters: parameterState.draft }
+          : {}),
+      }
       const response = currentRow?.id
         ? await updateModel(
             { ...payload, id: currentRow.id },
@@ -231,6 +258,7 @@ export function ModelMutateDrawer(props: {
       return response
     },
     onSuccess: async (response) => {
+      setParameterState(undefined)
       form.reset(form.getValues())
       loadedRevision.current = response.data?.revision
       if (response.data?.id) {
@@ -269,7 +297,10 @@ export function ModelMutateDrawer(props: {
   const metadataDirty = form.formState.isDirty
   const close = (open: boolean) => {
     if (!open && (isSubmitting || accessSaving)) return
-    if (!open && (metadataDirty || pricingDirty || accessDirty)) {
+    if (
+      !open &&
+      (metadataDirty || parameterState?.dirty || pricingDirty || accessDirty)
+    ) {
       setCloseConfirm(true)
       return
     }
@@ -284,9 +315,11 @@ export function ModelMutateDrawer(props: {
             <SheetTitle className='pr-6 break-all'>
               {hasModelName ? currentRow?.model_name : t('Create Model')}
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription
+              className={props.renderAccess ? 'sr-only' : undefined}
+            >
               {props.renderAccess
-                ? '管理模型资料、定价、渠道与访问权限，各分区分别保存。'
+                ? '模型配置'
                 : t(
                     'Manage metadata, pricing, and channel connections. Each section saves separately.'
                   )}
@@ -304,7 +337,7 @@ export function ModelMutateDrawer(props: {
             <TabsList
               className={
                 props.renderAccess
-                  ? 'grid w-full grid-cols-4 group-data-horizontal/tabs:h-auto'
+                  ? 'grid w-full grid-cols-2 gap-1 group-data-horizontal/tabs:h-auto sm:grid-cols-4'
                   : 'grid w-full grid-cols-3 group-data-horizontal/tabs:h-auto'
               }
             >
@@ -334,7 +367,7 @@ export function ModelMutateDrawer(props: {
                   disabled={!hasModelName || currentRow?.name_rule !== 0}
                   className='h-auto min-w-0 whitespace-normal'
                 >
-                  访问管理
+                  使用设置
                 </TabsTrigger>
               )}
             </TabsList>
@@ -348,6 +381,11 @@ export function ModelMutateDrawer(props: {
               }
             >
               {props.renderAccess(currentRow, {
+                section: 'access',
+                onParameters: () => {
+                  setSection('metadata')
+                  setAccessVisited(true)
+                },
                 onPricing: () => {
                   setSection('pricing')
                   setPricingVisited(true)
@@ -357,8 +395,14 @@ export function ModelMutateDrawer(props: {
               })}
             </div>
           )}
-          {props.open && section === 'metadata' && (
-            <>
+          {props.open && (
+            <div
+              className={
+                section === 'metadata'
+                  ? 'flex min-h-0 flex-1 flex-col'
+                  : 'hidden'
+              }
+            >
               {modelQuery.isError ? (
                 <ErrorState
                   description={modelQuery.error.message}
@@ -526,6 +570,32 @@ export function ModelMutateDrawer(props: {
                       />
                     </SideDrawerSection>
 
+                    {props.renderParameters &&
+                      form.watch('name_rule') === 0 &&
+                      form.watch('model_name') && (
+                        <SideDrawerSection>
+                          {props.renderParameters(
+                            currentRow ??
+                              ({
+                                model_name: form.watch('model_name'),
+                                name_rule: 0,
+                              } as Model),
+                            {
+                              onChange: setParameterState,
+                              onDescription: (description) => {
+                                if (!form.getValues('description'))
+                                  form.setValue('description', description, {
+                                    shouldDirty: true,
+                                  })
+                              },
+                              onPricing: () => {
+                                setSection('pricing')
+                                setPricingVisited(true)
+                              },
+                            }
+                          )}
+                        </SideDrawerSection>
+                      )}
                     {/* Matching Configuration */}
                     <SideDrawerSection>
                       <h3 className='text-sm font-semibold'>
@@ -715,7 +785,7 @@ export function ModelMutateDrawer(props: {
                   {isSubmitting ? t('Saving...') : t('Save metadata')}
                 </Button>
               </SheetFooter>
-            </>
+            </div>
           )}
           {props.open && pricingVisited && savedModel && (
             <div

@@ -227,9 +227,24 @@ async def call(
             raise HTTPException(
                 502, message or "渠道测试失败，请检查渠道地址、密钥、模型和计费配置"
             )
+        if method == "GET" and path.startswith("/api/channel/metadata/"):
+            raise HTTPException(
+                502, "百炼资料暂不可用，请核对渠道地域与业务空间，或手动填写模型资料"
+            )
         if method == "GET":
             raise HTTPException(502, "模型网关未能完成读取，请稍后重试")
         raise HTTPException(502, "模型网关未接受此次操作，请检查配置；保存操作请先刷新核对结果")
     if path.startswith("/api/channel/test/"):
-        return {"time": data.get("time")}
+        result = {"time": data.get("time")}
+        if data.get("pricing_status") == "unpriced":
+            result["pricing_status"] = "unpriced"
+        for key in ("model_name", "endpoint_type"):
+            value = data.get(key)
+            if isinstance(value, str) and len(value) <= 200:
+                result[key] = value
+        for key in ("prompt_tokens", "completion_tokens"):
+            value = data.get(key)
+            if type(value) is int and value >= 0:
+                result[key] = value
+        return result
     return data.get("data")

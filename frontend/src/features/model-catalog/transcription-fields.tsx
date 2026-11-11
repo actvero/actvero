@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch'
 import type { ModelValues } from './model-form'
 
 export function TranscriptionFields({ disabled }: { disabled: boolean }) {
-  const form = useFormContext<ModelValues>()
+  const form = useFormContext<Pick<ModelValues, 'transcription'>>()
   return (
     <Card>
       <CardHeader>

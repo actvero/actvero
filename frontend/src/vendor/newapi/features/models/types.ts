@@ -36,6 +36,7 @@ export interface BoundChannel {
 export type ModelSquareState = 'visible' | 'unavailable' | 'hidden' | 'partial'
 
 export interface Model {
+  actvero_parameters?: Record<string, unknown>
   /** Actvero configuration snapshot; not a second model identifier. */
   revision?: string
   square_state?: ModelSquareState

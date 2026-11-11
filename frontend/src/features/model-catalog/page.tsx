@@ -401,7 +401,7 @@ export function ModelCatalogPage() {
   ]
   return (
     <PageShell
-      title='模型管理'
+      title='模型'
       description='统一技术名称、能力参数与渠道价格配置。'
       action={
         <div className='flex flex-wrap gap-2'>

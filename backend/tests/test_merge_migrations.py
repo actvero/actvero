@@ -37,6 +37,8 @@ from app.modules.tenants.models import Tenant
         "111f_unified_branding",
         "112g_management_mcp_oauth",
         "114i_cli_settings",
+        "122q_gateway_parameters",
+        "123r_workbench_runtime_config",
     ],
 )
 async def test_both_migration_branches_upgrade_with_data_preserved(start):

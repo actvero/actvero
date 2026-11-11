@@ -16445,6 +16445,122 @@
         "title": "ModelOperation",
         "type": "object"
       },
+      "ModelParametersInput": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "title": "Capability Mode",
+            "type": "string"
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
+          "image": {
+            "$ref": "#/components/schemas/ImageOptions"
+          },
+          "kind": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank",
+              "image_generation",
+              "speech",
+              "transcription"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_output": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output"
+          },
+          "reasoning_options": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "budget_tokens": "#/components/schemas/ReasoningBudget",
+                  "effort": "#/components/schemas/ReasoningEffort",
+                  "toggle": "#/components/schemas/ReasoningToggle"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ReasoningToggle"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningEffort"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningBudget"
+                }
+              ]
+            },
+            "maxItems": 3,
+            "title": "Reasoning Options",
+            "type": "array"
+          },
+          "reference_model": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Reference Model",
+            "type": "string"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalOptions"
+          },
+          "source": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 12,
+            "title": "Source",
+            "type": "object"
+          },
+          "speech": {
+            "$ref": "#/components/schemas/SpeechOptions"
+          },
+          "transcription": {
+            "$ref": "#/components/schemas/TranscriptionOptions"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "title": "ModelParametersInput",
+        "type": "object"
+      },
       "ModelsInput": {
         "additionalProperties": false,
         "properties": {
@@ -18485,6 +18601,41 @@
           }
         },
         "title": "ProtectionSettings",
+        "type": "object"
+      },
+      "ProviderMetadataInput": {
+        "additionalProperties": false,
+        "properties": {
+          "channel_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Channel Id",
+            "type": "integer"
+          },
+          "model_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:/@+ \\-]*[A-Za-z0-9._:/@+\\-])?$",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "reference_model": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Reference Model",
+            "type": "string"
+          },
+          "workspace_id": {
+            "default": "",
+            "pattern": "^[A-Za-z0-9-]{0,64}$",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name",
+          "channel_id"
+        ],
+        "title": "ProviderMetadataInput",
         "type": "object"
       },
       "ProviderView": {
@@ -48583,6 +48734,141 @@
           }
         },
         "summary": "Native Model Write",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/parameters": {
+      "get": {
+        "operationId": "model_parameters_api_v1_model_gateway_parameters_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Model Parameters",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "save_model_parameters_api_v1_model_gateway_parameters_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelParametersInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Model Parameters",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/parameters/discover": {
+      "post": {
+        "operationId": "discover_model_parameters_api_v1_model_gateway_parameters_discover_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderMetadataInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discover Model Parameters",
         "tags": [
           "model-gateway"
         ]

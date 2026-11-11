@@ -1,13 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, type Schema } from '@/lib/api'
 import { useOrganization } from '@/features/auth/session'
 
-export type GatewayState = {
-  configured: boolean
-  connected: boolean
-  error: string | null
-  console_url?: string | null
-}
+export type GatewayState = Schema['GatewayStatus']
 export type Channel = {
   id: number
   name: string
@@ -104,6 +99,14 @@ export async function gateway<T>(
     csrf
   )
   return result.data
+}
+export function useGatewayStatus() {
+  const { organization } = useOrganization()
+  return useQuery({
+    queryKey: ['model-gateway', organization.tenant_id, 'status'],
+    queryFn: () => api<GatewayState>('/model-gateway/status'),
+    retry: false,
+  })
 }
 export function useGateway<T>(
   path: string,

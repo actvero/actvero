@@ -23,7 +23,7 @@ import {
 import type { ModelValues } from './model-form'
 
 export function ImageFields({ disabled }: { disabled: boolean }) {
-  const form = useFormContext<ModelValues>()
+  const form = useFormContext<Pick<ModelValues, 'image'>>()
   return (
     <Card>
       <CardHeader>

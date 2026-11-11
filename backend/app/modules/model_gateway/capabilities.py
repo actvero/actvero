@@ -95,7 +95,9 @@ def profile(model: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def resolve(model: str, group: str, channels: list[dict[str, Any]]) -> dict[str, Any]:
+def resolve(
+    model: str, group: str, channels: list[dict[str, Any]], *, reference_model: str = ""
+) -> dict[str, Any]:
     routes = [
         c
         for c in channels
@@ -113,7 +115,8 @@ def resolve(model: str, group: str, channels: list[dict[str, Any]]) -> dict[str,
         except (ValueError, AttributeError):
             return {"status": "unresolved", "reason": "渠道模型映射无效"}
         resolved = lookup(
-            channel.get("capability_provider") or PROVIDERS.get(channel.get("type", 0)), upstream
+            channel.get("capability_provider") or PROVIDERS.get(channel.get("type", 0)),
+            reference_model or upstream,
         )
         if resolved is None:
             return {
@@ -153,6 +156,7 @@ async def effective(
             config.slug,
             connection.relay_group,
             channels if channels is not None else await service.all_channels(request, tenant),
+            reference_model=config.gateway.capability_source.get("reference_model", ""),
         )
         if resolved["status"] != "resolved":
             raise HTTPException(409, resolved["reason"])
@@ -164,9 +168,16 @@ async def effective(
                 "reasoning_options": [
                     ReasoningEffort.model_validate(r) for r in resolved["reasoning_options"]
                 ],
-                "chat_policy": ChatPolicy.model_validate(resolved["chat_policy"]),
+                "chat_policy": config.chat_policy
+                if config.gateway.capability_source.get("independent_parameters")
+                else ChatPolicy.model_validate(resolved["chat_policy"]),
                 "gateway": config.gateway.model_copy(
-                    update={"capability_source": resolved["source"]}
+                    update={
+                        "capability_source": {
+                            **config.gateway.capability_source,
+                            **resolved["source"],
+                        }
+                    }
                 ),
             }
         )
