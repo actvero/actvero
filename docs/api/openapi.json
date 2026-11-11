@@ -7252,6 +7252,17 @@
             "title": "Dsh Requirement",
             "type": "string"
           },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
+          },
           "package_name": {
             "title": "Package Name",
             "type": "string"
@@ -26834,6 +26845,17 @@
             "title": "Has Draft",
             "type": "boolean"
           },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -27013,6 +27035,17 @@
           "has_draft": {
             "title": "Has Draft",
             "type": "boolean"
+          },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
           },
           "id": {
             "format": "uuid",

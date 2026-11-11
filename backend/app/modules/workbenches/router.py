@@ -91,7 +91,7 @@ async def versions(db: AsyncSession, row: Workbench) -> list[WorkbenchVersion]:
 
 
 def summary(
-    row: Workbench, current: str | None, has_draft: bool, was_published: bool
+    row: Workbench, current: str | None, has_draft: bool, was_published: bool, icon: str | None
 ) -> WorkbenchSummary:
     return WorkbenchSummary.model_validate(
         {
@@ -99,6 +99,7 @@ def summary(
             "package_name": row.package_name,
             "display_name": row.display_name,
             "description": row.description,
+            "icon_data_url": icon,
             "category": row.category,
             "audience": row.audience,
             "updated_at": row.updated_at,
@@ -111,12 +112,15 @@ def summary(
 
 async def view(db: AsyncSession, row: Workbench) -> WorkbenchView:
     releases = await versions(db, row)
+    current = next((item for item in releases if item.status == "published"), None)
+    display = current or next(iter(releases), None)
     return WorkbenchView(
         **summary(
             row,
-            next((item.version for item in releases if item.status == "published"), None),
+            current.version if current else None,
             any(item.status == "draft" for item in releases),
             any(item.published_at is not None for item in releases),
+            display.icon_data_url if display else None,
         ).model_dump(),
         revision=row.revision,
         member_ids=[UUID(ident) for ident in row.member_ids],
@@ -147,6 +151,7 @@ async def add_version(
         sha256=package.sha256,
         uploader_name=actor.user.name,
         config_fields=[field.model_dump() for field in package.config_fields],
+        icon_data_url=package.icon_data_url,
     )
     db.add(version)
     await db.flush()
@@ -172,6 +177,16 @@ async def list_workbenches(
     )
     drafts = query.where(WorkbenchVersion.status == "draft").exists()
     published = query.where(WorkbenchVersion.published_at.is_not(None)).exists()
+    icon = (
+        query.with_only_columns(WorkbenchVersion.icon_data_url)
+        .order_by(
+            (WorkbenchVersion.status == "published").desc(),
+            WorkbenchVersion.created_at.desc(),
+            WorkbenchVersion.id,
+        )
+        .limit(1)
+        .scalar_subquery()
+    )
     filters = [Workbench.tenant_id == actor.tenant.id]
     if q.strip():
         filters.append(
@@ -190,7 +205,7 @@ async def list_workbenches(
         filters.append(~published)
     total = await db.scalar(select(func.count()).select_from(Workbench).where(*filters))
     rows = await db.execute(
-        select(Workbench, current, drafts, published)
+        select(Workbench, current, drafts, published, icon)
         .where(*filters)
         .order_by(Workbench.updated_at.desc(), Workbench.id)
         .offset((page - 1) * 20)

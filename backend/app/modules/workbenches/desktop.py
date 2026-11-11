@@ -66,6 +66,7 @@ async def catalog(request: Request, db: DB) -> DesktopWorkbenchCatalog:
                 package_name=row.package_name,
                 display_name=row.display_name,
                 description=row.description,
+                icon_data_url=version.icon_data_url,
                 category=row.category,
                 version=version.version,
                 dsh_requirement=version.dsh_requirement,

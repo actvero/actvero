@@ -4,8 +4,11 @@ import json
 import re
 import tarfile
 import zlib
+from base64 import b64encode
 from dataclasses import dataclass
 from io import BytesIO
+
+from PIL import Image
 
 from app.modules.workbenches.configuration import parse_fields
 from app.modules.workbenches.schemas import WorkbenchConfigField
@@ -13,6 +16,10 @@ from app.modules.workbenches.schemas import WorkbenchConfigField
 MAX_PACKAGE_BYTES = 8 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
 MAX_JSON_BYTES = 128 * 1024
+MAX_ICON_BYTES = 64 * 1024
+MAX_ICON_EDGE = 512
+ICON_PATH = re.compile(r"\./assets/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(png|jpe?g|webp)", re.ASCII)
+ICON_FORMATS = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "webp": "WEBP"}
 PACKAGE_NAME = re.compile(r"(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*", re.ASCII)
 SEMVER = re.compile(
     r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
@@ -31,6 +38,7 @@ class Package:
     description: str
     sha256: str
     config_fields: list[WorkbenchConfigField]
+    icon_data_url: str | None
 
 
 def version_order(value: str) -> tuple[int, int, int, bool, tuple[tuple[int, int | str], ...]]:
@@ -80,6 +88,35 @@ def _path(member: tarfile.TarInfo) -> str:
     return name
 
 
+def _icon(
+    archive: tarfile.TarFile, entries: dict[str, tarfile.TarInfo], manifest: dict[str, object]
+) -> str | None:
+    dsh = manifest.get("dsh")
+    if not isinstance(dsh, dict) or "actveroWorkbenchIcon" not in dsh:
+        return None
+    path = dsh["actveroWorkbenchIcon"]
+    match = ICON_PATH.fullmatch(path) if isinstance(path, str) and len(path) <= 200 else None
+    if match is None:
+        raise ValueError("工作台头像须指向 ./assets 下的 PNG、JPEG 或 WebP 图片")
+    entry = entries.get("package/" + path[2:])
+    if entry is None or not entry.isfile() or not 0 < entry.size <= MAX_ICON_BYTES:
+        raise ValueError("工作台头像必须是包内不超过 64 KiB 的图片文件")
+    source = archive.extractfile(entry)
+    if source is None:
+        raise ValueError("无法读取工作台头像")
+    with source:
+        data = source.read()
+    image_format = ICON_FORMATS[match[1]]
+    try:
+        with Image.open(BytesIO(data), formats=[image_format]) as image:
+            if max(image.size) > MAX_ICON_EDGE or getattr(image, "is_animated", False):
+                raise ValueError("工作台头像须为不超过 512 × 512 像素的静态图片")
+            image.load()
+    except (OSError, Image.DecompressionBombError, SyntaxError) as error:
+        raise ValueError("工作台头像无法解码或格式与扩展名不符") from error
+    return f"data:image/{image_format.lower()};base64,{b64encode(data).decode('ascii')}"
+
+
 def inspect(data: bytes) -> Package:
     """Inspect an Actvero .tgz in memory without extracting or running its entries."""
     if not data or len(data) > MAX_PACKAGE_BYTES:
@@ -106,6 +143,7 @@ def inspect(data: bytes) -> Package:
             if manifest_entry is None or not manifest_entry.isfile():
                 raise ValueError("缺少 package/package.json")
             manifest = _json_file(archive, manifest_entry)
+            icon = _icon(archive, entries, manifest)
             locale_entry = entries.get("package/locale/en.json")
             locale = (
                 _json_file(archive, locale_entry) if locale_entry and locale_entry.isfile() else {}
@@ -179,4 +217,5 @@ def inspect(data: bytes) -> Package:
         description=description,
         sha256=hashlib.sha256(data).hexdigest(),
         config_fields=parse_fields(dsh.get("actveroWorkbenchConfig", [])),
+        icon_data_url=icon,
     )

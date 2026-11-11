@@ -75,6 +75,7 @@ class DesktopWorkbenchRelease(BaseModel):
     package_name: str
     display_name: str
     description: str
+    icon_data_url: str | None = None
     category: WorkbenchCategory
     version: str
     dsh_requirement: str
@@ -129,6 +130,7 @@ class WorkbenchSummary(BaseModel):
     package_name: str
     display_name: str
     description: str
+    icon_data_url: str | None = None
     category: WorkbenchCategory
     audience: WorkbenchAudience
     status: WorkbenchStatus
