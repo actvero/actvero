@@ -1,0 +1,16 @@
+{
+  "experts": {
+    "list": {
+      "operationId": "experts_listing_api_v1_management_organizations__org_id__experts_get",
+      "sendDefaults": ["page"]
+    },
+    "show": {
+      "operationId": "experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get",
+      "arguments": { "expert_id": "id" }
+    },
+    "update": {
+      "operationId": "experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
+      "arguments": { "expert_id": "id" }
+    }
+  }
+}

@@ -9,6 +9,7 @@ import { CliError, object, uuid } from './errors.js';
 import { login } from './login.js';
 import { CredentialStore } from './store.js';
 import { registerDistribution } from './distribution.js';
+import { managementCommands } from './generated/management-commands.js';
 import {
   example,
   exampleNames,
@@ -61,6 +62,21 @@ function query(options: Options, keys: string[]): string {
   for (const key of keys)
     if (typeof options[key] === 'string') params.set(key, options[key] as string);
   return params.size ? '?' + params.toString() : '';
+}
+
+function managementPath(
+  operation: {
+    path: string;
+    arguments: readonly { name: string }[];
+    query: readonly { name: string }[];
+  },
+  options: Options,
+  args: string[],
+): string {
+  let path = operation.path.replace('{org_id}', uuid(String(options.org)));
+  for (const [index, parameter] of operation.arguments.entries())
+    path = path.replace(`{${parameter.name}}`, uuid(args[index]!));
+  return path + query(options, operation.query.map((parameter) => parameter.name));
 }
 
 export function buildProgram(runtime: Runtime = {}): Command {
@@ -138,30 +154,43 @@ export function buildProgram(runtime: Runtime = {}): Command {
       .requiredOption('--org <uuid>', '目标组织 UUID', uuid);
   const writeOptions = (command: Command) =>
     command.option('--request-id <uuid>', '复用原请求编号以回查或恢复；内容必须一致', uuid);
-  const read = async (
+  const sendRead = async (
+    ctx: Context,
+    kind: string,
+    method: string,
+    path: string,
+    body?: unknown,
+  ) => {
+    await ctx.client.requireCapability(kind + '.read');
+    return ctx.client.request(method, path, body);
+  };
+  const read = (
     ctx: Context,
     kind: string,
     suffix: string,
     method = 'GET',
     body?: unknown,
+  ) => sendRead(ctx, kind, method, ctx.root + '/' + kind + suffix, body);
+  const sendWrite = async (
+    ctx: Context,
+    kind: string,
+    method: string,
+    path: string,
+    body?: unknown,
   ) => {
-    await ctx.client.requireCapability(kind + '.read');
-    return ctx.client.request(method, ctx.root + '/' + kind + suffix, body);
+    await ctx.client.requireCapability(kind + '.write');
+    const id = typeof ctx.options.requestId === 'string' ? ctx.options.requestId : randomUUID();
+    await journal(ctx.client.server, String(ctx.options.org), id, method + ' ' + path);
+    errorOutput('请求编号：' + id + '\n');
+    return ctx.client.request(method, path, body, id);
   };
-  const mutate = async (
+  const mutate = (
     ctx: Context,
     kind: string,
     method: string,
     suffix: string,
     body?: unknown,
-  ) => {
-    await ctx.client.requireCapability(kind + '.write');
-    const id = typeof ctx.options.requestId === 'string' ? ctx.options.requestId : randomUUID();
-    const path = ctx.root + '/' + kind + suffix;
-    await journal(ctx.client.server, String(ctx.options.org), id, method + ' ' + path);
-    errorOutput('请求编号：' + id + '\n');
-    return ctx.client.request(method, path, body, id);
-  };
+  ) => sendWrite(ctx, kind, method, ctx.root + '/' + kind + suffix, body);
   const fromFile = (ctx: Context) => jsonFile(String(ctx.options.file));
   const revision = (ctx: Context) => Number(ctx.options.revision);
 
@@ -401,20 +430,38 @@ export function buildProgram(runtime: Runtime = {}): Command {
   );
   run(scoped(mcp, 'export', '导出脱敏配置'), (ctx) => read(ctx, 'mcp', '/export'));
 
+  const registerManagedCommands = (parent: Command, resource: keyof typeof managementCommands) => {
+    for (const [name, operation] of Object.entries(managementCommands[resource])) {
+      const positionals = operation.arguments.map(({ alias }) => ` <${alias}>`).join('');
+      const command = scoped(parent, name + positionals, operation.description);
+      for (const option of operation.query) {
+        const flags = `--${option.name} <${option.positiveInteger ? 'number' : 'text'}>`;
+        const value = option.default == null ? undefined : String(option.default);
+        const addOption = option.required
+          ? command.requiredOption.bind(command)
+          : command.option.bind(command);
+        if (option.positiveInteger) addOption(flags, option.description, positive, value);
+        else addOption(flags, option.description, value);
+      }
+      if (operation.body) command.requiredOption('--file <json>', `${operation.body} JSON 文件`);
+      if (operation.write) writeOptions(command);
+      run(command, async (ctx, args) => {
+        const path = managementPath(operation, ctx.options, args);
+        if (operation.write) {
+          const body = operation.body ? await fromFile(ctx) : undefined;
+          return sendWrite(ctx, resource, operation.method, path, body);
+        }
+        return sendRead(ctx, resource, operation.method, path);
+      });
+    }
+  };
+
   const experts = program.command('experts').description('专家草稿、精确依赖与发布');
-  run(
-    scoped(experts, 'list', '查询专家')
-      .option('--q <text>', '搜索词')
-      .option('--category <id>', '类别')
-      .option('--status <status>', 'published 或 unpublished')
-      .option('--page <number>', '页码', positive, '1'),
-    (ctx) => read(ctx, 'experts', query(ctx.options, ['q', 'category', 'status', 'page'])),
-  );
-  run(scoped(experts, 'show <id>', '查看专家与发布版本'), (ctx, [id]) =>
-    read(ctx, 'experts', '/' + uuid(id!)),
-  );
+  registerManagedCommands(experts, 'experts');
   run(scoped(experts, 'check <id>', '检查草稿和依赖的发布资格'), async (ctx, [id]) => {
-    const result = await read(ctx, 'experts', '/' + uuid(id!));
+    const operation = managementCommands.experts.show;
+    const path = managementPath(operation, ctx.options, [id!]);
+    const result = await sendRead(ctx, 'experts', operation.method, path);
     return { ...result, result: object(result.result).check };
   });
   run(
@@ -427,7 +474,6 @@ export function buildProgram(runtime: Runtime = {}): Command {
     async (ctx) => mutate(ctx, 'experts', 'POST', '', await fromFile(ctx)),
   );
   for (const [action, method, suffix] of [
-    ['update', 'PUT', ''],
     ['scope', 'PUT', '/scope'],
     ['refresh-skills', 'POST', '/refresh-skills'],
   ] as const) {

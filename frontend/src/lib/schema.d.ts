@@ -3009,7 +3009,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Experts Listing */
+        /** 查询专家 */
         get: operations["experts_listing_api_v1_management_organizations__org_id__experts_get"];
         put?: never;
         /** Experts Create */
@@ -3148,9 +3148,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Experts Detail */
+        /** 查看专家与发布版本 */
         get: operations["experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get"];
-        /** Experts Update */
+        /**
+         * 修改专家草稿
+         * @description 提交 ExpertUpdate，包含当前草稿修订号 revision。
+         */
         put: operations["experts_update_api_v1_management_organizations__org_id__experts__expert_id__put"];
         post?: never;
         /** Experts Delete Expert */
@@ -26563,9 +26566,13 @@ export interface operations {
     experts_listing_api_v1_management_organizations__org_id__experts_get: {
         parameters: {
             query?: {
+                /** @description 搜索词 */
                 q?: string;
+                /** @description 类别 */
                 category?: string | null;
+                /** @description published 或 unpublished */
                 status?: ("published" | "unpublished") | null;
+                /** @description 页码 */
                 page?: number;
             };
             header?: never;

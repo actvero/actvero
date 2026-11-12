@@ -36,6 +36,12 @@ node --test scripts/test-identity-account-switch.mjs
 
 API 变更运行 `make generate-api` 并提交生成契约。新迁移保持既有 revision 不变。提交前执行 `make public-check`；本地钩子检查暂存区，CI 重复检查。
 
+## CLI 接口命令
+
+维护专家的 `list`、`show` 和 `update` 命令时，在 FastAPI 管理路由更新接口定义，在 [CLI 命令映射](../cli/scripts/management-commands.json) 维护公开命令名与参数别名。映射使用稳定的 `operationId`。运行 `make generate-api` 生成命令的 HTTP 方法、路径、选项和 JSON 文件的 Schema 名称。`make cli-check` 会核对生成结果，接口仍由平台校验请求内容与组织权限。
+
+增加此类命令时，先确认接口支持 CLI 的组织授权。通用生成支持 UUID 路径参数、字符串或正整数查询参数，以及 JSON 对象请求。写操作复用管理请求编号与回执。涉及二进制上传、轮询或多步发布的命令需要专门处理。更新命令后运行 `make cli-check cli-test`。
+
 ## 文档
 
 公开文档遵循 [文档规范](DOCUMENTATION.md)。个人过程材料只放入 `.local/process/` 或仓库外，不写进公共文档目录。

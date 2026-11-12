@@ -41868,17 +41868,20 @@
             }
           },
           {
+            "description": "搜索词",
             "in": "query",
             "name": "q",
             "required": false,
             "schema": {
               "default": "",
+              "description": "搜索词",
               "maxLength": 100,
               "title": "Q",
               "type": "string"
             }
           },
           {
+            "description": "类别",
             "in": "query",
             "name": "category",
             "required": false,
@@ -41894,10 +41897,12 @@
                   "type": "null"
                 }
               ],
+              "description": "类别",
               "title": "Category"
             }
           },
           {
+            "description": "published 或 unpublished",
             "in": "query",
             "name": "status",
             "required": false,
@@ -41914,15 +41919,18 @@
                   "type": "null"
                 }
               ],
+              "description": "published 或 unpublished",
               "title": "Status"
             }
           },
           {
+            "description": "页码",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
+              "description": "页码",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -41951,7 +41959,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Listing",
+        "summary": "查询专家",
         "tags": [
           "management-resources"
         ]
@@ -42777,12 +42785,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Detail",
+        "summary": "查看专家与发布版本",
         "tags": [
           "management-resources"
         ]
       },
       "put": {
+        "description": "提交 ExpertUpdate，包含当前草稿修订号 revision。",
         "operationId": "experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
         "parameters": [
           {
@@ -42848,7 +42857,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Update",
+        "summary": "修改专家草稿",
         "tags": [
           "management-resources"
         ]
