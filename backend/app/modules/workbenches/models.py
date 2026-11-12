@@ -62,6 +62,7 @@ class WorkbenchVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     config_fields: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    icon_data_url: Mapped[str | None] = mapped_column(Text)
 
 
 class WorkbenchPackage(Base):

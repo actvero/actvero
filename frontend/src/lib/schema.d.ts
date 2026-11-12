@@ -9310,6 +9310,8 @@ export interface components {
             display_name: string;
             /** Dsh Requirement */
             dsh_requirement: string;
+            /** Icon Data Url */
+            icon_data_url?: string | null;
             /** Package Name */
             package_name: string;
             /** Sha256 */
@@ -16986,6 +16988,8 @@ export interface components {
             display_name: string;
             /** Has Draft */
             has_draft: boolean;
+            /** Icon Data Url */
+            icon_data_url?: string | null;
             /**
              * Id
              * Format: uuid
@@ -17062,6 +17066,8 @@ export interface components {
             display_name: string;
             /** Has Draft */
             has_draft: boolean;
+            /** Icon Data Url */
+            icon_data_url?: string | null;
             /**
              * Id
              * Format: uuid
