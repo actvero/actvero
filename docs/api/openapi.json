@@ -7267,6 +7267,14 @@
             "title": "Package Name",
             "type": "string"
           },
+          "preview_data_urls": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Preview Data Urls",
+            "type": "array"
+          },
           "sha256": {
             "pattern": "^[0-9a-f]{64}$",
             "title": "Sha256",

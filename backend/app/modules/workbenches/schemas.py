@@ -76,6 +76,7 @@ class DesktopWorkbenchRelease(BaseModel):
     display_name: str
     description: str
     icon_data_url: str | None = None
+    preview_data_urls: list[str] = Field(default_factory=list, max_length=3)
     category: WorkbenchCategory
     version: str
     dsh_requirement: str

@@ -18,8 +18,11 @@ MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
 MAX_JSON_BYTES = 128 * 1024
 MAX_ICON_BYTES = 64 * 1024
 MAX_ICON_EDGE = 512
-ICON_PATH = re.compile(r"\./assets/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(png|jpe?g|webp)", re.ASCII)
-ICON_FORMATS = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "webp": "WEBP"}
+MAX_PREVIEW_BYTES = 128 * 1024
+MAX_PREVIEW_EDGE = 2048
+MAX_PREVIEWS = 3
+IMAGE_PATH = re.compile(r"\./assets/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(png|jpe?g|webp)", re.ASCII)
+IMAGE_FORMATS = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "webp": "WEBP"}
 PACKAGE_NAME = re.compile(r"(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*", re.ASCII)
 SEMVER = re.compile(
     r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
@@ -39,6 +42,7 @@ class Package:
     sha256: str
     config_fields: list[WorkbenchConfigField]
     icon_data_url: str | None
+    preview_data_urls: list[str]
 
 
 def version_order(value: str) -> tuple[int, int, int, bool, tuple[tuple[int, int | str], ...]]:
@@ -88,32 +92,33 @@ def _path(member: tarfile.TarInfo) -> str:
     return name
 
 
-def _icon(
-    archive: tarfile.TarFile, entries: dict[str, tarfile.TarInfo], manifest: dict[str, object]
-) -> str | None:
-    dsh = manifest.get("dsh")
-    if not isinstance(dsh, dict) or "actveroWorkbenchIcon" not in dsh:
-        return None
-    path = dsh["actveroWorkbenchIcon"]
-    match = ICON_PATH.fullmatch(path) if isinstance(path, str) and len(path) <= 200 else None
-    if match is None:
-        raise ValueError("工作台头像须指向 ./assets 下的 PNG、JPEG 或 WebP 图片")
+def _image(
+    archive: tarfile.TarFile,
+    entries: dict[str, tarfile.TarInfo],
+    path: object,
+    *,
+    label: str,
+    max_bytes: int,
+    max_edge: int,
+) -> str:
+    if not isinstance(path, str) or len(path) > 200 or not (match := IMAGE_PATH.fullmatch(path)):
+        raise ValueError(f"{label}须指向 ./assets 下的 PNG、JPEG 或 WebP 图片")
     entry = entries.get("package/" + path[2:])
-    if entry is None or not entry.isfile() or not 0 < entry.size <= MAX_ICON_BYTES:
-        raise ValueError("工作台头像必须是包内不超过 64 KiB 的图片文件")
+    if entry is None or not entry.isfile() or not 0 < entry.size <= max_bytes:
+        raise ValueError(f"{label}必须是包内不超过 {max_bytes // 1024} KiB 的图片文件")
     source = archive.extractfile(entry)
     if source is None:
-        raise ValueError("无法读取工作台头像")
+        raise ValueError(f"无法读取{label}")
     with source:
         data = source.read()
-    image_format = ICON_FORMATS[match[1]]
+    image_format = IMAGE_FORMATS[match[1]]
     try:
         with Image.open(BytesIO(data), formats=[image_format]) as image:
-            if max(image.size) > MAX_ICON_EDGE or getattr(image, "is_animated", False):
-                raise ValueError("工作台头像须为不超过 512 × 512 像素的静态图片")
+            if max(image.size) > max_edge or getattr(image, "is_animated", False):
+                raise ValueError(f"{label}须为不超过 {max_edge} × {max_edge} 像素的静态图片")
             image.load()
     except (OSError, Image.DecompressionBombError, SyntaxError) as error:
-        raise ValueError("工作台头像无法解码或格式与扩展名不符") from error
+        raise ValueError(f"{label}无法解码或格式与扩展名不符") from error
     return f"data:image/{image_format.lower()};base64,{b64encode(data).decode('ascii')}"
 
 
@@ -143,7 +148,40 @@ def inspect(data: bytes) -> Package:
             if manifest_entry is None or not manifest_entry.isfile():
                 raise ValueError("缺少 package/package.json")
             manifest = _json_file(archive, manifest_entry)
-            icon = _icon(archive, entries, manifest)
+            dsh = manifest.get("dsh")
+            if not isinstance(dsh, dict):
+                raise ValueError("缺少工作台格式声明")
+            icon = (
+                _image(
+                    archive,
+                    entries,
+                    dsh["actveroWorkbenchIcon"],
+                    label="工作台头像",
+                    max_bytes=MAX_ICON_BYTES,
+                    max_edge=MAX_ICON_EDGE,
+                )
+                if "actveroWorkbenchIcon" in dsh
+                else None
+            )
+            paths = dsh.get("actveroWorkbenchPreviews", [])
+            if (
+                not isinstance(paths, list)
+                or len(paths) > MAX_PREVIEWS
+                or any(not isinstance(path, str) for path in paths)
+                or len(set(paths)) != len(paths)
+            ):
+                raise ValueError("工作台预览最多可声明 3 个不同的图片路径")
+            previews = [
+                _image(
+                    archive,
+                    entries,
+                    path,
+                    label="工作台预览",
+                    max_bytes=MAX_PREVIEW_BYTES,
+                    max_edge=MAX_PREVIEW_EDGE,
+                )
+                for path in paths
+            ]
             locale_entry = entries.get("package/locale/en.json")
             locale = (
                 _json_file(archive, locale_entry) if locale_entry and locale_entry.isfile() else {}
@@ -165,9 +203,9 @@ def inspect(data: bytes) -> Package:
     if not isinstance(version, str):
         raise ValueError("缺少包版本")
     version_order(version)
-    dsh, exports, engines = (manifest.get(key) for key in ("dsh", "exports", "engines"))
-    if not isinstance(dsh, dict) or not isinstance(exports, dict) or not isinstance(engines, dict):
-        raise ValueError("缺少工作台格式声明、入口或运行时要求")
+    exports, engines = (manifest.get(key) for key in ("exports", "engines"))
+    if not isinstance(exports, dict) or not isinstance(engines, dict):
+        raise ValueError("缺少工作台入口或运行时要求")
     if type(dsh.get("actveroWorkbench")) is not int or dsh["actveroWorkbench"] != 1:
         raise ValueError("仅支持 Actvero 工作台包格式 1")
     client, bundle = dsh.get("client"), dsh.get("bundle")
@@ -218,4 +256,5 @@ def inspect(data: bytes) -> Package:
         sha256=hashlib.sha256(data).hexdigest(),
         config_fields=parse_fields(dsh.get("actveroWorkbenchConfig", [])),
         icon_data_url=icon,
+        preview_data_urls=previews,
     )

@@ -9314,6 +9314,8 @@ export interface components {
             icon_data_url?: string | null;
             /** Package Name */
             package_name: string;
+            /** Preview Data Urls */
+            preview_data_urls?: string[];
             /** Sha256 */
             sha256: string;
             /** Size */

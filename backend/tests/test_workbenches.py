@@ -22,7 +22,15 @@ BASE = "/api/v1/workbenches"
 BINARY = {"content-type": "application/octet-stream"}
 
 
-def package(version="1.0.0", extra=None, fields=None, icon=None, icon_path="./assets/icon.png"):
+def package(
+    version="1.0.0",
+    extra=None,
+    fields=None,
+    icon=None,
+    icon_path="./assets/icon.png",
+    preview=None,
+    preview_paths=None,
+):
     manifest = {
         "name": "@test/workbench",
         "version": version,
@@ -33,6 +41,7 @@ def package(version="1.0.0", extra=None, fields=None, icon=None, icon_path="./as
             "actveroWorkbench": 1,
             **({"actveroWorkbenchConfig": fields} if fields is not None else {}),
             **({"actveroWorkbenchIcon": icon_path} if icon is not None else {}),
+            **({"actveroWorkbenchPreviews": preview_paths} if preview_paths is not None else {}),
             "bundle": {"patch": "./cordis.patch.yml"},
             "client": {"platform": "web", "inject": ["@actvero/dsh-capability-ui"]},
         },
@@ -48,6 +57,8 @@ def package(version="1.0.0", extra=None, fields=None, icon=None, icon_path="./as
         }
         if icon is not None:
             entries["package/assets/icon.png"] = icon
+        if preview is not None:
+            entries["package/assets/cover.png"] = preview
         for name, data in entries.items():
             entry = tarfile.TarInfo(name)
             entry.size = len(data)
@@ -80,6 +91,7 @@ def test_inspects_real_manifest_and_rejects_non_file_entries():
     with pytest.raises(ValueError, match="重复的运行配置 Key"):
         inspect(package(fields=[field, field]))
     assert info.icon_data_url is None
+    assert info.preview_data_urls == []
 
 
 def test_reads_a_declared_avatar_and_rejects_invalid_files():
@@ -93,6 +105,18 @@ def test_reads_a_declared_avatar_and_rejects_invalid_files():
         inspect(package(icon=image, icon_path="./assets/missing.png"))
     with pytest.raises(ValueError, match="须指向"):
         inspect(package(icon=image, icon_path="./assets/../icon.png"))
+
+
+def test_rejects_missing_duplicate_and_invalid_catalog_previews():
+    path = "./assets/cover.png"
+    with pytest.raises(ValueError, match="包内不超过 128 KiB"):
+        inspect(package(preview_paths=[path]))
+    with pytest.raises(ValueError, match="最多可声明"):
+        inspect(package(preview_paths=[path, path]))
+    with pytest.raises(ValueError, match="须指向"):
+        inspect(package(preview_paths=["https://example.com/cover.png"]))
+    with pytest.raises(ValueError, match="格式与扩展名不符"):
+        inspect(package(preview_paths=[path], preview=b"<svg/>"))
 
 
 @pytest.mark.asyncio
@@ -195,7 +219,9 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
     member = await env.client(role="member", tenant=admin.tenant)
     url = {"key": "SERVICE_URL", "label": "服务地址", "kind": "url", "required": True}
     image = png_icon()
-    first_bytes = package(fields=[url], icon=image)
+    first_bytes = package(
+        fields=[url], icon=image, preview=image, preview_paths=["./assets/cover.png"]
+    )
     draft = await admin.api.post(BASE, content=first_bytes, headers=BINARY)
     assert draft.status_code == 201, draft.text
     item = draft.json()
@@ -279,6 +305,7 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
         assert catalog[0]["icon_data_url"] == (
             "data:image/png;base64," + b64encode(image).decode("ascii")
         )
+        assert catalog[0]["preview_data_urls"] == [catalog[0]["icon_data_url"]]
         assert await check(pin) == {"status": "current", "adopted_usable": True}
         received = await download(pin)
         assert received.status_code == 200
@@ -303,7 +330,9 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
         response = await publish(second)
         assert response.status_code == 200, response.text
         item = response.json()
-        assert (await list_releases())[0]["version_id"] == second
+        new_catalog = await list_releases()
+        assert new_catalog[0]["version_id"] == second
+        assert new_catalog[0]["preview_data_urls"] == []
         assert await check(pin) == {"status": "update_available", "adopted_usable": True}
         assert (await download(pin)).status_code == 409
         response = await save(second, {"SERVICE_URL": "https://second.example.test"})

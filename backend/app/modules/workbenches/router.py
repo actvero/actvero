@@ -152,6 +152,7 @@ async def add_version(
         uploader_name=actor.user.name,
         config_fields=[field.model_dump() for field in package.config_fields],
         icon_data_url=package.icon_data_url,
+        preview_data_urls=package.preview_data_urls or None,
     )
     db.add(version)
     await db.flush()
