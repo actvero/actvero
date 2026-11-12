@@ -1467,6 +1467,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/enterprises/{tenant_id}/departments/{department_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Direct Members */
+        get: operations["direct_members_api_v1_enterprises__tenant_id__departments__department_id__members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enterprises/{tenant_id}/events": {
         parameters: {
             query?: never;
@@ -8775,6 +8792,26 @@ export interface components {
              * @default 0
              */
             sort_order: number;
+        };
+        /** DepartmentMemberPage */
+        DepartmentMemberPage: {
+            /** Items */
+            items: components["schemas"]["DepartmentMemberView"][];
+            /** Page */
+            page: number;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /** DepartmentMemberView */
+        DepartmentMemberView: {
+            /** Is Primary */
+            is_primary: boolean;
+            member: components["schemas"]["MemberView"];
         };
         /** DepartmentScopeMember */
         DepartmentScopeMember: {
@@ -23044,6 +23081,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DepartmentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    direct_members_api_v1_enterprises__tenant_id__departments__department_id__members_get: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path: {
+                tenant_id: string;
+                department_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentMemberPage"];
                 };
             };
             /** @description Validation Error */

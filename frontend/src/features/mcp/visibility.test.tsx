@@ -55,19 +55,27 @@ function mockApi() {
           version: 1,
         },
       ])
-    if (url.endsWith('/departments/scope-preview'))
-      return Response.json({
-        items: [
-          {
-            id: 'member-0',
-            name: '成员 00',
-            direct: false,
-            department_ids: ['sales'],
-          },
-        ],
-        total: 1,
-        page: 1,
-      })
+    if (url.endsWith('/departments/scope-preview')) {
+      const scope = JSON.parse(String(options.body))
+      const inherited = scope.department_grants.some(
+        (grant: { department_id: string; include_descendants: boolean }) =>
+          grant.department_id === 'sales' && grant.include_descendants
+      )
+      const items = members
+        .filter(
+          (member) =>
+            scope.member_ids.includes(member.id) ||
+            (inherited && member.id === 'member-0')
+        )
+        .map((member) => ({
+          id: member.id,
+          name: member.name,
+          direct: scope.member_ids.includes(member.id),
+          department_ids:
+            inherited && member.id === 'member-0' ? ['sales'] : [],
+        }))
+      return Response.json({ items, total: items.length, page: 1 })
+    }
     if (url.includes('/members')) {
       const params =
         options.method === 'POST'
@@ -109,24 +117,29 @@ async function scope(value: string) {
   await userEvent.click(page.getByRole('combobox', { name: '可使用成员' }))
   await userEvent.click(page.getByRole('option', { name: value, exact: true }))
 }
+async function openMembers() {
+  await userEvent.click(
+    page.getByRole('button', { name: '添加成员', exact: true })
+  )
+  return page.getByRole('dialog', { name: '选择成员', exact: true })
+}
+
 it('只选部门即可授权，并可预览下级成员的授权来源', async () => {
   const fetcher = mockApi()
   await show(<ServiceEditor service={service} close={() => {}} />)
   await scope('指定范围')
   await userEvent.click(
-    page.getByRole('button', { name: '选择部门', exact: true })
+    page.getByRole('button', { name: '添加部门', exact: true })
   )
+  const picker = page.getByRole('dialog', { name: '选择部门', exact: true })
   await userEvent.click(
-    page.getByRole('checkbox', { name: '销售部', exact: true })
+    picker.getByRole('checkbox', { name: '销售部', exact: true })
   )
-  await userEvent.click(page.getByRole('checkbox', { name: '包含下级' }))
-  await userEvent.click(page.getByRole('button', { name: '查看授权成员' }))
-  const preview = page.getByRole('dialog', { name: '授权成员预览' })
-  await expect
-    .element(preview.getByRole('cell', { name: '销售部' }))
-    .toBeVisible()
-  await userEvent.keyboard('{Escape}')
-  await expect.element(preview).not.toBeInTheDocument()
+  await userEvent.click(picker.getByRole('button', { name: '应用选择' }))
+  const preview = page.getByRole('complementary', { name: '授权预览' })
+  await expect.element(preview.getByText('共 0 人')).toBeVisible()
+  await userEvent.click(page.getByRole('switch', { name: '包含下级部门' }))
+  await expect.element(preview.getByText('销售部（含下级）')).toBeVisible()
   await userEvent.click(page.getByRole('button', { name: '保存配置' }))
   await expect
     .poll(() =>
@@ -146,30 +159,38 @@ it('跨页搜索保留选择，已选筛选，切换范围保留草稿并保存'
   const fetcher = mockApi()
   await show(<ServiceEditor service={service} close={() => {}} />)
   await scope('指定范围')
+  const picker = await openMembers()
   await userEvent.click(
-    page.getByRole('checkbox', { name: '选择 成员 00', exact: true })
+    picker.getByRole('checkbox', { name: '选择 成员 00', exact: true })
   )
   await userEvent.click(
-    page.getByRole('button', { name: '下一页', exact: true })
+    picker.getByRole('button', { name: '下一页', exact: true })
   )
   await userEvent.click(
-    page.getByRole('checkbox', { name: '选择 成员 20', exact: true })
+    picker.getByRole('checkbox', { name: '选择 成员 20', exact: true })
   )
   await userEvent.fill(
-    page.getByRole('textbox', { name: '搜索成员' }),
+    picker.getByRole('textbox', { name: '搜索成员' }),
     'member24@'
   )
-  await expect.element(page.getByText('共 1 人 · 第 1 / 1 页')).toBeVisible()
+  await expect.element(picker.getByText('共 1 人 · 第 1 / 1 页')).toBeVisible()
   await userEvent.click(
-    page.getByRole('button', { name: '选择本页', exact: true })
+    picker.getByRole('button', { name: '选择本页', exact: true })
   )
-  await expect.element(page.getByText('已选择 3 人')).toBeVisible()
-  await userEvent.fill(page.getByRole('textbox', { name: '搜索成员' }), '')
-  await userEvent.click(page.getByRole('tab', { name: '已选成员' }))
-  await expect.element(page.getByText('共 3 人 · 第 1 / 1 页')).toBeVisible()
+  await expect.element(picker.getByText('已选择 3 人')).toBeVisible()
+  await userEvent.fill(picker.getByRole('textbox', { name: '搜索成员' }), '')
+  await userEvent.click(picker.getByRole('tab', { name: '已选成员' }))
+  await expect.element(picker.getByText('共 3 人 · 第 1 / 1 页')).toBeVisible()
+  await userEvent.click(picker.getByRole('button', { name: '应用选择' }))
   await scope('仅管理员')
   await scope('指定范围')
-  await expect.element(page.getByText('已选择 3 人')).toBeVisible()
+  await expect
+    .element(
+      page
+        .getByRole('region', { name: '已授权成员', exact: true })
+        .getByText('成员 24', { exact: true })
+    )
+    .toBeVisible()
   await userEvent.click(page.getByRole('button', { name: '保存配置' }))
   await expect
     .poll(() => fetcher.mock.calls.find(([, o]) => o.method === 'PUT'))
@@ -219,59 +240,87 @@ it('本页取消不清空其他页；名单固定高度，窄屏可用', async (
       close={() => {}}
     />
   )
+  const picker = await openMembers()
   await userEvent.click(
-    page.getByRole('button', { name: '选择本页', exact: true })
+    picker.getByRole('button', { name: '选择本页', exact: true })
   )
-  await expect.element(page.getByText('已选择 21 人')).toBeVisible()
+  await expect.element(picker.getByText('已选择 21 人')).toBeVisible()
   await userEvent.click(
-    page.getByRole('button', { name: '取消本页选择', exact: true })
+    picker.getByRole('button', { name: '取消本页选择', exact: true })
   )
-  await expect.element(page.getByText('已选择 1 人')).toBeVisible()
-  const viewport = document.querySelector('[data-slot="scroll-area-viewport"]')!
+  await expect.element(picker.getByText('已选择 1 人')).toBeVisible()
+  const viewport = picker
+    .getByRole('region', { name: '成员列表' })
+    .element()
+    .querySelector('[data-slot="scroll-area-viewport"]')!
   expect(viewport.getBoundingClientRect().height).toBeLessThanOrEqual(300)
   expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight)
-  expect(
-    page.getByRole('group', { name: '共享给成员', exact: true }).element()
-      .scrollTop
-  ).toBe(0)
-  await expect
-    .element(page.getByRole('textbox', { name: '搜索成员' }))
-    .toBeVisible()
-  await page
-    .getByRole('combobox', { name: '可使用成员' })
-    .element()
-    .scrollIntoView({ block: 'start' })
-  await page.screenshot({ path: '/tmp/actvero-visibility-desktop.png' })
   await page.viewport(390, 844)
   await expect
-    .element(page.getByRole('textbox', { name: '搜索成员' }))
+    .element(picker.getByRole('textbox', { name: '搜索成员' }))
     .toBeVisible()
-  const dialog = page.getByRole('dialog').element()
+  const dialog = picker.element()
   expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth + 1)
-  await page.screenshot({ path: '/tmp/actvero-visibility-mobile.png' })
+  await userEvent.click(
+    picker.getByRole('checkbox', { name: '选择 成员 00', exact: true })
+  )
+  await userEvent.click(
+    picker.getByRole('button', { name: '取消', exact: true })
+  )
+  await expect
+    .element(
+      page
+        .getByRole('region', { name: '已授权成员', exact: true })
+        .getByText('成员 24')
+    )
+    .toBeVisible()
+  await expect
+    .element(
+      page
+        .getByRole('region', { name: '已授权成员', exact: true })
+        .getByText('成员 00')
+    )
+    .not.toBeInTheDocument()
 })
 
 it('成员查询失败可重试，组织全员保存时清空名单', async () => {
   const fetcher = mockApi()
-  fetcher.mockImplementationOnce(async () =>
-    Response.json({ error: { message: '成员加载失败' } }, { status: 503 })
-  )
+  const original = fetcher.getMockImplementation()!
+  let failed = false
+  fetcher.mockImplementation(async (url, options) => {
+    if (!failed && url.includes('/members?')) {
+      failed = true
+      return Response.json(
+        { error: { message: '成员加载失败' } },
+        { status: 503 }
+      )
+    }
+    return original(url, options)
+  })
   await show(
     <ServiceEditor
       service={{ ...service, audience: 'selected', member_ids: ['member-0'] }}
       close={() => {}}
     />
   )
-  await expect.element(page.getByText('成员加载失败')).toBeVisible()
-  await userEvent.click(page.getByRole('button', { name: '重试', exact: true }))
+  const picker = await openMembers()
+  await expect.element(picker.getByText('成员加载失败')).toBeVisible()
+  await userEvent.click(
+    picker.getByRole('button', { name: '重试', exact: true })
+  )
   await expect
-    .element(page.getByRole('checkbox', { name: '选择 成员 00', exact: true }))
+    .element(
+      picker.getByRole('checkbox', { name: '选择 成员 00', exact: true })
+    )
     .toBeChecked()
   expect(fetcher.mock.calls.some(([, o]) => o.method === 'PUT')).toBe(false)
-  await userEvent.click(page.getByRole('tab', { name: '已选成员' }))
-  await expect.element(page.getByText('共 1 人 · 第 1 / 1 页')).toBeVisible()
+  await userEvent.click(picker.getByRole('tab', { name: '已选成员' }))
+  await expect.element(picker.getByText('共 1 人 · 第 1 / 1 页')).toBeVisible()
   expect(
-    document.querySelector('[data-slot="scroll-area-viewport"]')!.clientHeight
+    picker
+      .getByRole('region', { name: '成员列表' })
+      .element()
+      .querySelector('[data-slot="scroll-area-viewport"]')!.clientHeight
   ).toBeLessThan(150)
   document.documentElement.classList.add('dark')
   try {
@@ -279,6 +328,9 @@ it('成员查询失败可重试，组织全员保存时清空名单', async () =
   } finally {
     document.documentElement.classList.remove('dark')
   }
+  await userEvent.click(
+    picker.getByRole('button', { name: '取消', exact: true })
+  )
   await scope('组织全员')
   await userEvent.click(page.getByRole('button', { name: '保存配置' }))
   await expect

@@ -150,7 +150,7 @@ export function AccessFields({
             name='access.member_ids'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>可用成员</FormLabel>
+                <FormLabel>授权对象</FormLabel>
                 <FormControl>
                   <MemberPicker
                     departmentScope={{

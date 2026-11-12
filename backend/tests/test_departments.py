@@ -55,6 +55,8 @@ async def test_department_tree_rejects_cycles_foreign_nodes_and_stale_updates(en
     foreign = await department(other, "另一组织")
     path = organization(admin) + "/departments"
     assert (await other.api.get(path)).status_code == 403
+    assert (await other.api.get(f"{path}/{parent['id']}/members")).status_code == 403
+    assert (await admin.api.get(f"{path}/{foreign['id']}/members")).status_code == 404
     assert (
         await admin.api.post(path, json={"name": "跨组织", "parent_id": foreign["id"]})
     ).status_code == 422
@@ -82,6 +84,16 @@ async def test_workbench_department_scope_and_live_revocation(env, monkeypatch):
     assignment = await assign(admin, member, [child["id"], sibling["id"]])
     assert assignment["primary_department_id"] == child["id"]
     assert (await member.api.get(organization(admin) + "/departments")).status_code == 403
+    path = organization(admin) + "/departments"
+    assert (await member.api.get(f"{path}/{child['id']}/members")).status_code == 403
+    assert (await admin.api.get(f"{path}/{parent['id']}/members")).json()["total"] == 0
+    for node, is_primary in ((child, True), (sibling, False)):
+        roster = await admin.api.get(f"{path}/{node['id']}/members")
+        assert roster.status_code == 200, roster.text
+        assert roster.json()["total"] == 1
+        row = roster.json()["items"][0]
+        assert row["member"]["id"] == str(member.member.id)
+        assert row["is_primary"] is is_primary
     uploaded = await admin.api.post(WORKBENCHES, content=package(), headers=BINARY)
     assert uploaded.status_code == 201, uploaded.text
     item = uploaded.json()

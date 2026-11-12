@@ -1,13 +1,17 @@
 import { useId, useState } from 'react'
+import { Folder, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { Field, FieldLabel } from '@/components/ui/field'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Switch } from '@/components/ui/switch'
 import { LoadingState, RequestError } from '@/components/request-state'
 import {
   departmentTree,
@@ -15,125 +19,56 @@ import {
   type Department,
   type DepartmentGrant,
 } from './data'
+import { DepartmentTree } from './tree'
 
 export type DepartmentSelection = {
   value: DepartmentGrant[]
   onChange: (value: DepartmentGrant[]) => void
 }
 
-export function DepartmentChoices({
+function DepartmentSelectionDialog({
   departments,
   value,
   onChange,
+  close,
   disabled,
-  grant = false,
 }: DepartmentSelection & {
   departments: Department[]
+  close: () => void
   disabled?: boolean
-  grant?: boolean
 }) {
-  const id = useId()
-  const rows = departmentTree(departments).filter(
-    ({ department }) =>
-      !department.archived ||
-      value.some((item) => item.department_id === department.id)
-  )
-  const missing = value.filter(
-    (item) => !departments.some((d) => d.id === item.department_id)
-  )
-  if (!rows.length && !missing.length)
-    return (
-      <p className='text-sm text-muted-foreground'>
-        请先在部门管理中创建部门。
-      </p>
-    )
+  const [ids, setIds] = useState(value.map((grant) => grant.department_id))
   return (
-    <ScrollArea
-      viewportClassName='max-h-64'
-      role='region'
-      aria-label='部门列表'
-    >
-      <div className='flex flex-col gap-3 p-1'>
-        {rows.map(({ department, path }) => {
-          const selected = value.find(
-            (item) => item.department_id === department.id
-          )
-          const key = `${id}-${department.id}`
-          return (
-            <div
-              key={department.id}
-              className='flex flex-wrap items-center justify-between gap-2'
-            >
-              <Field orientation='horizontal' className='w-auto'>
-                <Checkbox
-                  id={key}
-                  checked={!!selected}
-                  disabled={
-                    disabled ||
-                    (!selected && (department.archived || value.length >= 100))
+    <>
+      <DepartmentTree
+        departments={departments}
+        selection={{ selectedIds: ids, change: setIds, disabled }}
+        emptyText='请先在部门管理中创建部门'
+      />
+      <DialogFooter>
+        <Button type='button' variant='outline' onClick={close}>
+          取消
+        </Button>
+        <Button
+          type='button'
+          disabled={disabled}
+          onClick={() => {
+            onChange(
+              ids.map(
+                (id) =>
+                  value.find((grant) => grant.department_id === id) ?? {
+                    department_id: id,
+                    include_descendants: false,
                   }
-                  onCheckedChange={(checked) =>
-                    onChange(
-                      checked
-                        ? [
-                            ...value,
-                            {
-                              department_id: department.id,
-                              include_descendants: false,
-                            },
-                          ]
-                        : value.filter(
-                            (item) => item.department_id !== department.id
-                          )
-                    )
-                  }
-                />
-                <FieldLabel htmlFor={key}>
-                  {path}
-                  {department.archived ? '（已归档）' : ''}
-                </FieldLabel>
-              </Field>
-              {grant && selected && !department.archived && (
-                <Field orientation='horizontal' className='w-auto'>
-                  <Checkbox
-                    id={`${key}-children`}
-                    checked={selected.include_descendants ?? false}
-                    disabled={disabled}
-                    onCheckedChange={(checked) =>
-                      onChange(
-                        value.map((item) =>
-                          item.department_id === department.id
-                            ? { ...item, include_descendants: checked === true }
-                            : item
-                        )
-                      )
-                    }
-                  />
-                  <FieldLabel htmlFor={`${key}-children`}>包含下级</FieldLabel>
-                </Field>
-              )}
-            </div>
-          )
-        })}
-        {missing.map((item) => (
-          <div
-            key={item.department_id}
-            className='flex items-center justify-between gap-2'
-          >
-            <span className='text-sm text-muted-foreground'>部门不可用</span>
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              disabled={disabled}
-              onClick={() => onChange(value.filter((entry) => entry !== item))}
-            >
-              移除授权
-            </Button>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
+              )
+            )
+            close()
+          }}
+        >
+          应用选择
+        </Button>
+      </DialogFooter>
+    </>
   )
 }
 
@@ -142,42 +77,134 @@ export function DepartmentGrantPicker({
   onChange,
   disabled,
 }: DepartmentSelection & { disabled?: boolean }) {
+  const id = useId()
   const [open, setOpen] = useState(false)
-  const query = useDepartments(open)
+  const query = useDepartments(open || value.length > 0)
+  const rows = new Map(
+    departmentTree(query.data ?? []).map((row) => [row.department.id, row])
+  )
+  const close = () => setOpen(false)
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={setOpen}
-      className='flex flex-col gap-3'
-    >
-      <CollapsibleTrigger asChild>
-        <Button
-          type='button'
-          variant='outline'
-          className='self-start'
-          disabled={disabled}
+    <section className='flex min-w-0 flex-col gap-2' aria-label='部门授权规则'>
+      <div className='flex flex-wrap items-center gap-x-2'>
+        <h3 className='text-sm font-semibold'>部门</h3>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button type='button' variant='ghost' size='sm' disabled={disabled}>
+              <Plus data-icon='inline-start' /> 添加部门
+            </Button>
+          </DialogTrigger>
+          <DialogContent className='max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg'>
+            <DialogHeader>
+              <DialogTitle>选择部门</DialogTitle>
+              <DialogDescription>
+                勾选要授权的部门，应用后可设置是否包含下级。
+              </DialogDescription>
+            </DialogHeader>
+            {query.isError ? (
+              <RequestError
+                error={query.error}
+                retry={() => void query.refetch()}
+              />
+            ) : query.isPending ? (
+              <LoadingState />
+            ) : (
+              <DepartmentSelectionDialog
+                departments={query.data}
+                value={value}
+                onChange={onChange}
+                close={close}
+                disabled={disabled}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+      {value.length === 0 ? (
+        <p className='text-sm text-muted-foreground'>未添加部门</p>
+      ) : query.isPending ? (
+        <LoadingState />
+      ) : query.isError ? (
+        <RequestError error={query.error} retry={() => void query.refetch()} />
+      ) : (
+        <ScrollArea
+          role='region'
+          aria-label='已授权部门'
+          viewportClassName='max-h-64'
         >
-          选择部门{value.length ? `（${value.length}）` : ''}
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        {query.isError ? (
-          <RequestError
-            error={query.error}
-            retry={() => void query.refetch()}
-          />
-        ) : query.isPending ? (
-          <LoadingState />
-        ) : (
-          <DepartmentChoices
-            departments={query.data}
-            value={value}
-            onChange={onChange}
-            disabled={disabled}
-            grant
-          />
-        )}
-      </CollapsibleContent>
-    </Collapsible>
+          <ul className='flex flex-col gap-2'>
+            {value.map((grant) => {
+              const row = rows.get(grant.department_id)
+              const department = row?.department
+              const parentId = department?.parent_id
+              const label = department?.name ?? '部门不可用'
+              const switchId = `${id}-${grant.department_id}`
+              return (
+                <li
+                  key={grant.department_id}
+                  className='flex min-w-0 flex-wrap items-center gap-2 rounded-md border px-3 py-2'
+                >
+                  <Folder
+                    className='size-4 shrink-0 text-muted-foreground'
+                    aria-hidden='true'
+                  />
+                  <div className='min-w-24 flex-1'>
+                    <div className='text-sm font-medium break-words'>
+                      {label}
+                    </div>
+                    {parentId && (
+                      <div className='text-xs break-words text-muted-foreground'>
+                        {rows.get(parentId)?.path}
+                      </div>
+                    )}
+                    {department?.archived && (
+                      <p className='text-xs text-muted-foreground'>已归档</p>
+                    )}
+                  </div>
+                  {department && !department.archived && (
+                    <div className='flex items-center gap-2'>
+                      <label htmlFor={switchId} className='text-xs'>
+                        包含下级部门
+                      </label>
+                      <Switch
+                        id={switchId}
+                        checked={grant.include_descendants ?? false}
+                        disabled={disabled}
+                        onCheckedChange={(checked) =>
+                          onChange(
+                            value.map((item) =>
+                              item.department_id === grant.department_id
+                                ? { ...item, include_descendants: checked }
+                                : item
+                            )
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='size-8'
+                    aria-label={`移除 ${label}`}
+                    disabled={disabled}
+                    onClick={() =>
+                      onChange(
+                        value.filter(
+                          (item) => item.department_id !== grant.department_id
+                        )
+                      )
+                    }
+                  >
+                    <X />
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        </ScrollArea>
+      )}
+    </section>
   )
 }
