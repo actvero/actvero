@@ -18,7 +18,8 @@ export function DepartmentScopePreview({
   const [page, setPage] = useState(1)
   const { organization, user, csrf } = useOrganization()
   const path = `/enterprises/${organization.tenant_id}/departments/scope-preview`
-  const departments = useDepartments(grants.length > 0)
+  const needsDepartments = grants.length > 0
+  const departments = useDepartments(needsDepartments)
   const body: Schema['DepartmentScopePreview'] = {
     member_ids: members,
     department_grants: grants,
@@ -60,14 +61,14 @@ export function DepartmentScopePreview({
         <p className='text-sm text-muted-foreground'>
           添加部门或成员后可查看授权名单。
         </p>
-      ) : preview.isError || departments.isError ? (
+      ) : preview.isError || (needsDepartments && departments.isError) ? (
         <RequestError
           error={preview.error ?? departments.error}
           retry={() =>
             void (preview.isError ? preview.refetch() : departments.refetch())
           }
         />
-      ) : preview.isPending || (grants.length > 0 && departments.isPending) ? (
+      ) : preview.isPending || (needsDepartments && departments.isPending) ? (
         <LoadingState />
       ) : !preview.data.total ? (
         <p className='text-sm text-muted-foreground'>

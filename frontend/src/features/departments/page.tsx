@@ -235,64 +235,66 @@ export function DepartmentsPage() {
       ) : query.isError ? (
         <RequestError error={query.error} retry={() => void query.refetch()} />
       ) : (
-        <div className='grid min-w-0 divide-y lg:min-h-[min(70dvh,45rem)] lg:grid-cols-[minmax(14rem,19rem)_minmax(0,1fr)] lg:divide-x lg:divide-y-0'>
-          <aside className='flex min-w-0 flex-col gap-3 pb-5 lg:pe-5 lg:pb-0'>
-            <h2 className='font-semibold'>部门结构</h2>
-            <DepartmentTree
-              departments={departments}
-              selection={{
-                selectedId: selected?.department.id,
-                select: setSelectedId,
-              }}
-              showArchived={showArchived}
-              emptyText='暂无有效部门'
-            />
-            {departments.some((department) => department.archived) && (
-              <div className='mt-auto flex flex-col gap-2 pt-4'>
-                <Separator />
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='sm'
-                  className='self-start'
-                  aria-pressed={showArchived}
-                  onClick={() => setShowArchived(!showArchived)}
-                >
-                  <Archive data-icon='inline-start' />
-                  {showArchived ? '隐藏已归档部门' : '查看已归档部门'}
-                </Button>
-              </div>
-            )}
-          </aside>
-          <div className='min-w-0 pt-5 lg:ps-6 lg:pt-0'>
-            {selected ? (
-              <DepartmentDetail
-                key={selected.department.id}
-                department={selected.department}
-                parentPath={
-                  rows.find(({ department }) => department.id === parentId)
-                    ?.path
-                }
-                childrenCount={
-                  departments.filter(
-                    (department) =>
-                      department.parent_id === selected.department.id &&
-                      !department.archived
-                  ).length
-                }
-                edit={() => setEditing(selected.department)}
-                archive={() => {
-                  archive.reset()
-                  setArchiving(selected.department)
+        <div className='@container min-w-0'>
+          <div className='grid min-w-0 divide-y @min-[36rem]:min-h-[min(70dvh,45rem)] @min-[36rem]:grid-cols-[minmax(13rem,28%)_minmax(0,1fr)] @min-[36rem]:divide-x @min-[36rem]:divide-y-0'>
+            <aside className='flex min-w-0 flex-col gap-3 pb-5 @min-[36rem]:pe-5 @min-[36rem]:pb-0'>
+              <h2 className='font-semibold'>部门结构</h2>
+              <DepartmentTree
+                departments={departments}
+                selection={{
+                  selectedId: selected?.department.id,
+                  select: setSelectedId,
                 }}
+                showArchived={showArchived}
+                emptyText='暂无有效部门'
               />
-            ) : (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyTitle>暂无部门</EmptyTitle>
-                </EmptyHeader>
-              </Empty>
-            )}
+              {departments.some((department) => department.archived) && (
+                <div className='mt-auto flex flex-col gap-2 pt-4'>
+                  <Separator />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='self-start'
+                    aria-pressed={showArchived}
+                    onClick={() => setShowArchived(!showArchived)}
+                  >
+                    <Archive data-icon='inline-start' />
+                    {showArchived ? '隐藏已归档部门' : '查看已归档部门'}
+                  </Button>
+                </div>
+              )}
+            </aside>
+            <div className='min-w-0 pt-5 @min-[36rem]:ps-6 @min-[36rem]:pt-0'>
+              {selected ? (
+                <DepartmentDetail
+                  key={selected.department.id}
+                  department={selected.department}
+                  parentPath={
+                    rows.find(({ department }) => department.id === parentId)
+                      ?.path
+                  }
+                  childrenCount={
+                    departments.filter(
+                      (department) =>
+                        department.parent_id === selected.department.id &&
+                        !department.archived
+                    ).length
+                  }
+                  edit={() => setEditing(selected.department)}
+                  archive={() => {
+                    archive.reset()
+                    setArchiving(selected.department)
+                  }}
+                />
+              ) : (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyTitle>暂无部门</EmptyTitle>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </div>
           </div>
         </div>
       )}

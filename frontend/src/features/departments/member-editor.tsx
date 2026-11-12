@@ -86,13 +86,13 @@ function AssignmentForm({
 
   return (
     <form
-      className='flex min-w-0 flex-col'
+      className='@container flex min-w-0 flex-col'
       onSubmit={(event) => {
         event.preventDefault()
         if (dirty && valid && !save.isPending) save.mutate()
       }}
     >
-      <div className='grid min-w-0 divide-y md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] md:divide-x md:divide-y-0'>
+      <div className='grid min-w-0 divide-y @min-[36rem]:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] @min-[36rem]:divide-x @min-[36rem]:divide-y-0'>
         <section
           className='flex min-w-0 flex-col gap-3 p-4 sm:p-6'
           aria-label='选择部门'
