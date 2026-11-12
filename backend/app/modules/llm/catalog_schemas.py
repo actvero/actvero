@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.llm.audio_schemas import SpeechOptions, TranscriptionOptions
 from app.modules.llm.image_schemas import ImageOptions
 from app.modules.llm.model_identifier import ModelIdentifier
@@ -255,12 +256,13 @@ class ModelAccess(Input):
     enabled: bool = False
     audience: Literal["administrators", "organization", "selected"] = "administrators"
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
     channel_id: UUID | None = None
     upstream_id: str = Field(default="", max_length=200)
 
     @model_validator(mode="after")
     def valid_access(self) -> Self:
-        if self.audience == "selected" and not self.member_ids:
+        if self.audience == "selected" and not self.member_ids and self.department_grants == []:
             raise ValueError("指定成员至少选择一人")
         if len(set(self.member_ids)) != len(self.member_ids):
             raise ValueError("成员不能重复")
@@ -287,6 +289,7 @@ class GatewayExecution(Input):
     origin_hash: str = Field(min_length=64, max_length=64)
     capability_mode: Literal["auto", "manual"] = "manual"
     capability_source: dict[str, str] = Field(default_factory=dict)
+    transport_provider: str | None = None
     reserve_usd: str = Field(
         default="0.01",
         pattern=r"^(0|[1-9][0-9]{0,5})(\.[0-9]{1,8})?$",
@@ -300,6 +303,12 @@ class GatewayExecution(Input):
         if Decimal(value) <= 0:
             raise ValueError("单次预留额度须大于零")
         return value
+
+    @property
+    def native_provider(self) -> str:
+        if self.transport_provider is not None:
+            return self.transport_provider
+        return self.capability_source.get("provider", "")
 
 
 class OperationParameters(Input):
@@ -317,6 +326,12 @@ class OperationParameters(Input):
     reasoning_options: list[ReasoningOption] = Field(default_factory=list, max_length=3)
     bindings: list[ModelBinding] = Field(default_factory=list, max_length=50)
     budget_price: TokenPrice | None = None
+
+    @model_validator(mode="after")
+    def gateway_chat_streaming(self) -> Self:
+        if self.gateway is not None and self.kind == "chat":
+            self.capabilities = self.capabilities.model_copy(update={"streaming": "supported"})
+        return self
 
     def validate_operation(self, enabled: bool, channel_id: UUID | None, upstream_id: str) -> None:
         if self.kind == "transcription":

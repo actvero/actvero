@@ -28,6 +28,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { MemberPicker } from '@/components/member-picker'
 import { RequestError } from '@/components/request-state'
+import { sameDepartmentGrants } from '@/features/departments/scope'
 import {
   audiences,
   categories,
@@ -138,6 +139,7 @@ export function WorkbenchScopeForm({ item }: { item: Workbench }) {
   const id = useId()
   const [audience, setAudience] = useState(item.audience)
   const [members, setMembers] = useState(item.member_ids)
+  const [departments, setDepartments] = useState(item.department_grants ?? [])
   const { csrf, update } = useWorkbenches()
   const save = useMutation({
     mutationFn: (body: Schema['WorkbenchScope']) =>
@@ -152,8 +154,9 @@ export function WorkbenchScopeForm({ item }: { item: Workbench }) {
     audience !== item.audience ||
     (selected &&
       (members.length !== item.member_ids.length ||
-        members.some((member) => !item.member_ids.includes(member))))
-  const valid = !selected || members.length > 0
+        members.some((member) => !item.member_ids.includes(member)) ||
+        !sameDepartmentGrants(departments, item.department_grants ?? [])))
+  const valid = !selected || members.length > 0 || departments.length > 0
   return (
     <Card className='max-w-3xl'>
       <CardHeader>
@@ -170,6 +173,7 @@ export function WorkbenchScopeForm({ item }: { item: Workbench }) {
               save.mutate({
                 audience,
                 member_ids: selected ? members : [],
+                department_grants: selected ? departments : [],
                 revision: item.revision,
               })
           }}
@@ -199,6 +203,10 @@ export function WorkbenchScopeForm({ item }: { item: Workbench }) {
             </Field>
             {selected && (
               <MemberPicker
+                departmentScope={{
+                  value: departments,
+                  onChange: setDepartments,
+                }}
                 value={members}
                 onChange={setMembers}
                 disabled={save.isPending}

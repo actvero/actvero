@@ -10,11 +10,12 @@ for source in (base / "overlay").rglob("*.go"):
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
 for relative, old, new in [
+    ("relay/channel/ali/rerank.go", 'rerankResponse := dto.RerankResponse{', 'actveroConfirmRerankUsage(c, &usage, responseBody)\n\trerankResponse := dto.RerankResponse{'),
     ("router/api-router.go", 'optionRoute.GET("/model_pricing", controller.GetModelPricingConfig)', 'optionRoute.GET("/model_pricing", controller.GetModelPricingConfig)\n\t\t\toptionRoute.POST("/model_pricing/preflight", controller.ActveroAdmissionPreview)'),
     ("middleware/access_token_routes.go", '"GET /api/option/model_pricing":', '"POST /api/option/model_pricing/preflight": accessTokenScopeRule("option:read"),\n\t"GET /api/option/model_pricing":'),
-    ("relay/channel/openai/relay-openai.go", 'if simpleResponse.Usage.PromptTokens == 0 {', 'actveroConfirmChatUsage(c, &simpleResponse.Usage, responseBody)\n\tif simpleResponse.Usage.PromptTokens == 0 {'),
+    ("relay/channel/openai/relay-openai.go", 'if simpleResponse.Usage.PromptTokens == 0 {', 'actveroConfirmChatUsage(c, &simpleResponse.Usage, responseBody)\n\tactveroConfirmEmbeddingUsage(c, info, &simpleResponse.Usage, responseBody)\n\tif simpleResponse.Usage.PromptTokens == 0 {'),
     ("relay/channel/openai/relay-openai.go", 'applyUsagePostProcessing(info, usage, common.StringToByteSlice(usageFrame))', 'applyUsagePostProcessing(info, usage, common.StringToByteSlice(usageFrame))\n\tif containStreamUsage { actveroConfirmChatUsage(c, usage, common.StringToByteSlice(usageFrame)) }'),
-    ("service/text_quota.go", 'appendUsageBillingPathForLog(other, common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens), originUsage)', 'appendUsageBillingPathForLog(other, common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens), originUsage)\n\tif ctx.GetBool("actvero_confirmed_chat_usage") && !common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens) { other.SetAdmin("actvero_upstream_usage_confirmed", true) }'),
+    ("service/text_quota.go", 'appendUsageBillingPathForLog(other, common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens), originUsage)', 'appendUsageBillingPathForLog(other, common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens), originUsage)\n\tif (ctx.GetBool("actvero_confirmed_chat_usage") || ctx.GetBool("actvero_confirmed_input_usage")) && !common.GetContextKeyBool(ctx, constant.ContextKeyLocalCountTokens) { other.SetAdmin("actvero_upstream_usage_confirmed", true) }'),
 ]:
     path = root / relative
     text = path.read_text()
@@ -26,6 +27,10 @@ for relative, old, new in [
 
 # These anchors target the checksummed release, never an unpinned working tree.
 patches = [
+ ("controller/perf_metrics.go", 'activeGroups := append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")', 'activeGroups := actveroMetricGroups(c,append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto"))'),
+ ("controller/perf_metrics.go", 'AllowedGroups: append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto"),', 'AllowedGroups: actveroMetricGroups(c,append(lo.Keys(ratio_setting.GetGroupRatioCopy()), "auto")),'),
+ ("controller/channel-test.go", 'helper.ModelPriceHelper(c, info, 0, request.GetTokenCountMeta())', 'actveroTestPrice(c, info, 0, request.GetTokenCountMeta())'),
+ ("controller/channel-test.go", 'model.RecordConsumeLog(c, testUserID, model.RecordConsumeLogParams{', 'actveroRecordTestLog(c, testUserID, model.RecordConsumeLogParams{'),
  ("setting/ratio_setting/model_ratio.go", 'func FormatMatchingModelName(name string) string {', 'func FormatMatchingModelName(name string) string {\n namespace,publicName:=common.ActveroSplitName(name);name=publicName'),
  ("setting/ratio_setting/model_ratio.go", 'return name\n}\n\n// result: 倍率or价格， usePrice， exist', 'return namespace+name\n}\n\n// result: 倍率or价格， usePrice， exist'),
  ("setting/ratio_setting/model_ratio.go", 'func ResolveCompletionRatio(name string, configured *float64) CompletionRatioInfo {', 'func ResolveCompletionRatio(name string, configured *float64) CompletionRatioInfo {\n _,name=common.ActveroSplitName(name)'),

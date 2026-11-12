@@ -35,7 +35,13 @@ async def reference(
         not expert
         or expert.tenant_id != actor.tenant.id
         or not expert.current_release_id
-        or not allowed(expert.audience, expert.member_ids, actor.member)
+        or not allowed(
+            expert.audience,
+            expert.member_ids,
+            actor.member,
+            actor.departments,
+            expert.department_grants,
+        )
     ):
         fail(404, "expert_unavailable", "专家不可用或未获授权")
     release = await db.get(ExpertRelease, release_id)

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { departmentGrantSchema } from '@/features/departments/scope'
 
 export const metadataSchema = z
   .object({
@@ -9,6 +10,7 @@ export const metadataSchema = z
       error: '请选择使用范围',
     }),
     member_ids: z.array(z.string()),
+    department_grants: z.array(departmentGrantSchema).max(100),
     icon_selection: z
       .object({
         source: z.enum(['auto', 'library', 'upload']),
@@ -17,13 +19,21 @@ export const metadataSchema = z
       })
       .optional(),
   })
-  .refine((v) => v.audience !== 'selected' || v.member_ids.length > 0, {
-    path: ['member_ids'],
-    message: '请至少选择一名成员',
-  })
+  .refine(
+    (v) =>
+      v.audience !== 'selected' ||
+      v.member_ids.length > 0 ||
+      v.department_grants.length > 0,
+    {
+      path: ['member_ids'],
+      message: '请至少选择一个部门或成员',
+    }
+  )
   .transform((values) => ({
     ...values,
     member_ids: values.audience === 'selected' ? values.member_ids : [],
+    department_grants:
+      values.audience === 'selected' ? values.department_grants : [],
   }))
 
 export type Metadata = z.infer<typeof metadataSchema>

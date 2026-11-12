@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.departments.schemas import DepartmentGrant
+
 WorkbenchAudience = Literal["administrators", "selected", "organization"]
 WorkbenchCategory = Literal[
     "office",
@@ -46,10 +48,11 @@ class WorkbenchMetadata(WorkbenchRevision):
 class WorkbenchScope(WorkbenchRevision):
     audience: WorkbenchAudience
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
 
     @model_validator(mode="after")
     def validate_members(self) -> "WorkbenchScope":
-        if (self.audience == "selected") != bool(self.member_ids):
+        if self.audience != "selected" and self.member_ids:
             raise ValueError("仅指定成员范围需要选择成员")
         if len(set(self.member_ids)) != len(self.member_ids):
             raise ValueError("成员不能重复")
@@ -75,6 +78,8 @@ class DesktopWorkbenchRelease(BaseModel):
     package_name: str
     display_name: str
     description: str
+    icon_data_url: str | None = None
+    preview_data_urls: list[str] = Field(default_factory=list, max_length=3)
     category: WorkbenchCategory
     version: str
     dsh_requirement: str
@@ -129,6 +134,7 @@ class WorkbenchSummary(BaseModel):
     package_name: str
     display_name: str
     description: str
+    icon_data_url: str | None = None
     category: WorkbenchCategory
     audience: WorkbenchAudience
     status: WorkbenchStatus
@@ -140,6 +146,7 @@ class WorkbenchSummary(BaseModel):
 class WorkbenchView(WorkbenchSummary):
     revision: int
     member_ids: list[UUID]
+    department_grants: list[DepartmentGrant] = Field(default_factory=list)
     versions: list[WorkbenchVersionView]
     config_values: dict[ConfigKey, ConfigValue]
 

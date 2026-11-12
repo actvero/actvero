@@ -2,7 +2,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 
 from app.modules.account.service import own_access
 from app.modules.auth.router import Mutation
@@ -17,6 +17,7 @@ from app.modules.quota.schemas import (
     QuotaAssignmentInput,
     QuotaMatchPage,
     QuotaPolicyInput,
+    QuotaPolicyListItem,
     QuotaPolicyPage,
     QuotaPolicyUpdate,
     QuotaPolicyView,
@@ -89,20 +90,45 @@ async def listing(
     if assignable_only:
         filters.append(QuotaPolicy.is_default.is_(False))
     total = await db.scalar(select(func.count()).select_from(QuotaPolicy).where(*filters)) or 0
-    rows = await db.scalars(
-        select(QuotaPolicy)
-        .where(*filters)
-        .order_by(QuotaPolicy.is_default.desc(), QuotaPolicy.created_at.desc(), QuotaPolicy.id)
-        .offset((page - 1) * 20)
-        .limit(20)
-    )
+    rows = (
+        await db.scalars(
+            select(QuotaPolicy)
+            .where(*filters)
+            .order_by(QuotaPolicy.is_default.desc(), QuotaPolicy.created_at.desc(), QuotaPolicy.id)
+            .offset((page - 1) * 20)
+            .limit(20)
+        )
+    ).all()
+    active_counts: dict[UUID | None, int] = {}
+    if rows and state == "current":
+        counts = await db.execute(
+            select(QuotaAssignment.policy_id, func.count(Membership.id))
+            .select_from(Membership)
+            .outerjoin(
+                QuotaAssignment,
+                and_(
+                    QuotaAssignment.member_id == Membership.id,
+                    QuotaAssignment.tenant_id == Membership.tenant_id,
+                ),
+            )
+            .where(Membership.tenant_id == actor.tenant.id, Membership.status == "active")
+            .group_by(QuotaAssignment.policy_id)
+        )
+        active_counts = {policy_id: count for policy_id, count in counts}
     default = await db.scalar(
         select(QuotaPolicy).where(
             QuotaPolicy.tenant_id == actor.tenant.id, QuotaPolicy.is_default.is_(True)
         )
     )
     return QuotaPolicyPage(
-        items=[view(r) for r in rows],
+        items=[
+            QuotaPolicyListItem(
+                **view(row).model_dump(),
+                active_member_count=active_counts.get(row.id, 0)
+                + (active_counts.get(None, 0) if row.is_default else 0),
+            )
+            for row in rows
+        ],
         total=total,
         has_default=default is not None,
     )
@@ -191,6 +217,7 @@ async def matches(
     request: Request,
     db: DB,
     q: str = Query(default="", max_length=200),
+    assigned_only: bool = False,
     page: int = Query(default=1, ge=1),
 ) -> QuotaMatchPage:
     actor = await administrator(request, db)
@@ -201,6 +228,16 @@ async def matches(
                 User.name.icontains(q.strip(), autoescape=True),
                 User.email.icontains(q.strip(), autoescape=True),
             )
+        )
+    if assigned_only:
+        filters.append(
+            select(QuotaAssignment.member_id)
+            .where(
+                QuotaAssignment.member_id == Membership.id,
+                QuotaAssignment.tenant_id == actor.tenant.id,
+                QuotaAssignment.policy_id.is_not(None),
+            )
+            .exists()
         )
     query = select(Membership, User).join(User).where(*filters)
     total = await db.scalar(select(func.count()).select_from(query.subquery())) or 0

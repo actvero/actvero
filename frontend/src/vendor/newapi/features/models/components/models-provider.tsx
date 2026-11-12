@@ -47,12 +47,18 @@ type DialogType =
   | null
 
 type ModelsContextType = {
+  renderParameters?: (
+    model: Model,
+    controls: import('./drawers/model-mutate-drawer').ModelParameterControls
+  ) => React.ReactNode
   onManageAccess?: (model: Model) => void
   accessColumns?: ColumnDef<Model>[]
   onModelsVisible?: (models: Model[]) => void
   renderAccess?: (
     model: Model,
     controls: {
+      section: 'parameters' | 'access'
+      onParameters: () => void
       onPricing: () => void
       onDirtyChange: (dirty: boolean) => void
       onSavingChange: (saving: boolean) => void
@@ -94,12 +100,14 @@ export function ModelsProvider({
   accessColumns,
   onModelsVisible,
   renderAccess,
+  renderParameters,
 }: {
   children: React.ReactNode
   onManageAccess?: (model: Model) => void
   accessColumns?: ColumnDef<Model>[]
   onModelsVisible?: (models: Model[]) => void
   renderAccess?: ModelsContextType['renderAccess']
+  renderParameters?: ModelsContextType['renderParameters']
 }) {
   const [open, setOpen] = useState<DialogType>(null)
   const [currentRow, setCurrentRow] = useState<Model | null>(null)
@@ -125,6 +133,7 @@ export function ModelsProvider({
         accessColumns,
         onModelsVisible,
         renderAccess,
+        renderParameters,
         open,
         setOpen,
         currentRow,

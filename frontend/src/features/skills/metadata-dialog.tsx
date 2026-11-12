@@ -37,6 +37,7 @@ export function MetadataDialog({
       category: skill.category ?? 'uncategorized',
       audience: skill.audience,
       member_ids: skill.member_ids,
+      department_grants: skill.department_grants ?? [],
       icon_selection: skill.icon_selection ?? { source: 'auto' },
     },
   })

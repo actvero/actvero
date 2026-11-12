@@ -72,7 +72,7 @@ it('侧栏收起后仍可打开 MCP 子菜单', async () => {
     .flatMap((group) => group.items)
     .find((item) => item.title === 'MCP')
   expect(memberMcp?.items?.map((item) => item.title)).toEqual(['可用服务'])
-  expect(memberMcp?.items?.map((item) => item.title)).not.toContain('服务管理')
+  expect(memberMcp?.items?.map((item) => item.title)).not.toContain('服务')
 })
 
 it('普通成员侧栏包含 MCP，但不包含管理员入口', () => {

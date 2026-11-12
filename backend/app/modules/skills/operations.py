@@ -80,7 +80,7 @@ async def import_skill(
             raise HTTPException(422, "新版本的技能 name 必须与原技能一致")
         skill.revision += 1
     else:
-        await service.scope(db, actor, body)
+        grants = await service.scope(db, actor, body)
         await require_category(db, actor.tenant.id, body.category or "uncategorized")
         if await db.scalar(
             select(Skill.id).where(Skill.tenant_id == actor.tenant.id, Skill.name == package.name)
@@ -97,6 +97,7 @@ async def import_skill(
             else {"source": "auto"},
             audience=body.audience,
             member_ids=[str(m) for m in body.member_ids],
+            department_grants=grants,
         )
         db.add(skill)
         await db.flush()
@@ -164,7 +165,10 @@ async def list_skills(
                 or_(
                     Skill.audience == "organization",
                     (Skill.audience == "selected")
-                    & Skill.member_ids.contains([str(actor.member.id)]),
+                    & or_(
+                        Skill.member_ids.contains([str(actor.member.id)]),
+                        actor.departments.predicate(Skill.department_grants),
+                    ),
                 ),
                 select(SkillVersion.id)
                 .where(
@@ -223,7 +227,7 @@ async def update(
     skill = await service.get_skill(db, actor, skill_id)
     if skill.revision != body.revision:
         raise HTTPException(409, "技能已被修改，请刷新后重试")
-    await service.scope(db, actor, body)
+    skill.department_grants = await service.scope(db, actor, body, skill.department_grants)
     skill.display_name = body.display_name.strip()
     skill.description = body.description.strip()
     if body.category is not None:

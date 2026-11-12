@@ -48,6 +48,10 @@ export function RuleFields({ disabled }: { disabled: boolean }) {
           </Button>
         </div>
       </div>
+      <p className='text-sm text-muted-foreground'>
+        每个周期从首次获准调用时起算。到期后的下一次获准调用开始新周期，7
+        天按连续 168 小时计算。
+      </p>
       {fields.map((r, i) => (
         <Card key={r.id} density='compact'>
           <CardHeader layout='row'>
@@ -103,9 +107,6 @@ export function RuleFields({ disabled }: { disabled: boolean }) {
                 )}
               />
             </div>
-            <p className='text-sm text-muted-foreground'>
-              首次使用起算，到期后下一次使用重新计时。7 天为连续 168 小时。
-            </p>
           </CardContent>
         </Card>
       ))}

@@ -15,7 +15,7 @@ from app.modules.desktop.errors import fail
 from app.modules.desktop.oidc import NativeIdentity
 from app.modules.desktop.service import native_request
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor, membership_state
+from app.modules.members.service import BusinessActor, membership_state, with_departments
 from app.modules.tenants.models import Installation, Tenant
 from app.modules.users.models import LoginIdentity, User
 
@@ -151,7 +151,7 @@ async def authorize(
     if not permits(actor, kind, resource_id, action):
         fail(403, "key_scope_denied", "此密钥未获准访问该资源或操作")
     request.state.access_key_id = row.id
-    return actor
+    return await with_departments(db, actor)
 
 
 async def resources(
@@ -180,6 +180,28 @@ async def resources(
                         name=config.name,
                         identifier=config.slug,
                         endpoint=base + "/api/llm/v1",
+                    )
+                )
+    elif kind == "knowledge":
+        from app.modules.knowledge.models import KnowledgeBase
+        from app.modules.knowledge.service import visible as knowledge_visible
+
+        bases = await db.scalars(
+            select(KnowledgeBase)
+            .where(KnowledgeBase.tenant_id == actor.tenant.id, KnowledgeBase.archived.is_(False))
+            .order_by(KnowledgeBase.name)
+        )
+        for knowledge in bases:
+            if knowledge_visible(knowledge, actor) and permits(
+                actor, "knowledge", knowledge.id, "read"
+            ):
+                result.append(
+                    KeyResource(
+                        kind="knowledge",
+                        id=knowledge.id,
+                        name=knowledge.name,
+                        identifier=str(knowledge.id),
+                        endpoint=base + "/api/knowledge/v1",
                     )
                 )
     else:

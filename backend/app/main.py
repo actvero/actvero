@@ -25,6 +25,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.client_distribution.router import public_router as update_feed_router
 from app.modules.client_distribution.router import router as distribution_router
 from app.modules.client_distribution.worker import monitor as monitor_distribution
+from app.modules.departments.router import router as departments_router
 from app.modules.desktop.router import router as desktop_router
 from app.modules.desktop.router import web_router as devices_router
 from app.modules.desktop_mcp.gateway import router as mcp_gateway_router
@@ -32,6 +33,11 @@ from app.modules.desktop_mcp.router import router as desktop_mcp_router
 from app.modules.desktop_skills.router import router as desktop_skills_router
 from app.modules.experts.desktop import router as desktop_experts_router
 from app.modules.experts.router import router as experts_router
+from app.modules.knowledge.integration import router as knowledge_integration_router
+from app.modules.knowledge.reader import normalize_parent
+from app.modules.knowledge.reader import router as knowledge_reader_router
+from app.modules.knowledge.router import router as knowledge_router
+from app.modules.knowledge.worker import monitor as monitor_knowledge
 from app.modules.llm import chat_router  # noqa: F401 -- registers chat handlers on shared routers
 from app.modules.llm.call_router import router as llm_call_router
 from app.modules.llm.catalog_router import router as llm_catalog_router
@@ -107,9 +113,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if settings.database_url and settings.client_distribution_worker_enabled
             else None
         )
+        knowledge_task = (
+            asyncio.create_task(monitor_knowledge(application)) if settings.database_url else None
+        )
         try:
             yield
         finally:
+            if knowledge_task is not None:
+                knowledge_task.cancel()
+                await asyncio.gather(knowledge_task, return_exceptions=True)
             if distribution_task is not None:
                 distribution_task.cancel()
                 await asyncio.gather(distribution_task, return_exceptions=True)
@@ -196,6 +208,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.add_middleware(BrandUploadLimit)
     register_error_handlers(application)
     application.include_router(router)
+    application.include_router(knowledge_router)
+    application.include_router(knowledge_integration_router)
+    application.include_router(knowledge_reader_router)
     application.include_router(object_storage_router, prefix="/api/v1/platform/object-storage")
     application.include_router(
         object_storage_router,
@@ -220,6 +235,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         access_keys_router,
         setup_router,
         organization_settings_router,
+        departments_router,
         members_router,
         invitations_router,
         audit_router,
@@ -285,13 +301,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        if request.url.path != "/api/docs":
+        ancestors = "'none'"
+        if request.url.path == "/embed/knowledge":
+            try:
+                ancestors = normalize_parent(request.query_params.get("parent_origin", ""))
+                del response.headers["X-Frame-Options"]
+            except HTTPException:
+                pass
+        if request.url.path != "/api/docs" and "Content-Security-Policy" not in response.headers:
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; script-src 'self'; "
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                "img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; "
+                "img-src 'self' data: blob:; "
+                "font-src 'self' data: blob: https://fonts.gstatic.com; "
                 "connect-src 'self'; media-src 'self' blob:; "
-                "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+                "worker-src 'self'; "
+                f"frame-ancestors {ancestors}; base-uri 'none'; form-action 'self'"
             )
         return response
 

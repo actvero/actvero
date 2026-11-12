@@ -54,7 +54,7 @@ def prepare(
     if (
         binding
         and config.gateway
-        and config.gateway.capability_source.get("provider") == "deepseek"
+        and config.gateway.native_provider == "deepseek"
         and body.reasoning_effort is not None
     ):
         # DeepSeek's compatible chat endpoint requires an explicit thinking switch.

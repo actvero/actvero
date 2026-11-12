@@ -17,12 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { QueryClient } from '@tanstack/react-query'
-import i18next from 'i18next'
-import { toast } from 'sonner'
-
 import { handleServerError } from '@newapi/lib/handle-server-error'
 import { getServerMessage } from '@newapi/lib/server-error-message'
-
+import i18next from 'i18next'
+import { toast } from 'sonner'
 import {
   copyChannel,
   deleteChannel,
@@ -302,18 +300,24 @@ export async function handleTestChannel(
     const responseTime = getChannelTestResponseTime(response)
     const duration = formatChannelTestDuration(responseTime)
     const target = getChannelTestLabel(options)
+    const details = [
+      response.model_name || options?.testModel,
+      response.endpoint_type || options?.endpointType || '自动接口',
+      duration ? `耗时 ${duration}` : undefined,
+      response.prompt_tokens !== undefined
+        ? `输入 ${response.prompt_tokens} / 输出 ${response.completion_tokens ?? 0} Token`
+        : undefined,
+      response.pricing_status === 'unpriced'
+        ? '管理员诊断 · 未计价'
+        : undefined,
+    ]
+      .filter(Boolean)
+      .join(' · ')
     if (response.success) {
       if (!options?.silent) {
-        toast.success(
-          i18next.t('{{target}} test succeeded', { target }),
-          duration
-            ? {
-                description: i18next.t('Response time: {{duration}}', {
-                  duration,
-                }),
-              }
-            : undefined
-        )
+        toast.success(i18next.t('{{target}} test succeeded', { target }), {
+          description: details,
+        })
       }
       onTestComplete?.(true, responseTime)
     } else {
@@ -323,8 +327,8 @@ export async function handleTestChannel(
         handleServerError(response, undefined, {
           title: i18next.t('{{target}} test failed', { target }),
           description: response.error_code
-            ? `${errorMsg} (${response.error_code})`
-            : errorMsg,
+            ? `${errorMsg} (${response.error_code}) · ${details}`
+            : `${errorMsg} · ${details}`,
         })
       }
       onTestComplete?.(false, responseTime, errorMsg, response.error_code)
@@ -680,4 +684,3 @@ export async function handleUpdateAllBalances(
     handleServerError(error, i18next.t('Failed to update all balances'))
   }
 }
-

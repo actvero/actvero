@@ -1,9 +1,11 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.departments.access import resolve_grants
 from app.modules.members.models import Membership
 from app.modules.members.service import BusinessActor
 from app.modules.skills.categories import require_category
@@ -22,11 +24,19 @@ def allowed(skill: Skill, actor: BusinessActor) -> bool:
         actor.member.role == "administrator"
         or skill.audience == "organization"
         or skill.audience == "selected"
-        and str(actor.member.id) in skill.member_ids
+        and (
+            str(actor.member.id) in skill.member_ids
+            or actor.departments.matches(skill.department_grants)
+        )
     )
 
 
-async def scope(db: AsyncSession, actor: BusinessActor, body: SkillScope) -> None:
+async def scope(
+    db: AsyncSession,
+    actor: BusinessActor,
+    body: SkillScope,
+    current: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     if body.member_ids:
         valid = set(
             await db.scalars(
@@ -39,6 +49,9 @@ async def scope(db: AsyncSession, actor: BusinessActor, body: SkillScope) -> Non
         )
         if valid != set(body.member_ids):
             raise HTTPException(422, "请选择当前组织的有效成员")
+    return await resolve_grants(
+        db, actor.tenant.id, body.audience, body.member_ids, body.department_grants, current
+    )
 
 
 async def get_skill(db: AsyncSession, actor: BusinessActor, skill_id: UUID) -> Skill:
@@ -98,6 +111,7 @@ async def view(db: AsyncSession, actor: BusinessActor, skill: Skill) -> SkillVie
         description=skill.description,
         audience=skill.audience,
         member_ids=skill.member_ids if actor.member.role == "administrator" else [],
+        department_grants=skill.department_grants if actor.member.role == "administrator" else [],
         revision=skill.revision,
         default_version_id=skill.default_version_id,
         versions=[SkillVersionView.model_validate(v) for v in versions],

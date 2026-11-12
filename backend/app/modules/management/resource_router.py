@@ -431,15 +431,22 @@ async def experts_skill_impact(
     )
 
 
-@router.get("/{org_id}/experts", response_model=ResourceResult[ExpertPage])
+@router.get(
+    "/{org_id}/experts",
+    operation_id="experts_listing_api_v1_management_organizations__org_id__experts_get",
+    summary="查询专家",
+    response_model=ResourceResult[ExpertPage],
+)
 async def experts_listing(
     org_id: UUID,
     request: Request,
     db: DB,
-    q: str = Query("", max_length=100),
-    category: ExpertCategoryId | None = None,
-    status: Literal["published", "unpublished"] | None = None,
-    page: int = Query(1, ge=1),
+    q: Annotated[str, Query(max_length=100, description="搜索词")] = "",
+    category: Annotated[ExpertCategoryId | None, Query(description="类别")] = None,
+    status: Annotated[
+        Literal["published", "unpublished"] | None, Query(description="published 或 unpublished")
+    ] = None,
+    page: Annotated[int, Query(ge=1, description="页码")] = 1,
 ) -> ResourceResult[ExpertPage]:
     return await read_resource(
         request, db, org_id, experts_ops.listing, q=q, category=category, status=status, page=page
@@ -492,7 +499,12 @@ async def experts_create(
     return await mutate_resource(request, db, org_id, request_id, experts_ops.create, body=body)
 
 
-@router.get("/{org_id}/experts/{expert_id}", response_model=ResourceResult[ExpertView])
+@router.get(
+    "/{org_id}/experts/{expert_id}",
+    operation_id="experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get",
+    summary="查看专家与发布版本",
+    response_model=ResourceResult[ExpertView],
+)
 async def experts_detail(
     org_id: UUID, expert_id: UUID, request: Request, db: DB
 ) -> ResourceResult[ExpertView]:
@@ -529,7 +541,13 @@ async def experts_refresh_skills(
     )
 
 
-@router.put("/{org_id}/experts/{expert_id}", response_model=ResourceResult[ExpertView])
+@router.put(
+    "/{org_id}/experts/{expert_id}",
+    operation_id="experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
+    summary="修改专家草稿",
+    description="提交 ExpertUpdate，包含当前草稿修订号 revision。",
+    response_model=ResourceResult[ExpertView],
+)
 async def experts_update(
     request_id: Annotated[UUID, Header(alias="X-Management-Request-ID")],
     org_id: UUID,

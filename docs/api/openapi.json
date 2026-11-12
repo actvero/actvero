@@ -5128,6 +5128,133 @@
         "title": "CheckRecord",
         "type": "object"
       },
+      "ChunkView": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "content",
+          "sources"
+        ],
+        "title": "ChunkView",
+        "type": "object"
+      },
+      "Chunking": {
+        "additionalProperties": false,
+        "properties": {
+          "max_chars": {
+            "default": 1800,
+            "description": "智能模式的合并软上限；长度模式的切片长度，均受模型输入硬上限约束",
+            "maximum": 10000.0,
+            "minimum": 100.0,
+            "title": "Max Chars",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "smart",
+            "enum": [
+              "smart",
+              "normal"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "overlap_chars": {
+            "default": 100,
+            "description": "长度切片的重叠字数",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Overlap Chars",
+            "type": "integer"
+          },
+          "target_chars": {
+            "default": 1200,
+            "description": "智能切片目标字数",
+            "maximum": 6000.0,
+            "minimum": 100.0,
+            "title": "Target Chars",
+            "type": "integer"
+          }
+        },
+        "title": "Chunking",
+        "type": "object"
+      },
+      "CitationView": {
+        "properties": {
+          "base_id": {
+            "format": "uuid",
+            "title": "Base Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "base_id",
+          "document_id",
+          "generation_id",
+          "filename",
+          "content",
+          "sources",
+          "source_url"
+        ],
+        "title": "CitationView",
+        "type": "object"
+      },
       "CliConsentDecision": {
         "additionalProperties": false,
         "properties": {
@@ -5879,6 +6006,62 @@
         "title": "ContentPart",
         "type": "object"
       },
+      "CredentialBatchCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "keys": {
+            "description": "批量添加 Key，重复项自动忽略",
+            "items": {
+              "format": "password",
+              "maxLength": 4096,
+              "minLength": 10,
+              "type": "string",
+              "writeOnly": true
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "CredentialBatchCreate",
+        "type": "object"
+      },
+      "CredentialCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "description": "同一官方账号使用相同标记",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "key": {
+            "maxLength": 4096,
+            "minLength": 10,
+            "title": "Key",
+            "type": "string",
+            "writeOnly": true
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "account",
+          "key"
+        ],
+        "title": "CredentialCreate",
+        "type": "object"
+      },
       "CredentialField": {
         "additionalProperties": false,
         "properties": {
@@ -5911,6 +6094,53 @@
           "header"
         ],
         "title": "CredentialField",
+        "type": "object"
+      },
+      "CredentialView": {
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "cooldown_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Until"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "account",
+          "enabled",
+          "cooldown_until",
+          "error"
+        ],
+        "title": "CredentialView",
         "type": "object"
       },
       "CurrentHeld": {
@@ -6023,6 +6253,246 @@
           "request_id"
         ],
         "title": "DeliveryInput",
+        "type": "object"
+      },
+      "DepartmentGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "department_id": {
+            "format": "uuid",
+            "title": "Department Id",
+            "type": "string"
+          },
+          "include_descendants": {
+            "default": false,
+            "title": "Include Descendants",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "department_id"
+        ],
+        "title": "DepartmentGrant",
+        "type": "object"
+      },
+      "DepartmentInput": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DepartmentInput",
+        "type": "object"
+      },
+      "DepartmentScopeMember": {
+        "properties": {
+          "department_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Department Ids",
+            "type": "array"
+          },
+          "direct": {
+            "title": "Direct",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direct",
+          "department_ids"
+        ],
+        "title": "DepartmentScopeMember",
+        "type": "object"
+      },
+      "DepartmentScopePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentScopeMember"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ],
+        "title": "DepartmentScopePage",
+        "type": "object"
+      },
+      "DepartmentScopePreview": {
+        "properties": {
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "title": "DepartmentScopePreview",
+        "type": "object"
+      },
+      "DepartmentUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "default": false,
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "DepartmentUpdate",
+        "type": "object"
+      },
+      "DepartmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "archived",
+          "version"
+        ],
+        "title": "DepartmentView",
         "type": "object"
       },
       "DependencyCommandView": {
@@ -7252,9 +7722,28 @@
             "title": "Dsh Requirement",
             "type": "string"
           },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
+          },
           "package_name": {
             "title": "Package Name",
             "type": "string"
+          },
+          "preview_data_urls": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Preview Data Urls",
+            "type": "array"
           },
           "sha256": {
             "pattern": "^[0-9a-f]{64}$",
@@ -7840,6 +8329,259 @@
           "artifacts"
         ],
         "title": "DistributionView",
+        "type": "object"
+      },
+      "DocumentDetail": {
+        "properties": {
+          "active_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Generation Id"
+          },
+          "can_manage": {
+            "title": "Can Manage",
+            "type": "boolean"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkView"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_count": {
+            "title": "Indexed Count",
+            "type": "integer"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_chunks": {
+            "title": "Total Chunks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "media_type",
+          "size",
+          "created_at",
+          "generation_id",
+          "active_generation_id",
+          "status",
+          "error",
+          "chunk_count",
+          "indexed_count",
+          "chunks",
+          "total_chunks",
+          "can_manage",
+          "source_url"
+        ],
+        "title": "DocumentDetail",
+        "type": "object"
+      },
+      "DocumentPreview": {
+        "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text_ranges": {
+            "items": {
+              "$ref": "#/components/schemas/OriginalTextRange"
+            },
+            "title": "Text Ranges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "generation_id",
+          "filename",
+          "media_type",
+          "source_url"
+        ],
+        "title": "DocumentPreview",
+        "type": "object"
+      },
+      "DocumentView": {
+        "properties": {
+          "active_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Generation Id"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_count": {
+            "title": "Indexed Count",
+            "type": "integer"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "media_type",
+          "size",
+          "created_at",
+          "generation_id",
+          "active_generation_id",
+          "status",
+          "error",
+          "chunk_count",
+          "indexed_count"
+        ],
+        "title": "DocumentView",
         "type": "object"
       },
       "DraftInspectionInput": {
@@ -9493,6 +10235,21 @@
             "title": "Audience",
             "type": "string"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "member_ids": {
             "items": {
               "format": "uuid",
@@ -9927,6 +10684,13 @@
                 "type": "null"
               }
             ]
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
           },
           "dependency_issues": {
             "default": 0,
@@ -10475,6 +11239,17 @@
             "pattern": "^(0|[1-9][0-9]{0,5})(\\.[0-9]{1,8})?$",
             "title": "Reserve Usd",
             "type": "string"
+          },
+          "transport_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport Provider"
           }
         },
         "required": [
@@ -11066,7 +11841,9 @@
             "enum": [
               "member",
               "desktop",
-              "access_key"
+              "access_key",
+              "knowledge_index",
+              "knowledge_search"
             ],
             "title": "Source",
             "type": "string"
@@ -12337,7 +13114,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -12379,7 +13157,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -12481,7 +13260,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -12742,6 +13522,340 @@
           "last_used_at"
         ],
         "title": "KeyView",
+        "type": "object"
+      },
+      "KnowledgeCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "KnowledgeCreate",
+        "type": "object"
+      },
+      "KnowledgeDefaults": {
+        "additionalProperties": false,
+        "properties": {
+          "embedding_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model Id"
+          },
+          "rerank_enabled": {
+            "default": false,
+            "title": "Rerank Enabled",
+            "type": "boolean"
+          },
+          "rerank_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model Id"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "title": "KnowledgeDefaults",
+        "type": "object"
+      },
+      "KnowledgeDefaultsView": {
+        "additionalProperties": false,
+        "properties": {
+          "credentials": {
+            "items": {
+              "$ref": "#/components/schemas/CredentialView"
+            },
+            "title": "Credentials",
+            "type": "array"
+          },
+          "embedding_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model Id"
+          },
+          "executor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Executor Name"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOption"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "rerank_enabled": {
+            "default": false,
+            "title": "Rerank Enabled",
+            "type": "boolean"
+          },
+          "rerank_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model Id"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "credentials",
+          "models"
+        ],
+        "title": "KnowledgeDefaultsView",
+        "type": "object"
+      },
+      "KnowledgePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "KnowledgePage",
+        "type": "object"
+      },
+      "KnowledgeUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "KnowledgeUpdate",
+        "type": "object"
+      },
+      "KnowledgeView": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "can_manage": {
+            "default": false,
+            "title": "Can Manage",
+            "type": "boolean"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "document_count": {
+            "default": 0,
+            "title": "Document Count",
+            "type": "integer"
+          },
+          "embedding_profile": {
+            "additionalProperties": true,
+            "title": "Embedding Profile",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "default": "empty",
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "version",
+          "embedding_profile",
+          "updated_at"
+        ],
+        "title": "KnowledgeView",
         "type": "object"
       },
       "LatestChannelDiagnostic": {
@@ -14171,6 +15285,21 @@
             "title": "Credential Fields",
             "type": "array"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -14313,6 +15442,21 @@
             ],
             "title": "Credential Values"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -14453,6 +15597,21 @@
             "maxItems": 10,
             "title": "Credential Fields",
             "type": "array"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "default": "",
@@ -14633,6 +15792,21 @@
               }
             ],
             "title": "Credential Values"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "default": "",
@@ -14886,6 +16060,41 @@
           "member"
         ],
         "title": "MemberCreated",
+        "type": "object"
+      },
+      "MemberDepartments": {
+        "properties": {
+          "department_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Department Ids",
+            "type": "array"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "MemberDepartments",
         "type": "object"
       },
       "MemberEndpointView": {
@@ -15659,6 +16868,21 @@
               }
             ],
             "title": "Channel Id"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "enabled": {
             "default": false,
@@ -16443,6 +17667,158 @@
           }
         },
         "title": "ModelOperation",
+        "type": "object"
+      },
+      "ModelOption": {
+        "properties": {
+          "dimensions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "dimensions"
+        ],
+        "title": "ModelOption",
+        "type": "object"
+      },
+      "ModelParametersInput": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/ModelCapabilities"
+          },
+          "capability_mode": {
+            "default": "manual",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "title": "Capability Mode",
+            "type": "string"
+          },
+          "context_window": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
+          "image": {
+            "$ref": "#/components/schemas/ImageOptions"
+          },
+          "kind": {
+            "default": "chat",
+            "enum": [
+              "chat",
+              "embedding",
+              "rerank",
+              "image_generation",
+              "speech",
+              "transcription"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_output": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output"
+          },
+          "reasoning_options": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "budget_tokens": "#/components/schemas/ReasoningBudget",
+                  "effort": "#/components/schemas/ReasoningEffort",
+                  "toggle": "#/components/schemas/ReasoningToggle"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ReasoningToggle"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningEffort"
+                },
+                {
+                  "$ref": "#/components/schemas/ReasoningBudget"
+                }
+              ]
+            },
+            "maxItems": 3,
+            "title": "Reasoning Options",
+            "type": "array"
+          },
+          "reference_model": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Reference Model",
+            "type": "string"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalOptions"
+          },
+          "source": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 12,
+            "title": "Source",
+            "type": "object"
+          },
+          "speech": {
+            "$ref": "#/components/schemas/SpeechOptions"
+          },
+          "transcription": {
+            "$ref": "#/components/schemas/TranscriptionOptions"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "title": "ModelParametersInput",
         "type": "object"
       },
       "ModelsInput": {
@@ -17611,6 +18987,28 @@
         "title": "Organizations",
         "type": "object"
       },
+      "OriginalTextRange": {
+        "properties": {
+          "end": {
+            "description": "原件 Unicode 字符终点，不包含此字符",
+            "minimum": 0.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "start": {
+            "description": "原件 Unicode 字符起点，不是 UTF-16 偏移",
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "OriginalTextRange",
+        "type": "object"
+      },
       "OverviewActivity": {
         "properties": {
           "action": {
@@ -17638,6 +19036,32 @@
           "target"
         ],
         "title": "OverviewActivity",
+        "type": "object"
+      },
+      "ParsedSource": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/SourceBlock"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blocks",
+          "total",
+          "offset"
+        ],
+        "title": "ParsedSource",
         "type": "object"
       },
       "PartAck": {
@@ -19501,7 +20925,7 @@
             "$ref": "#/components/schemas/ModelCapabilities"
           },
           "capability_mode": {
-            "default": "auto",
+            "default": "manual",
             "enum": [
               "auto",
               "manual"
@@ -19524,6 +20948,21 @@
               }
             ],
             "title": "Context Window"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "enabled": {
             "default": false,
@@ -19884,6 +21323,11 @@
             },
             "title": "Reasoning Options",
             "type": "array"
+          },
+          "transport_provider": {
+            "default": "",
+            "title": "Transport Provider",
+            "type": "string"
           }
         },
         "required": [
@@ -20176,6 +21620,78 @@
         "title": "QuotaPolicyInput",
         "type": "object"
       },
+      "QuotaPolicyListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "active_member_count": {
+            "minimum": 0.0,
+            "title": "Active Member Count",
+            "type": "integer"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mode": {
+            "enum": [
+              "limited",
+              "unlimited"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/FixedHours"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "is_default",
+          "mode",
+          "rules",
+          "id",
+          "archived",
+          "version",
+          "created_at",
+          "updated_at",
+          "active_member_count"
+        ],
+        "title": "QuotaPolicyListItem",
+        "type": "object"
+      },
       "QuotaPolicyPage": {
         "properties": {
           "default_timezone": {
@@ -20201,7 +21717,7 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/QuotaPolicyView"
+              "$ref": "#/components/schemas/QuotaPolicyListItem"
             },
             "title": "Items",
             "type": "array"
@@ -20509,6 +22025,59 @@
         "title": "RankPreview",
         "type": "object"
       },
+      "ReaderSessionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "parent_origin": {
+            "description": "嵌入方的完整 HTTPS origin；本地开发允许 HTTP localhost",
+            "maxLength": 300,
+            "title": "Parent Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "parent_origin"
+        ],
+        "title": "ReaderSessionInput",
+        "type": "object"
+      },
+      "ReaderSessionView": {
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "parent_origin": {
+            "title": "Parent Origin",
+            "type": "string"
+          },
+          "protocol": {
+            "const": "actvero.knowledge.v1",
+            "default": "actvero.knowledge.v1",
+            "title": "Protocol",
+            "type": "string"
+          },
+          "token": {
+            "description": "短期、单文档凭证，仅经 postMessage 传入，不放入 URL",
+            "title": "Token",
+            "type": "string"
+          },
+          "viewer_url": {
+            "description": "无秘密的独立阅读器地址，可放入任意宿主容器",
+            "title": "Viewer Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "viewer_url",
+          "token",
+          "expires_at",
+          "parent_origin"
+        ],
+        "title": "ReaderSessionView",
+        "type": "object"
+      },
       "ReadinessResponse": {
         "properties": {
           "database": {
@@ -20619,6 +22188,36 @@
           }
         },
         "title": "ReasoningToggle",
+        "type": "object"
+      },
+      "RebuildInput": {
+        "additionalProperties": false,
+        "properties": {
+          "chunking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Chunking"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "use_current_defaults": {
+            "default": false,
+            "title": "Use Current Defaults",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "generation_id"
+        ],
+        "title": "RebuildInput",
         "type": "object"
       },
       "RecommendationSave": {
@@ -22935,6 +24534,100 @@
         "title": "ResponseFormat",
         "type": "object"
       },
+      "RetrievalHit": {
+        "properties": {
+          "base_id": {
+            "format": "uuid",
+            "title": "Base Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "base_id",
+          "document_id",
+          "generation_id",
+          "filename",
+          "content",
+          "sources",
+          "source_url",
+          "score"
+        ],
+        "title": "RetrievalHit",
+        "type": "object"
+      },
+      "RetrievalInput": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 5,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "rerank": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "RetrievalInput",
+        "type": "object"
+      },
       "RetrievalOptions": {
         "additionalProperties": false,
         "properties": {
@@ -22994,6 +24687,36 @@
           }
         },
         "title": "RetrievalOptions",
+        "type": "object"
+      },
+      "RetrievalView": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalHit"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "hybrid",
+              "keyword"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "reranked": {
+            "title": "Reranked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mode",
+          "reranked",
+          "items"
+        ],
+        "title": "RetrievalView",
         "type": "object"
       },
       "Revision": {
@@ -24045,6 +25768,21 @@
             "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
             "title": "Category"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "maxLength": 1024,
             "minLength": 1,
@@ -24243,6 +25981,21 @@
             ],
             "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
             "title": "Category"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "maxLength": 1024,
@@ -24467,6 +26220,13 @@
             "description": "当前唯一生效的已发布版本；无生效版本时为空。保留原字段名，不再单独设置默认版本。",
             "title": "Default Version Id"
           },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
+          },
           "description": {
             "title": "Description",
             "type": "string"
@@ -24535,6 +26295,252 @@
           "created_at"
         ],
         "title": "SkillView",
+        "type": "object"
+      },
+      "SourceBlock": {
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "cell_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Range"
+          },
+          "coordinate_space": {
+            "default": "unknown",
+            "enum": [
+              "normalized",
+              "page",
+              "unknown"
+            ],
+            "title": "Coordinate Space",
+            "type": "string"
+          },
+          "end": {
+            "default": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "heading": {
+            "default": "",
+            "title": "Heading",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Height"
+          },
+          "page_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Width"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "default": "text",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "block_id",
+          "text"
+        ],
+        "title": "SourceBlock",
+        "type": "object"
+      },
+      "SourceLocation": {
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "cell_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Range"
+          },
+          "coordinate_space": {
+            "default": "unknown",
+            "enum": [
+              "normalized",
+              "page",
+              "unknown"
+            ],
+            "title": "Coordinate Space",
+            "type": "string"
+          },
+          "end": {
+            "default": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "heading": {
+            "default": "",
+            "title": "Heading",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Height"
+          },
+          "page_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Width"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block_id"
+        ],
+        "title": "SourceLocation",
         "type": "object"
       },
       "SpeechDiagnostic": {
@@ -26612,6 +28618,21 @@
             "title": "Audience",
             "type": "string"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "member_ids": {
             "items": {
               "format": "uuid",
@@ -26682,6 +28703,17 @@
           "has_draft": {
             "title": "Has Draft",
             "type": "boolean"
+          },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
           },
           "id": {
             "format": "uuid",
@@ -26851,6 +28883,13 @@
             ],
             "title": "Current Version"
           },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
+          },
           "description": {
             "title": "Description",
             "type": "string"
@@ -26862,6 +28901,17 @@
           "has_draft": {
             "title": "Has Draft",
             "type": "boolean"
+          },
+          "icon_data_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Data Url"
           },
           "id": {
             "format": "uuid",
@@ -27086,6 +29136,11 @@
         "scheme": "bearer",
         "type": "http"
       },
+      "KnowledgeReader": {
+        "description": "单文档、短期 avr_ 阅读凭证，不接受模型密钥或 Web Cookie 代替",
+        "scheme": "bearer",
+        "type": "http"
+      },
       "LlmResource": {
         "description": "接受含对应模型权限的个人访问密钥，或通过 desktop/resource-tokens 申请的 llm:catalog / llm:<模型UUID> 资源令牌。",
         "scheme": "bearer",
@@ -27124,6 +29179,239 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/knowledge/v1/bases": {
+      "get": {
+        "operationId": "bases_api_knowledge_v1_bases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "列出密钥显式授权且当前成员可访问的知识库",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}": {
+      "get": {
+        "operationId": "reference_api_knowledge_v1_bases__base_id__citations__chunk_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "读取引用摘要，供宿主渲染角标或悬浮卡片",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}/reader-session": {
+      "post": {
+        "operationId": "reader_session_api_knowledge_v1_bases__base_id__citations__chunk_id__reader_session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReaderSessionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderSessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "由宿主服务签发短期原文阅读凭证；长期 API Key 不得发送到浏览器",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/search": {
+      "post": {
+        "operationId": "retrieve_api_knowledge_v1_bases__base_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "检索知识库；需要 invoke 授权并沿用组织模型计费",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
     "/api/llm/v1/audio/speech": {
       "post": {
         "operationId": "speech_api_llm_v1_audio_speech_post",
@@ -28585,7 +30873,8 @@
             "schema": {
               "enum": [
                 "llm",
-                "mcp"
+                "mcp",
+                "knowledge"
               ],
               "title": "Kind",
               "type": "string"
@@ -34432,6 +36721,220 @@
         ]
       }
     },
+    "/api/v1/enterprises/{tenant_id}/departments": {
+      "get": {
+        "operationId": "departments_api_v1_enterprises__tenant_id__departments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentView"
+                  },
+                  "title": "Response Departments Api V1 Enterprises  Tenant Id  Departments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Departments",
+        "tags": [
+          "departments"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_v1_enterprises__tenant_id__departments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/departments/scope-preview": {
+      "post": {
+        "operationId": "preview_scope_api_v1_enterprises__tenant_id__departments_scope_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentScopePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentScopePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Scope",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/departments/{department_id}": {
+      "put": {
+        "operationId": "update_api_v1_enterprises__tenant_id__departments__department_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "department_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Department Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
     "/api/v1/enterprises/{tenant_id}/events": {
       "get": {
         "operationId": "events_api_v1_enterprises__tenant_id__events_get",
@@ -35236,6 +37739,120 @@
         "summary": "读取组织成员头像，权限与成员资料一致",
         "tags": [
           "members"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/members/{member_id}/departments": {
+      "get": {
+        "operationId": "member_departments_api_v1_enterprises__tenant_id__members__member_id__departments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDepartments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Member Departments",
+        "tags": [
+          "departments"
+        ]
+      },
+      "put": {
+        "operationId": "assign_api_v1_enterprises__tenant_id__members__member_id__departments_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberDepartments"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDepartments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign",
+        "tags": [
+          "departments"
         ]
       }
     },
@@ -36508,6 +39125,1181 @@
         "summary": "Preview",
         "tags": [
           "invitations"
+        ]
+      }
+    },
+    "/api/v1/knowledge": {
+      "get": {
+        "operationId": "bases_api_v1_knowledge_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "列出本人有权访问的知识库",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_v1_knowledge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "创建知识库并快照当前默认向量配置",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge-reader/manifest": {
+      "get": {
+        "operationId": "manifest_api_v1_knowledge_reader_manifest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "KnowledgeReader": []
+          }
+        ],
+        "summary": "读取被授权原文的展示信息与高亮位置",
+        "tags": [
+          "knowledge-reader"
+        ]
+      }
+    },
+    "/api/v1/knowledge-reader/source": {
+      "get": {
+        "operationId": "source_api_v1_knowledge_reader_source_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "KnowledgeReader": []
+          }
+        ],
+        "summary": "读取凭证绑定原件；每次重新验证当前权限",
+        "tags": [
+          "knowledge-reader"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials": {
+      "post": {
+        "operationId": "add_credential_api_v1_knowledge_credentials_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "添加加密保存的 MinerU 凭据",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials/batch": {
+      "post": {
+        "operationId": "add_credentials_api_v1_knowledge_credentials_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialBatchCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CredentialView"
+                  },
+                  "title": "Response Add Credentials Api V1 Knowledge Credentials Batch Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "批量添加 MinerU Key，自动去重并加密保存",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials/{credential_id}": {
+      "put": {
+        "operationId": "toggle_credential_api_v1_knowledge_credentials__credential_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Credential Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "enabled",
+            "required": true,
+            "schema": {
+              "title": "Enabled",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "启用或停用解析凭据",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/defaults": {
+      "get": {
+        "operationId": "defaults_api_v1_knowledge_defaults_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDefaultsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "读取当前组织的知识库默认配置",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "save_defaults_api_v1_knowledge_defaults_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeDefaults"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDefaultsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "设置组织默认模型并授权知识库调用",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}": {
+      "delete": {
+        "operationId": "archive_api_v1_knowledge__base_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "归档知识库并立即停止原文和检索访问",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "detail_api_v1_knowledge__base_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取知识库设置与处理状态",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "update_api_v1_knowledge__base_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "更新知识库设置；已有文档需单独重新处理",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}": {
+      "get": {
+        "operationId": "reference_api_v1_knowledge__base_id__citations__chunk_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取稳定引用；历史版本仍检查当前文档权限",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}/reader-session": {
+      "post": {
+        "operationId": "reader_session_api_v1_knowledge__base_id__citations__chunk_id__reader_session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReaderSessionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderSessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "签发单文档短期嵌入凭证；宿主自行选择弹窗、侧栏或全屏",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents": {
+      "get": {
+        "operationId": "documents_api_v1_knowledge__base_id__documents_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentView"
+                  },
+                  "title": "Response Documents Api V1 Knowledge  Base Id  Documents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "列出文档及最新处理进度",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "upload_api_v1_knowledge__base_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "上传文档原件并启动异步解析；upload_id 保证重试幂等",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "delete_document_api_v1_knowledge__base_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "删除文档并撤销所有版本的引用访问",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "document_api_v1_knowledge__base_id__documents__document_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "分页读取切片与原文位置；可查看历史切片版本",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/parsed-source": {
+      "get": {
+        "operationId": "parsed_source_api_v1_knowledge__base_id__documents__document_id__parsed_source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "block_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Block Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParsedSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取原文结构块，支持按块定位并分页",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/preview": {
+      "get": {
+        "operationId": "original_preview_api_v1_knowledge__base_id__documents__document_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chunk_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chunk Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取原件展示信息与引用高亮位置，不返回替代原文的解析文本",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/rebuild": {
+      "post": {
+        "operationId": "rebuild_api_v1_knowledge__base_id__documents__document_id__rebuild_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebuildInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "创建新的切片版本；成功前保留旧索引",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/source": {
+      "get": {
+        "operationId": "source_api_v1_knowledge__base_id__documents__document_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "在当前权限下读取原件，禁止公共缓存",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/search": {
+      "post": {
+        "operationId": "retrieve_api_v1_knowledge__base_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "在授权知识库内检索；向量与重排序调用沿用模型计费",
+        "tags": [
+          "knowledge"
         ]
       }
     },
@@ -40849,17 +44641,20 @@
             }
           },
           {
+            "description": "搜索词",
             "in": "query",
             "name": "q",
             "required": false,
             "schema": {
               "default": "",
+              "description": "搜索词",
               "maxLength": 100,
               "title": "Q",
               "type": "string"
             }
           },
           {
+            "description": "类别",
             "in": "query",
             "name": "category",
             "required": false,
@@ -40875,10 +44670,12 @@
                   "type": "null"
                 }
               ],
+              "description": "类别",
               "title": "Category"
             }
           },
           {
+            "description": "published 或 unpublished",
             "in": "query",
             "name": "status",
             "required": false,
@@ -40895,15 +44692,18 @@
                   "type": "null"
                 }
               ],
+              "description": "published 或 unpublished",
               "title": "Status"
             }
           },
           {
+            "description": "页码",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
+              "description": "页码",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -40932,7 +44732,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Listing",
+        "summary": "查询专家",
         "tags": [
           "management-resources"
         ]
@@ -41758,12 +45558,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Detail",
+        "summary": "查看专家与发布版本",
         "tags": [
           "management-resources"
         ]
       },
       "put": {
+        "description": "提交 ExpertUpdate，包含当前草稿修订号 revision。",
         "operationId": "experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
         "parameters": [
           {
@@ -41829,7 +45630,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Update",
+        "summary": "修改专家草稿",
         "tags": [
           "management-resources"
         ]
@@ -48588,6 +52389,110 @@
         ]
       }
     },
+    "/api/v1/model-gateway/parameters": {
+      "get": {
+        "operationId": "model_parameters_api_v1_model_gateway_parameters_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_reference",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Include Reference",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Model Parameters",
+        "tags": [
+          "model-gateway"
+        ]
+      },
+      "put": {
+        "operationId": "save_model_parameters_api_v1_model_gateway_parameters_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelParametersInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Model Parameters",
+        "tags": [
+          "model-gateway"
+        ]
+      }
+    },
     "/api/v1/model-gateway/prices": {
       "get": {
         "operationId": "prices_api_v1_model_gateway_prices_get",
@@ -52383,6 +56288,16 @@
               "maxLength": 200,
               "title": "Q",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Assigned Only",
+              "type": "boolean"
             }
           },
           {

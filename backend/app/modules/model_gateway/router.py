@@ -18,6 +18,7 @@ from app.modules.model_gateway.access_status import (
 from app.modules.model_gateway.authorization import administrator
 from app.modules.model_gateway.connection_templates import is_ark_plan_template
 from app.modules.model_gateway.models import GatewayDirectory
+from app.modules.model_gateway.parameters import ModelParametersInput
 from app.modules.model_gateway.publication import PublicationInput
 from app.modules.model_gateway.schemas import (
     GatewayChannelInput,
@@ -583,22 +584,85 @@ async def import_reference(request: Request, db: DB, body: GatewayReferenceImpor
     return GatewayResult(data=data)
 
 
+@router.put("/parameters")
+async def save_model_parameters(
+    request: Request, db: DB, body: ModelParametersInput, model: str = Query(max_length=128)
+) -> GatewayResult:
+    from app.modules.model_gateway import parameters
+
+    actor = await administrator(request, db, write=True)
+    await parameters.save(request, db, actor, model, body)
+    await audit(db, actor, "model.parameters.update", model)
+    return GatewayResult(data=await parameters.view(db, actor.tenant.id, model))
+
+
+@router.get("/parameters")
+async def model_parameters(
+    request: Request,
+    db: DB,
+    model: str = Query(max_length=128),
+    include_reference: bool = Query(default=True),
+) -> GatewayResult:
+    from app.modules.model_gateway import parameters
+
+    actor = await administrator(request, db)
+    data = await parameters.view(db, actor.tenant.id, model)
+    if not include_reference:
+        return GatewayResult(data=data)
+
+    from app.modules.model_gateway.capabilities import resolve
+
+    try:
+        connection = await client.relay_connection(request, actor.tenant.id)
+        channels = await service.all_channels(request, actor.tenant.id)
+        data["sources"] = [
+            {"id": channel["id"], "name": channel["name"], "type": channel["type"]}
+            for channel in channels
+            if model in (channel.get("models") or "").split(",")
+        ]
+        data["automatic"] = resolve(
+            model,
+            connection.relay_group,
+            channels,
+            reference_model=str(data.get("reference_model", "")),
+        )
+    except HTTPException:
+        data["automatic"] = {"status": "unavailable", "reason": "自动资料暂不可用，可手动填写"}
+    return GatewayResult(data=data)
+
+
 @router.get("/publication")
 async def publication_view(
     request: Request, db: DB, model: str = Query(max_length=128)
 ) -> GatewayResult:
-    from app.modules.model_gateway import publication
+    from app.modules.model_gateway import parameters, publication
 
     actor = await administrator(request, db)
     config = await client.relay_connection(request, actor.tenant.id)
     from app.modules.model_gateway.capabilities import resolve
 
-    automatic = resolve(
-        model, config.relay_group, await service.all_channels(request, actor.tenant.id)
-    )
+    data = publication.view(await publication.find(db, actor.tenant.id, model))
+    facts = await parameters.get(db, actor.tenant.id, model)
+    if facts:
+        data.update({k: v for k, v in facts.configuration.items() if k in parameters.FACT_FIELDS})
+        data["capability_source"] = facts.configuration.get("source", {})
+    automatic: dict[str, Any] = {}
+    if data.get("capability_mode") == "auto":
+        try:
+            automatic = resolve(
+                model,
+                config.relay_group,
+                await service.all_channels(request, actor.tenant.id),
+                reference_model=facts.configuration.get("reference_model", "") if facts else "",
+            )
+        except HTTPException:
+            automatic = {
+                "status": "unavailable",
+                "reason": "暂时无法读取渠道资料，可由管理员填写参数",
+            }
     return GatewayResult(
         data={
-            **publication.view(await publication.find(db, actor.tenant.id, model)),
+            **data,
             "automatic": automatic,
             "relay_ready": bool(config.relay_key and config.relay_token_id),
             "group": config.relay_group,

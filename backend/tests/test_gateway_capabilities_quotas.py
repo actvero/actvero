@@ -161,9 +161,7 @@ async def test_calendar_migration_preserves_current_spend_holds_and_duplicate_wi
 
 
 @pytest.mark.asyncio
-async def test_new_model_requires_no_manual_parameters_and_alias_updates_refresh_catalog(
-    env, monkeypatch
-):
+async def test_legacy_automatic_model_alias_updates_refresh_catalog(env, monkeypatch):
     from llm_billing_helpers import billing
     from pydantic import SecretStr
     from test_model_gateway import bind
@@ -193,7 +191,7 @@ async def test_new_model_requires_no_manual_parameters_and_alias_updates_refresh
     monkeypatch.setattr(client, "call", native)
     saved = await admin.api.put(
         "/api/v1/model-gateway/publication",
-        json={"model_name": "team", "name": "Team", "enabled": True},
+        json={"model_name": "team", "name": "Team", "enabled": True, "capability_mode": "auto"},
     )
     assert saved.status_code == 200, saved.text
     data = saved.json()["data"]
@@ -264,7 +262,7 @@ def test_missing_feature_evidence_remains_unknown_and_does_not_erase_core_profil
     )
     explicit = lookup("azure", "shared")
     assert explicit["capabilities"]["tools"] == "unsupported"
-    assert explicit["capabilities"]["streaming"] == "unknown"
+    assert explicit["capabilities"]["streaming"] == "supported"
     assert explicit["capabilities"]["structured_output"] == "unknown"
     ambiguous = lookup(None, "shared")
     assert ambiguous["context_window"] == 1000

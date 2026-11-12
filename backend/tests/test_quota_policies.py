@@ -44,10 +44,16 @@ async def edit(admin, policy, **kwargs):
     )
 
 
-async def matches(admin):
-    response = await admin.api.get("/api/v1/quota/matches")
+async def matches(admin, **filters):
+    response = await admin.api.get("/api/v1/quota/matches", params=filters)
     assert response.status_code == 200, response.text
     return {member["member_id"]: member for member in response.json()["items"]}
+
+
+async def policy_counts(admin):
+    response = await admin.api.get(BASE)
+    assert response.status_code == 200, response.text
+    return {policy["id"]: policy["active_member_count"] for policy in response.json()["items"]}
 
 
 async def assign(admin, member, policy, version=0):
@@ -74,6 +80,7 @@ async def test_templates_and_default_inheritance_include_future_members(env):
     newcomer = await env.client(role="member", tenant=admin.tenant)
     assert (await matches(admin))[str(newcomer.member.id)]["selected"]["id"] == default["id"]
     assert template["rules"] == [hours(), week()]
+    assert await policy_counts(admin) == {default["id"]: 3, template["id"]: 0}
 
 
 async def test_member_has_one_policy_and_can_explicitly_use_unlimited(env):
@@ -87,10 +94,14 @@ async def test_member_has_one_policy_and_can_explicitly_use_unlimited(env):
     assert value["assigned"]["id"] == unlimited["id"]
     assert value["selected"]["mode"] == "unlimited" and value["rules"] == []
     assert (await matches(admin))[str(admin.member.id)]["selected"]["id"] == default["id"]
+    assert await policy_counts(admin) == {default["id"]: 1, unlimited["id"]: 1}
+    assert set(await matches(admin, assigned_only="true")) == {str(member.member.id)}
     assert (await assign(admin, member, None, 1)).status_code == 200
     value = (await matches(admin))[str(member.member.id)]
     assert value["assigned"] is None and value["selected"]["id"] == default["id"]
     assert value["assignment_version"] == 2
+    assert await policy_counts(admin) == {default["id"]: 2, unlimited["id"]: 0}
+    assert await matches(admin, assigned_only="true") == {}
     assert (await assign(admin, member, unlimited, 0)).status_code == 409
     async with env.sessions() as db:
         events = list(
@@ -183,6 +194,8 @@ async def test_archive_requires_reassignment_and_retains_default(env):
         await db.commit()
     paused = (await matches(admin))[str(member.member.id)]
     assert paused["status"] == "paused" and paused["assigned"]["id"] == policy["id"]
+    assert await policy_counts(admin) == {default["id"]: 1, policy["id"]: 0}
+    assert set(await matches(admin, assigned_only="true")) == {str(member.member.id)}
     assert (await admin.api.put(path, json={"version": 1, "archived": True})).status_code == 409
     assert (await assign(admin, member, None, 1)).status_code == 200
     assert (await admin.api.put(path, json={"version": 1, "archived": True})).status_code == 200

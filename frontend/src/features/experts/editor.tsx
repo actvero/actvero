@@ -44,6 +44,7 @@ import { MemberPicker } from '@/components/member-picker'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { ResourceIcon } from '@/components/resource-icon'
 import { SearchSelect } from '@/components/search-select'
+import { departmentGrantSchema } from '@/features/departments/scope'
 import { ExpertActions } from './actions'
 import { ExpertCategoryPicker } from './category-picker'
 import { DependencyCard } from './dependency-card'
@@ -291,15 +292,29 @@ function Scope({
         .object({
           audience: z.enum(['administrators', 'selected', 'organization']),
           member_ids: z.array(z.string()),
+          department_grants: z.array(departmentGrantSchema).max(100),
         })
-        .refine((v) => v.audience !== 'selected' || v.member_ids.length > 0, {
-          path: ['member_ids'],
-          message: '请选择至少一名成员',
-        })
+        .refine(
+          (v) =>
+            v.audience !== 'selected' ||
+            v.member_ids.length > 0 ||
+            v.department_grants.length > 0,
+          {
+            path: ['member_ids'],
+            message: '请选择至少一个部门或成员',
+          }
+        )
     ),
-    defaultValues: { audience: expert.audience, member_ids: expert.member_ids },
+    defaultValues: {
+      audience: expert.audience,
+      member_ids: expert.member_ids,
+      department_grants: expert.department_grants ?? [],
+    },
   })
-  const audience = useWatch({ control: form.control, name: 'audience' })
+  const [audience, departmentGrants] = useWatch({
+    control: form.control,
+    name: ['audience', 'department_grants'],
+  })
   const busy = disabled || form.formState.isSubmitting
   return (
     <Form {...form}>
@@ -316,6 +331,10 @@ function Scope({
                 ...values,
                 member_ids:
                   values.audience === 'selected' ? values.member_ids : [],
+                department_grants:
+                  values.audience === 'selected'
+                    ? values.department_grants
+                    : [],
                 revision: expert.revision,
               },
               csrf
@@ -323,6 +342,7 @@ function Scope({
             form.reset({
               audience: result.audience,
               member_ids: result.member_ids,
+              department_grants: result.department_grants ?? [],
             })
             saved(result)
             toast.success('使用范围已保存')
@@ -363,6 +383,14 @@ function Scope({
                 <FormLabel>指定成员</FormLabel>
                 <FormControl>
                   <MemberPicker
+                    departmentScope={{
+                      value: departmentGrants ?? [],
+                      onChange: (value) =>
+                        form.setValue('department_grants', value, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }),
+                    }}
                     includeAdministrators
                     value={field.value}
                     onChange={field.onChange}

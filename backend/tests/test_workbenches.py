@@ -3,11 +3,13 @@
 import hashlib
 import json
 import tarfile
+from base64 import b64encode
 from io import BytesIO
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
+from PIL import Image
 from test_desktop import bearer, login, native_client
 from test_desktop_mcp import token
 from test_identity_access import env  # noqa: F401
@@ -20,7 +22,15 @@ BASE = "/api/v1/workbenches"
 BINARY = {"content-type": "application/octet-stream"}
 
 
-def package(version="1.0.0", extra=None, fields=None):
+def package(
+    version="1.0.0",
+    extra=None,
+    fields=None,
+    icon=None,
+    icon_path="./assets/icon.png",
+    preview=None,
+    preview_paths=None,
+):
     manifest = {
         "name": "@test/workbench",
         "version": version,
@@ -30,6 +40,8 @@ def package(version="1.0.0", extra=None, fields=None):
         "dsh": {
             "actveroWorkbench": 1,
             **({"actveroWorkbenchConfig": fields} if fields is not None else {}),
+            **({"actveroWorkbenchIcon": icon_path} if icon is not None else {}),
+            **({"actveroWorkbenchPreviews": preview_paths} if preview_paths is not None else {}),
             "bundle": {"patch": "./cordis.patch.yml"},
             "client": {"platform": "web", "inject": ["@actvero/dsh-capability-ui"]},
         },
@@ -43,12 +55,22 @@ def package(version="1.0.0", extra=None, fields=None):
             "package/lib/client.js": b"export {}",
             "package/cordis.patch.yml": b"[]",
         }
+        if icon is not None:
+            entries["package/assets/icon.png"] = icon
+        if preview is not None:
+            entries["package/assets/cover.png"] = preview
         for name, data in entries.items():
             entry = tarfile.TarInfo(name)
             entry.size = len(data)
             archive.addfile(entry, BytesIO(data))
         if extra:
             archive.addfile(extra)
+    return output.getvalue()
+
+
+def png_icon():
+    output = BytesIO()
+    Image.new("RGB", (2, 2), "blue").save(output, format="PNG")
     return output.getvalue()
 
 
@@ -68,13 +90,42 @@ def test_inspects_real_manifest_and_rejects_non_file_entries():
     field = {"key": "SERVICE_URL", "label": "服务地址", "kind": "url"}
     with pytest.raises(ValueError, match="重复的运行配置 Key"):
         inspect(package(fields=[field, field]))
+    assert info.icon_data_url is None
+    assert info.preview_data_urls == []
+
+
+def test_reads_a_declared_avatar_and_rejects_invalid_files():
+    image = png_icon()
+    assert inspect(package(icon=image)).icon_data_url == (
+        "data:image/png;base64," + b64encode(image).decode("ascii")
+    )
+    with pytest.raises(ValueError, match="格式与扩展名不符"):
+        inspect(package(icon=b"<svg/>"))
+    with pytest.raises(ValueError, match="包内不超过 64 KiB"):
+        inspect(package(icon=image, icon_path="./assets/missing.png"))
+    with pytest.raises(ValueError, match="须指向"):
+        inspect(package(icon=image, icon_path="./assets/../icon.png"))
+
+
+def test_rejects_missing_duplicate_and_invalid_catalog_previews():
+    path = "./assets/cover.png"
+    with pytest.raises(ValueError, match="包内不超过 128 KiB"):
+        inspect(package(preview_paths=[path]))
+    with pytest.raises(ValueError, match="最多可声明"):
+        inspect(package(preview_paths=[path, path]))
+    with pytest.raises(ValueError, match="须指向"):
+        inspect(package(preview_paths=["https://example.com/cover.png"]))
+    with pytest.raises(ValueError, match="格式与扩展名不符"):
+        inspect(package(preview_paths=[path], preview=b"<svg/>"))
 
 
 @pytest.mark.asyncio
 async def test_release_scope_revisions_and_immutable_bytes(env):  # noqa: F811
     admin = await env.client()
     member = await env.client(role="member", tenant=admin.tenant)
-    data = package()
+    image = png_icon()
+    icon = "data:image/png;base64," + b64encode(image).decode("ascii")
+    data = package(icon=image)
     assert (await member.api.get(BASE)).status_code == 403
     assert (await member.api.post(BASE, content=data, headers=BINARY)).status_code == 403
     assert (await admin.api.post(BASE, content=b"invalid", headers=BINARY)).status_code == 422
@@ -85,6 +136,8 @@ async def test_release_scope_revisions_and_immutable_bytes(env):  # noqa: F811
     root = f"{BASE}/{item['id']}"
     assert item["status"] == "draft"
     assert item["audience"] == "administrators"
+    assert item["icon_data_url"] == icon
+    assert (await admin.api.get(BASE)).json()["items"][0]["icon_data_url"] == icon
     invalid = await admin.api.put(
         f"{root}/scope",
         json={
@@ -132,11 +185,15 @@ async def test_release_scope_revisions_and_immutable_bytes(env):  # noqa: F811
     assert result.status_code == 201, result.text
     item = result.json()
     second = item["versions"][0]["id"]
+    assert item["icon_data_url"] == icon
+    assert (await admin.api.get(BASE)).json()["items"][0]["icon_data_url"] == icon
     result = await admin.api.post(
         f"{root}/versions/{second}/publish", json={"revision": item["revision"]}
     )
     assert result.status_code == 200, result.text
     item = result.json()
+    assert item["icon_data_url"] is None
+    assert (await admin.api.get(BASE)).json()["items"][0]["icon_data_url"] is None
     assert {v["version"]: v["status"] for v in item["versions"]} == {
         "1.0.0": "superseded",
         "1.1.0": "published",
@@ -161,7 +218,10 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
     admin = await env.client()
     member = await env.client(role="member", tenant=admin.tenant)
     url = {"key": "SERVICE_URL", "label": "服务地址", "kind": "url", "required": True}
-    first_bytes = package(fields=[url])
+    image = png_icon()
+    first_bytes = package(
+        fields=[url], icon=image, preview=image, preview_paths=["./assets/cover.png"]
+    )
     draft = await admin.api.post(BASE, content=first_bytes, headers=BINARY)
     assert draft.status_code == 201, draft.text
     item = draft.json()
@@ -242,6 +302,10 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
         catalog = await list_releases()
         assert len(catalog) == 1 and catalog[0]["version_id"] == first
         assert catalog[0]["size"] == len(first_bytes)
+        assert catalog[0]["icon_data_url"] == (
+            "data:image/png;base64," + b64encode(image).decode("ascii")
+        )
+        assert catalog[0]["preview_data_urls"] == [catalog[0]["icon_data_url"]]
         assert await check(pin) == {"status": "current", "adopted_usable": True}
         received = await download(pin)
         assert received.status_code == 200
@@ -266,7 +330,9 @@ async def test_runtime_config_follows_org_scope_and_running_version(env, monkeyp
         response = await publish(second)
         assert response.status_code == 200, response.text
         item = response.json()
-        assert (await list_releases())[0]["version_id"] == second
+        new_catalog = await list_releases()
+        assert new_catalog[0]["version_id"] == second
+        assert new_catalog[0]["preview_data_urls"] == []
         assert await check(pin) == {"status": "update_available", "adopted_usable": True}
         assert (await download(pin)).status_code == 409
         response = await save(second, {"SERVICE_URL": "https://second.example.test"})

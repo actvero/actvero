@@ -46,6 +46,7 @@ generate-api:
 	uv run --frozen --directory backend python ../scripts/export-openapi.py
 	pnpm --dir frontend exec openapi-typescript ../docs/api/openapi.json -o src/lib/schema.d.ts
 	node cli/scripts/sync-schemas.mjs docs/api/openapi.json
+	node cli/scripts/sync-management-commands.mjs docs/api/openapi.json
 
 .PHONY: cli-bootstrap cli-check cli-test cli-legacy-check cli-legacy-test
 cli-bootstrap:
@@ -53,6 +54,7 @@ cli-bootstrap:
 	uv sync --frozen --directory cli
 cli-check:
 	node cli/scripts/sync-schemas.mjs --check docs/api/openapi.json
+	node cli/scripts/sync-management-commands.mjs --check docs/api/openapi.json
 	npm --prefix cli run check
 	npm --prefix cli run build
 cli-test:

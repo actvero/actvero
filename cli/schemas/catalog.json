@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "ea61c38be427d779f76393cdd338b8ab9d4018cfc0559c3241cf35220983aa8a",
+  "source_sha256": "b7ad1250442d1db70415944647e2a21a546318de84ccfdaf44b3d12373780c23",
   "roots": [
     "ArtifactCreate",
     "ArtifactView",
@@ -597,6 +597,26 @@
         "header"
       ],
       "title": "CredentialField",
+      "type": "object"
+    },
+    "DepartmentGrant": {
+      "additionalProperties": false,
+      "properties": {
+        "department_id": {
+          "format": "uuid",
+          "title": "Department Id",
+          "type": "string"
+        },
+        "include_descendants": {
+          "default": false,
+          "title": "Include Descendants",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "department_id"
+      ],
+      "title": "DepartmentGrant",
       "type": "object"
     },
     "DependencyCommandView": {
@@ -1400,6 +1420,21 @@
           "title": "Audience",
           "type": "string"
         },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
+        },
         "member_ids": {
           "items": {
             "format": "uuid",
@@ -1702,6 +1737,13 @@
               "type": "null"
             }
           ]
+        },
+        "department_grants": {
+          "items": {
+            "$ref": "#/$defs/DepartmentGrant"
+          },
+          "title": "Department Grants",
+          "type": "array"
         },
         "dependency_issues": {
           "default": 0,
@@ -2527,6 +2569,21 @@
           "title": "Credential Fields",
           "type": "array"
         },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
+        },
         "description": {
           "default": "",
           "maxLength": 2000,
@@ -2652,6 +2709,21 @@
             }
           ],
           "title": "Credential Values"
+        },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
         },
         "description": {
           "default": "",
@@ -2793,6 +2865,21 @@
           "maxItems": 10,
           "title": "Credential Fields",
           "type": "array"
+        },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
         },
         "description": {
           "default": "",
@@ -2973,6 +3060,21 @@
             }
           ],
           "title": "Credential Values"
+        },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
         },
         "description": {
           "default": "",
@@ -3713,6 +3815,21 @@
           "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
           "title": "Category"
         },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
+        },
         "description": {
           "maxLength": 1024,
           "minLength": 1,
@@ -3885,6 +4002,21 @@
           ],
           "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
           "title": "Category"
+        },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
         },
         "description": {
           "maxLength": 1024,
@@ -4060,6 +4192,13 @@
           ],
           "description": "当前唯一生效的已发布版本；无生效版本时为空。保留原字段名，不再单独设置默认版本。",
           "title": "Default Version Id"
+        },
+        "department_grants": {
+          "items": {
+            "$ref": "#/$defs/DepartmentGrant"
+          },
+          "title": "Department Grants",
+          "type": "array"
         },
         "description": {
           "title": "Description",

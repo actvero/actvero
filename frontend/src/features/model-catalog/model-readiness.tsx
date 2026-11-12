@@ -42,7 +42,7 @@ export function ModelReadiness({
           ? '仅管理员使用'
           : draft.access.audience === 'organization'
             ? '组织全员使用'
-            : `${draft.access.member_ids.length} 位指定成员`,
+            : `${draft.access.department_grants.length} 个部门 · ${draft.access.member_ids.length} 位成员`,
       ready: !issues.some((issue) => issueTab(issue.path) === 'access'),
     },
   ]

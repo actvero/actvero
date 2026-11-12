@@ -312,7 +312,7 @@ function DetailContent({ skill }: { skill: Skill }) {
         <Button variant='ghost' asChild>
           <Link to='/skills'>
             <ArrowLeft />
-            返回技能管理
+            返回技能
           </Link>
         </Button>
       </div>
@@ -565,6 +565,9 @@ function DetailContent({ skill }: { skill: Skill }) {
                     {scopeLabels[skill.audience]}
                     {skill.audience === 'selected' &&
                       ` · ${skill.member_ids.length} 人`}
+                    {skill.audience === 'selected' &&
+                      !!skill.department_grants?.length &&
+                      ` · ${skill.department_grants.length} 个部门`}
                   </dd>
                 </div>
                 <Separator />

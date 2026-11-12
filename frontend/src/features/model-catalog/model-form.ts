@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Schema } from '@/lib/api'
+import { departmentGrantSchema } from '@/features/departments/scope'
 import {
   imageSizes,
   imageQualities,
@@ -224,6 +225,7 @@ export const modelSchema = z
       enabled: z.boolean(),
       audience: z.enum(['administrators', 'organization', 'selected']),
       member_ids: z.array(z.string()),
+      department_grants: z.array(departmentGrantSchema).max(100),
       channel_id: z.string(),
       upstream_id: z.string(),
     }),
@@ -421,11 +423,15 @@ export const modelSchema = z
             message: '填写输出单价',
           })
     }
-    if (value.access.audience === 'selected' && !value.access.member_ids.length)
+    if (
+      value.access.audience === 'selected' &&
+      !value.access.member_ids.length &&
+      !value.access.department_grants.length
+    )
       ctx.addIssue({
         code: 'custom',
         path: ['access', 'member_ids'],
-        message: '至少选择一名成员',
+        message: '至少选择一个部门或成员',
       })
     if (
       value.access.enabled &&
@@ -642,6 +648,7 @@ export function values(model?: Model): ModelValues {
       enabled: model?.access?.enabled ?? false,
       audience: model?.access?.audience ?? 'administrators',
       member_ids: model?.access?.member_ids ?? [],
+      department_grants: model?.access?.department_grants ?? [],
       channel_id: model?.access?.channel_id ?? '',
       upstream_id: model?.access?.upstream_id ?? '',
     },
@@ -740,6 +747,10 @@ export function modelInput(value: ModelValues): Schema['CatalogInput'] {
     },
     access: {
       ...value.access,
+      department_grants:
+        value.access.audience === 'selected'
+          ? value.access.department_grants
+          : [],
       enabled: value.access.enabled,
       channel_id: value.access.channel_id || null,
     },
@@ -870,6 +881,7 @@ export function shareModelFields(
       enabled: source.access.enabled,
       audience: source.access.audience,
       member_ids: source.access.member_ids,
+      department_grants: source.access.department_grants,
     },
   }
 }

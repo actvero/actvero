@@ -13,7 +13,7 @@ export function categoryLabel(skill: Skill) {
 }
 export const scopeLabels = {
   administrators: '仅管理员',
-  selected: '指定成员',
+  selected: '指定范围',
   organization: '组织全员',
 }
 export const statusLabels = {

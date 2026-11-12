@@ -93,12 +93,14 @@ export function UploadWizard({
           category: skill.category ?? 'uncategorized',
           audience: skill.audience,
           member_ids: skill.member_ids,
+          department_grants: skill.department_grants ?? [],
         }
       : {
           display_name: '',
           description: '',
           category: 'uncategorized',
           member_ids: [],
+          department_grants: [],
         },
   })
   async function choose(files: File[], folder: boolean) {

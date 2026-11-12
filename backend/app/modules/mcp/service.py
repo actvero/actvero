@@ -30,7 +30,13 @@ from app.modules.mcp.schemas import (
     McpRun,
     McpServiceView,
 )
-from app.modules.members.service import Access, BusinessActor, ManagementBusinessActor, record
+from app.modules.members.service import (
+    Access,
+    BusinessActor,
+    ManagementBusinessActor,
+    record,
+    with_departments,
+)
 
 DispatchGuard = Callable[[dict[str, Any] | None], Awaitable[None]]
 
@@ -63,7 +69,9 @@ def administrator(actor: BusinessActor) -> None:
 
 def visible(service: McpService, actor: BusinessActor) -> bool:
     return service.enabled and (
-        service.audience == "organization" or str(actor.member.id) in service.member_ids
+        service.audience == "organization"
+        or str(actor.member.id) in service.member_ids
+        or actor.departments.matches(service.department_grants)
     )
 
 
@@ -141,6 +149,7 @@ async def view(db: AsyncSession, service: McpService, actor: BusinessActor) -> M
         enabled=service.enabled,
         audience=service.audience,
         member_ids=service.member_ids if actor.member.role == "administrator" else [],
+        department_grants=service.department_grants if actor.member.role == "administrator" else [],
         auth_mode=service.auth_mode,
         credential_fields=service.credential_fields,
         oauth=service.oauth,
@@ -306,7 +315,7 @@ async def _run(
                     request, db, "mcp", service.id, "invoke" if body.kind == "tools" else "read"
                 )
                 current = await db.get(McpService, service.id, populate_existing=True)
-                if not current or not visible(current, actor):
+                if not current or not visible(current, await with_departments(db, actor)):
                     raise HTTPException(403, "服务未开放")
                 await db.refresh(rule)
                 if not capability_allowed(rule, entry):

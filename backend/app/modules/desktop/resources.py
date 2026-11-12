@@ -19,7 +19,7 @@ from app.modules.desktop.models import DeviceSession
 from app.modules.desktop_mcp.models import ResourceToken
 from app.modules.desktop_mcp.schemas import ResourceTokenView
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor, membership_state
+from app.modules.members.service import BusinessActor, membership_state, with_departments
 from app.modules.tenants.models import Installation, Tenant
 
 CATALOG = "mcp:catalog"
@@ -68,7 +68,7 @@ async def business_actor(
     await desktop.require_organization(db, actor, platform_edition=platform_edition)
     tenant, member = await desktop.organization(db, actor, platform_edition=platform_edition)
     assert tenant is not None and member is not None
-    return NativeActor(actor.user, member, tenant, actor.session)
+    return await with_departments(db, NativeActor(actor.user, member, tenant, actor.session))
 
 
 async def issue(request: Request, db: AsyncSession, resource: str) -> ResourceTokenView:
@@ -182,4 +182,4 @@ async def actor_for_membership(
             "此令牌的组织资格已不可用",
         )
     assert tenant is not None
-    return NativeActor(native.user, member, tenant, native.session)
+    return await with_departments(db, NativeActor(native.user, member, tenant, native.session))

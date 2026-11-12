@@ -31,6 +31,7 @@ class Workbench(Base):
     category: Mapped[str] = mapped_column(String(20), default="uncategorized")
     audience: Mapped[str] = mapped_column(String(20), default="administrators")
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    department_grants: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     config_values: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     revision: Mapped[int] = mapped_column(default=1)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
@@ -62,6 +63,8 @@ class WorkbenchVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     config_fields: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    icon_data_url: Mapped[str | None] = mapped_column(Text)
+    preview_data_urls: Mapped[list[str] | None] = mapped_column(JSONB)
 
 
 class WorkbenchPackage(Base):

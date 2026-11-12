@@ -44,7 +44,7 @@ const columns: ColumnDef<WorkbenchSummary>[] = [
         to='/workbenches/$workbenchId'
         params={{ workbenchId: item.id }}
       >
-        <ResourceIcon name={item.display_name} />
+        <ResourceIcon name={item.display_name} image={item.icon_data_url} />
         <div className='flex min-w-0 flex-col gap-0.5'>
           <span className='font-medium break-all'>{item.display_name}</span>
           <span className='hidden truncate text-xs text-muted-foreground sm:block'>

@@ -15,6 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.access_keys import service as keys
 from app.modules.auth.service import digest, limit, now, provider
+from app.modules.departments.access import resolve_grants
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.desktop import service as desktop
 from app.modules.desktop.errors import fail
 from app.modules.desktop.models import DeviceSession
@@ -60,7 +62,10 @@ def visible(config: CatalogInput, actor: BusinessActor) -> bool:
         or policy.audience == "administrators"
         and actor.member.role == "administrator"
         or policy.audience == "selected"
-        and actor.member.id in policy.member_ids
+        and (
+            actor.member.id in policy.member_ids
+            or actor.departments.matches(policy.department_grants)
+        )
     )
 
 
@@ -98,6 +103,18 @@ async def validate_configuration(
     config: CatalogInput,
     channels: dict[UUID, ModelChannel],
 ) -> None:
+    previous = CatalogInput.model_validate(row.configuration) if row.configuration else None
+    grants = await resolve_grants(
+        db,
+        actor.tenant.id,
+        config.access.audience,
+        config.access.member_ids,
+        config.access.department_grants,
+        [grant.model_dump(mode="json") for grant in (previous.access.department_grants or [])]
+        if previous
+        else None,
+    )
+    config.access.department_grants = [DepartmentGrant.model_validate(grant) for grant in grants]
     if config.access.audience == "selected":
         ids = set(
             await db.scalars(
@@ -116,7 +133,6 @@ async def validate_configuration(
                 route(operation, channels)
             else:
                 routing.configured_candidates(operation, channels)
-    previous = CatalogInput.model_validate(row.configuration) if row.configuration else None
     old_embedding = previous.for_operation("embedding") if previous else None
     embedding = config.for_operation("embedding")
     if old_embedding and (
@@ -131,7 +147,9 @@ async def validate_configuration(
             .where(
                 ModelCall.model_id == row.id,
                 ModelCall.kind == "embedding",
-                ModelCall.source.in_(["desktop", "access_key"]),
+                ModelCall.source.in_(
+                    ["desktop", "access_key", "knowledge_index", "knowledge_search"]
+                ),
             )
             .limit(1)
         )
@@ -150,6 +168,10 @@ async def authorize(
     *,
     in_flight: bool = False,
 ) -> BusinessActor:
+    if getattr(request.state, "knowledge_invocation", None) is not None:
+        from app.modules.knowledge.inference import model_actor
+
+        return await model_actor(request, db, resource)
     if keys.supplied(request):
         resource_id = (
             UUID(resource.removeprefix("llm:")) if resource and resource != "llm:catalog" else None
@@ -406,7 +428,9 @@ async def execute(
         actor_id=actor.user.id,
         device_id=actor.device.id if isinstance(actor, NativeActor) else None,
         access_key_id=actor.key.id if isinstance(actor, keys.KeyActor) else None,
-        source="admin_channel_test"
+        source=("knowledge_" + request.state.knowledge_invocation.purpose)
+        if getattr(request.state, "knowledge_invocation", None) is not None
+        else "admin_channel_test"
         if specific
         else "admin_route_test"
         if test

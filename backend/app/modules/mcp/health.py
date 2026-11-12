@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.modules.auth.service import now
+from app.modules.departments.access import DepartmentAccess, load_access
 from app.modules.mcp.activity import failure
 from app.modules.mcp.credentials import SHARED, headers_for_owner
 from app.modules.mcp.models import McpActivity, McpConnection, McpHealth, McpService
@@ -58,7 +59,9 @@ async def probe(app: FastAPI, service_id: UUID, owner_id: UUID) -> bool:
                 and row.audience != "organization"
                 and str(member.id) not in row.member_ids
             ):
-                return False
+                access = await load_access(db, tenant.id, [member.id])
+                if not access.get(member.id, DepartmentAccess()).matches(row.department_grants):
+                    return False
             user = await db.get(User, member.user_id)
             if user is None:
                 return False

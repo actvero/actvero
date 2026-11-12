@@ -24,6 +24,7 @@ import { Route as PlatformSettingsRouteImport } from './routes/platform.settings
 import { Route as PlatformOrganizationsRouteImport } from './routes/platform.organizations'
 import { Route as PlatformInvitationsRouteImport } from './routes/platform.invitations'
 import { Route as PlatformApplicationsRouteImport } from './routes/platform.applications'
+import { Route as EmbedKnowledgeRouteImport } from './routes/embed.knowledge'
 import { Route as CliAuthorizeRouteImport } from './routes/cli.authorize'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedSystemRouteImport } from './routes/_authenticated/system'
@@ -43,6 +44,8 @@ import { Route as AuthenticatedMcpCallsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
 import { Route as AuthenticatedLlmUsageRouteImport } from './routes/_authenticated/llm-usage'
 import { Route as AuthenticatedLlmCallsRouteImport } from './routes/_authenticated/llm-calls'
+import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
+import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAccessKeysRouteImport } from './routes/_authenticated/access-keys'
@@ -146,6 +149,11 @@ const PlatformApplicationsRoute = PlatformApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => PlatformRoute,
 } as any)
+const EmbedKnowledgeRoute = EmbedKnowledgeRouteImport.update({
+  id: '/embed/knowledge',
+  path: '/embed/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CliAuthorizeRoute = CliAuthorizeRouteImport.update({
   id: '/cli/authorize',
   path: '/cli/authorize',
@@ -247,6 +255,17 @@ const AuthenticatedLlmCallsRoute = AuthenticatedLlmCallsRouteImport.update({
   path: '/llm-calls',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDepartmentsRoute =
+  AuthenticatedDepartmentsRouteImport.update({
+    id: '/departments',
+    path: '/departments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -417,6 +436,8 @@ export interface FileRoutesByFullPath {
   '/access-keys': typeof AuthenticatedAccessKeysRoute
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/departments': typeof AuthenticatedDepartmentsRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/mcp': typeof AuthenticatedMcpRoute
@@ -436,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/system': typeof AuthenticatedSystemRouteWithChildren
   '/users': typeof AuthenticatedUsersRoute
   '/cli/authorize': typeof CliAuthorizeRoute
+  '/embed/knowledge': typeof EmbedKnowledgeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -479,6 +501,8 @@ export interface FileRoutesByTo {
   '/access-keys': typeof AuthenticatedAccessKeysRoute
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/departments': typeof AuthenticatedDepartmentsRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/mcp': typeof AuthenticatedMcpRoute
@@ -497,6 +521,7 @@ export interface FileRoutesByTo {
   '/skill-distributions': typeof AuthenticatedSkillDistributionsRoute
   '/users': typeof AuthenticatedUsersRoute
   '/cli/authorize': typeof CliAuthorizeRoute
+  '/embed/knowledge': typeof EmbedKnowledgeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -542,6 +567,8 @@ export interface FileRoutesById {
   '/_authenticated/access-keys': typeof AuthenticatedAccessKeysRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/departments': typeof AuthenticatedDepartmentsRoute
+  '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/_authenticated/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
@@ -561,6 +588,7 @@ export interface FileRoutesById {
   '/_authenticated/system': typeof AuthenticatedSystemRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/cli/authorize': typeof CliAuthorizeRoute
+  '/embed/knowledge': typeof EmbedKnowledgeRoute
   '/platform/applications': typeof PlatformApplicationsRoute
   '/platform/invitations': typeof PlatformInvitationsRoute
   '/platform/organizations': typeof PlatformOrganizationsRoute
@@ -607,6 +635,8 @@ export interface FileRouteTypes {
     | '/access-keys'
     | '/account'
     | '/audit'
+    | '/departments'
+    | '/knowledge'
     | '/llm-calls'
     | '/llm-usage'
     | '/mcp'
@@ -626,6 +656,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/users'
     | '/cli/authorize'
+    | '/embed/knowledge'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -669,6 +700,8 @@ export interface FileRouteTypes {
     | '/access-keys'
     | '/account'
     | '/audit'
+    | '/departments'
+    | '/knowledge'
     | '/llm-calls'
     | '/llm-usage'
     | '/mcp'
@@ -687,6 +720,7 @@ export interface FileRouteTypes {
     | '/skill-distributions'
     | '/users'
     | '/cli/authorize'
+    | '/embed/knowledge'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -731,6 +765,8 @@ export interface FileRouteTypes {
     | '/_authenticated/access-keys'
     | '/_authenticated/account'
     | '/_authenticated/audit'
+    | '/_authenticated/departments'
+    | '/_authenticated/knowledge'
     | '/_authenticated/llm-calls'
     | '/_authenticated/llm-usage'
     | '/_authenticated/mcp'
@@ -750,6 +786,7 @@ export interface FileRouteTypes {
     | '/_authenticated/system'
     | '/_authenticated/users'
     | '/cli/authorize'
+    | '/embed/knowledge'
     | '/platform/applications'
     | '/platform/invitations'
     | '/platform/organizations'
@@ -794,6 +831,7 @@ export interface RootRouteChildren {
   PlatformRoute: typeof PlatformRouteWithChildren
   SetupRoute: typeof SetupRoute
   CliAuthorizeRoute: typeof CliAuthorizeRoute
+  EmbedKnowledgeRoute: typeof EmbedKnowledgeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -902,6 +940,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/applications'
       preLoaderRoute: typeof PlatformApplicationsRouteImport
       parentRoute: typeof PlatformRoute
+    }
+    '/embed/knowledge': {
+      id: '/embed/knowledge'
+      path: '/embed/knowledge'
+      fullPath: '/embed/knowledge'
+      preLoaderRoute: typeof EmbedKnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/cli/authorize': {
       id: '/cli/authorize'
@@ -1034,6 +1079,20 @@ declare module '@tanstack/react-router' {
       path: '/llm-calls'
       fullPath: '/llm-calls'
       preLoaderRoute: typeof AuthenticatedLlmCallsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge': {
+      id: '/_authenticated/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/departments': {
+      id: '/_authenticated/departments'
+      path: '/departments'
+      fullPath: '/departments'
+      preLoaderRoute: typeof AuthenticatedDepartmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/audit': {
@@ -1264,6 +1323,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccessKeysRoute: typeof AuthenticatedAccessKeysRoute
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedDepartmentsRoute: typeof AuthenticatedDepartmentsRoute
+  AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLlmCallsRoute: typeof AuthenticatedLlmCallsRoute
   AuthenticatedLlmUsageRoute: typeof AuthenticatedLlmUsageRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
@@ -1296,6 +1357,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccessKeysRoute: AuthenticatedAccessKeysRoute,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedDepartmentsRoute: AuthenticatedDepartmentsRoute,
+  AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLlmCallsRoute: AuthenticatedLlmCallsRoute,
   AuthenticatedLlmUsageRoute: AuthenticatedLlmUsageRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
@@ -1388,6 +1451,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlatformRoute: PlatformRouteWithChildren,
   SetupRoute: SetupRoute,
   CliAuthorizeRoute: CliAuthorizeRoute,
+  EmbedKnowledgeRoute: EmbedKnowledgeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

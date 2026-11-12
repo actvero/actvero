@@ -87,9 +87,17 @@ function compareDrafts(
       JSON.stringify(server.reference),
     ],
     [
-      '成员范围',
-      JSON.stringify([current.access.audience, current.access.member_ids]),
-      JSON.stringify([server.access?.audience, server.access?.member_ids]),
+      '使用范围',
+      JSON.stringify([
+        current.access.audience,
+        current.access.member_ids,
+        current.access.department_grants,
+      ]),
+      JSON.stringify([
+        server.access?.audience,
+        server.access?.member_ids,
+        server.access?.department_grants ?? [],
+      ]),
     ],
   ]
   for (const [kind, label] of Object.entries(kinds)) {
@@ -364,7 +372,7 @@ export function ModelEditor({
         if (unavailable) {
           setTab('bindings')
           throw new Error(
-            `渠道“${unavailable.name}”已停用或归档，请在渠道管理中恢复后重试。`
+            `渠道“${unavailable.name}”已停用或归档，请在渠道页恢复后重试。`
           )
         }
         if (!data.budget_price.enabled) {

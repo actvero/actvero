@@ -55,6 +55,7 @@ async def setup(env, monkeypatch):
         "version": 0,
         "enabled": True,
         "audience": "organization",
+        "capability_mode": "auto",
     }
     return admin, draft, channels, prices, call
 
@@ -71,7 +72,8 @@ async def test_preview_and_batch_never_create_calls_models_or_quota_clocks(env, 
     batch = await admin.api.post(BASE + "/publication/status", json={"models": ["team"]})
     assert batch.status_code == 200, batch.text
     status = batch.json()["items"][0]
-    assert status["ready"] and not status["enabled"]
+    assert not status["ready"] and not status["enabled"]
+    assert any(c["key"] == "parameters" and c["status"] == "blocked" for c in status["checks"])
     assert status["active_channels"] == 1
     call.reset_mock()
     preview = await admin.api.post(
@@ -187,14 +189,14 @@ async def test_plan_alias_publication_reaches_member_catalog_with_supplier_param
     ]
     prices["entries"][0]["model_name"] = name
     draft.update(model_name=name)
+    saved = await admin.api.put(BASE + "/publication", json=draft)
+    assert saved.status_code == 200, saved.text
     response = await admin.api.post(BASE + "/publication/status", json={"models": [name]})
     assert response.status_code == 200, response.text
     status = response.json()["items"][0]
     assert status["ready"] and status["automatic"]["source"]["provider"] == "volcengine-ark-plan"
     assert status["context_window"] == 1024000 and status["max_output"] == 384000
     assert status["capabilities"]["vision"] == "supported"
-    saved = await admin.api.put(BASE + "/publication", json=draft)
-    assert saved.status_code == 200, saved.text
     catalog = await admin.api.get("/api/v1/account/llm/models")
     assert catalog.status_code == 200, catalog.text
     item = catalog.json()["items"][0]
@@ -217,11 +219,13 @@ async def test_plan_alias_publication_reaches_member_catalog_with_supplier_param
 
 
 async def test_plan_always_thinking_model_rejects_stale_off_control(env, monkeypatch):
-    from fastapi import HTTPException
+    from fastapi import HTTPException, Request
 
     from app.modules.llm.catalog_schemas import CatalogInput
     from app.modules.llm.chat_policy import resolve
     from app.modules.llm.chat_schemas import ChatInput
+    from app.modules.llm.providers.chat import prepare
+    from app.modules.model_gateway.capabilities import effective
 
     admin, draft, channels, prices, _ = await setup(env, monkeypatch)
     name = "glm-5.3"
@@ -232,6 +236,21 @@ async def test_plan_always_thinking_model_rejects_stale_off_control(env, monkeyp
     async with env.sessions() as db:
         row = await db.scalar(select(CatalogModel).where(CatalogModel.tenant_id == admin.tenant.id))
         config = CatalogInput.model_validate(row.configuration)
+    parameters = config.model_dump(
+        mode="json", include={"context_window", "max_output", "capabilities", "reasoning_options"}
+    )
+    parameters["source"] = {"provider": "models.dev", "model": name}
+    saved = await admin.api.put(BASE + "/parameters", params={"model": name}, json=parameters)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["data"]["capability_mode"] == "manual"
+    async with env.sessions() as db:
+        row = await db.scalar(select(CatalogModel).where(CatalogModel.tenant_id == admin.tenant.id))
+        config = CatalogInput.model_validate(row.configuration)
+    config = await effective(Request({"type": "http", "app": env.app}), admin.tenant.id, config)
+    assert config.gateway.capability_source["provider"] == "models.dev"
+    body = resolve(ChatInput(model=name, messages=[{"role": "user", "content": "hi"}]), config, 1)
+    payload = prepare(body, config, config.bindings[0])
+    assert "max_completion_tokens" in payload and "max_tokens" not in payload
     for parameters in ({"reasoning_effort": "none"}, {"thinking": {"type": "disabled"}}):
         with pytest.raises(HTTPException) as error:
             resolve(
@@ -240,3 +259,100 @@ async def test_plan_always_thinking_model_rejects_stale_off_control(env, monkeyp
                 1,
             )
         assert error.value.status_code == 422
+
+
+async def test_unknown_model_can_save_manual_parameters_without_native_prices_or_routes(
+    env, monkeypatch
+):
+    admin, draft, channels, prices, call = await setup(env, monkeypatch)
+    channels.clear()
+    prices["entries"].clear()
+    draft.update(
+        enabled=False,
+        capability_mode="manual",
+        context_window=64000,
+        max_output=8000,
+        chat_policy={"default_max_output": 2000},
+    )
+    saved = await admin.api.put(BASE + "/publication", json=draft)
+    assert saved.status_code == 200, saved.text
+    result = saved.json()["data"]
+    assert result["capability_mode"] == "manual" and not result["enabled"]
+    assert result["context_window"] == 64000
+    assert result["capabilities"]["tools"] == "unknown"
+    assert (await admin.api.get("/api/v1/account/llm/models")).json()["items"] == []
+    assert all(args.args[2] == "GET" for args in call.await_args_list)
+    assert channels == [] and prices["entries"] == []
+
+
+async def test_manual_parameters_reach_terminal_and_survive_automatic_mapping_changes(
+    env, monkeypatch
+):
+    from fastapi import HTTPException, Request
+
+    from app.modules.llm.catalog_schemas import CatalogInput
+    from app.modules.llm.chat_policy import resolve
+    from app.modules.llm.chat_schemas import ChatInput
+    from app.modules.model_gateway.capabilities import effective
+
+    admin, draft, channels, prices, call = await setup(env, monkeypatch)
+    channels[0]["model_mapping"] = '{"team":"unlisted-upstream-model"}'
+    draft.update(
+        capability_mode="manual",
+        context_window=64000,
+        max_output=8000,
+        capabilities={"tools": "supported", "reasoning": "supported", "streaming": "unsupported"},
+        reasoning_options=[{"type": "effort", "values": ["none", "high"]}],
+        chat_policy={"default_max_output": 2000, "default_reasoning_effort": "high"},
+    )
+    response = await admin.api.put(BASE + "/publication", json=draft)
+    assert response.status_code == 200, response.text
+    # A later native mapping with different automatic limits must not replace manual settings.
+    channels[0]["model_mapping"] = '{"team":"deepseek-flash"}'
+    member = await env.client(role="member", tenant=admin.tenant)
+    item = (await member.api.get("/api/v1/account/llm/models")).json()["items"][0]
+    operation = item["operations"][0]
+    assert operation["context_window"] == 64000 and operation["max_output"] == 8000
+    assert operation["chat_policy"]["default_max_output"] == 2000
+    assert operation["capabilities"]["tools"] == "supported"
+    assert operation["capabilities"]["streaming"] == "supported"
+    async with env.sessions() as db:
+        row = await db.scalar(select(CatalogModel).where(CatalogModel.tenant_id == admin.tenant.id))
+        config = CatalogInput.model_validate(row.configuration)
+    config = await effective(Request({"type": "http", "app": env.app}), admin.tenant.id, config)
+    body = resolve(ChatInput(model="team", messages=[{"role": "user", "content": "hi"}]), config, 1)
+    assert body.max_completion_tokens == 2000 and body.reasoning_effort == "high"
+    with pytest.raises(HTTPException) as error:
+        resolve(
+            ChatInput(
+                model="team",
+                messages=[{"role": "user", "content": "hi"}],
+                reasoning_effort="medium",
+            ),
+            config,
+            1,
+        )
+    assert error.value.status_code == 422
+    assert prices["entries"] == [{"model_name": "team", "effective": {"ModelPrice": 0}}]
+    assert all(args.args[2] == "GET" for args in call.await_args_list)
+
+
+async def test_saved_manual_parameters_remain_editable_when_native_reference_is_unavailable(
+    env, monkeypatch
+):
+    from fastapi import HTTPException
+
+    admin, draft, _, _, _ = await setup(env, monkeypatch)
+    draft.update(enabled=False, capability_mode="manual", context_window=64000, max_output=8000)
+    response = await admin.api.put(BASE + "/publication", json=draft)
+    assert response.status_code == 200, response.text
+    version = response.json()["data"]["version"]
+    monkeypatch.setattr(client, "call", AsyncMock(side_effect=HTTPException(502, "unavailable")))
+    response = await admin.api.get(BASE + "/publication", params={"model": "team"})
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["context_window"] == 64000
+    assert response.json()["data"]["automatic"] == {}
+    draft.update(version=version, max_output=4000)
+    response = await admin.api.put(BASE + "/publication", json=draft)
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["max_output"] == 4000

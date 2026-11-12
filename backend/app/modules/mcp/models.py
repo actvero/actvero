@@ -28,6 +28,7 @@ class McpService(Base):
     catalog_initialized: Mapped[bool] = mapped_column(default=False)
     audience: Mapped[str] = mapped_column(String(20), default="organization")
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    department_grants: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     auth_mode: Mapped[str] = mapped_column(String(20), default="none")
     credential_fields: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     oauth: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

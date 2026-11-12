@@ -16,12 +16,14 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { GatewayChannels } from './channels'
+import { ModelParameters, type ParameterDraftState } from './model-parameters'
 import { NativeLanguage } from './native-language'
 import { NativeModelManagement } from './native-models'
 import { bindNativeAdministrator } from './native-session'
 import { GatewayPage } from './page'
 import { makePricing, tokenRates } from './pricing'
 import { ModelPublication } from './publication'
+import { GatewayStatistics } from './statistics'
 
 vi.mock('@/features/auth/session', () => ({
   useOrganization: () => {
@@ -92,22 +94,28 @@ const c = {
 }
 async function show(
   node: ReactNode,
-  handler: (url: string) => unknown = () => undefined
+  handler: (
+    url: string,
+    method?: string,
+    body?: Record<string, unknown>
+  ) => unknown = () => undefined
 ) {
   nativeDetailVersion = 'a'.repeat(64)
   nativeUpdateVersion = ''
   nativeApi.defaults.adapter = async (config) => {
     let data: unknown
     if (config.method === 'get') reads.push(config.url ?? '')
-    const custom = handler(config.url ?? '')
+    const custom =
+      config.method === 'get' ? handler(config.url ?? '') : undefined
     if (
       config.method === 'put' ||
       config.method === 'post' ||
       config.method === 'patch'
     ) {
       nativeUpdateVersion = String(config.headers.get('If-Match'))
-      writes.push({ url: config.url ?? '', body: JSON.parse(config.data) })
-      data = custom
+      const body = JSON.parse(config.data)
+      writes.push({ url: config.url ?? '', body })
+      data = handler(config.url ?? '', config.method.toUpperCase(), body)
     } else if (custom !== undefined) {
       data = custom
     } else if (config.url === '/api/vendors/') {
@@ -199,12 +207,21 @@ async function show(
         )
       }
       if (init?.method && init.method !== 'GET') {
-        writes.push({ url, body: JSON.parse(String(init.body ?? '{}')) })
-        return Response.json({ data: {} })
+        const body = JSON.parse(String(init.body ?? '{}'))
+        writes.push({ url, body })
+        return Response.json(handler(url, init.method, body) ?? { data: {} })
       }
       reads.push(url)
       const custom = handler(url)
       if (custom !== undefined) return Response.json(custom)
+      if (url.includes('/parameters?'))
+        return Response.json({
+          data: {
+            version: 0,
+            automatic: { status: 'unresolved' },
+            sources: [],
+          },
+        })
       if (url.includes('/models?') || url.endsWith('/vendors'))
         return Response.json({ data: { items: [], total: 0 } })
       if (url.includes('/channels?'))
@@ -500,16 +517,18 @@ it('saves an existing native model from the footer button with its loaded revisi
         : undefined
   )
   await expect
+    .element(page.getByLabelText('展示名称', { exact: true }))
+    .toBeVisible()
+  await expect
     .element(page.getByLabelText('说明信息', { exact: true }))
-    .toHaveValue('Original')
-  await page
-    .getByLabelText('说明信息', { exact: true })
-    .fill('Edited from footer')
+    .not.toBeInTheDocument()
+  await page.getByLabelText('展示名称', { exact: true }).fill('通过底部保存')
   await page.getByRole('button', { name: '保存资料', exact: true }).click()
   await expect.poll(() => writes.length).toBe(1)
   expect(writes[0].body).toMatchObject({
     id: 21,
-    description: 'Edited from footer',
+    description: 'Original',
+    display_name: '通过底部保存',
     model_name: 'editable-model',
   })
   expect(nativeUpdateVersion).toBe('a'.repeat(64))
@@ -557,7 +576,7 @@ it('edits through the native form and preserves provider settings without resubm
   await show(<GatewayChannels />)
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   await expect
-    .element(page.getByRole('heading', { name: '编辑渠道', exact: true }))
+    .element(page.getByRole('button', { name: /测试渠道.*返回渠道列表/ }))
     .toBeVisible()
   for (const name of ['路由与映射', '请求与响应', '其他设置']) {
     await expect
@@ -599,15 +618,21 @@ it('edits through the native form and preserves provider settings without resubm
   await expect
     .element(page.getByRole('button', { name: '创建渠道', exact: true }))
     .toBeVisible()
+  await page.getByRole('button', { name: /创建渠道.*返回渠道列表/ }).click()
+  await expect
+    .element(page.getByRole('heading', { name: '创建渠道', exact: true }))
+    .not.toBeInTheDocument()
   expect(writes).toHaveLength(1)
 })
 it('keeps organization access in the host session outside the native query cache', async () => {
   await page.viewport(1280, 900)
+  let parameters = { version: 2, context_window: 32000 }
+  let pricingFailed = false
   await show(
     <NativeLanguage>
       <NativeModelManagement />
     </NativeLanguage>,
-    (url) => {
+    (url, method, body) => {
       if (url === '/api/models/')
         return {
           items: [
@@ -637,30 +662,103 @@ it('keeps organization access in the host session outside the native query cache
       if (url.includes('/publication?model=policy-model'))
         return {
           data: {
+            ...parameters,
             model_name: 'policy-model',
             name: 'Policy model',
             enabled: false,
             audience: 'administrators',
-            version: 0,
             relay_ready: true,
           },
         }
+      if (url.includes('/parameters?') && url.endsWith('model=policy-model')) {
+        if (method === 'PUT')
+          parameters = {
+            ...parameters,
+            ...body,
+            version: parameters.version + 1,
+          }
+        return { data: parameters }
+      }
+      if (url.includes('/reference-models?')) {
+        const base = {
+          model_id: 'policy-model',
+          name: '公共模型',
+          context_window: 128000,
+          capabilities: { tools: 'supported', structured_output: 'unknown' },
+          reasoning_options: [],
+        }
+        return {
+          items: [
+            {
+              ...base,
+              provider: 'a',
+              provider_name: '供应商 A',
+              max_output: 96000,
+            },
+            {
+              ...base,
+              provider: 'b',
+              provider_name: '供应商 B',
+              max_output: 8000,
+              price: {
+                currency: 'USD',
+                metric: 'tokens',
+                unit: 1000000,
+                input: '0.15',
+                output: '0.47',
+                cache_read: '0.016',
+              },
+              quote_snapshot: {
+                raw_cost: {
+                  input: '0.15',
+                  output: '0.47',
+                  cache_read: '0.016',
+                  cache_write: '0.2',
+                },
+              },
+            },
+          ],
+          fetched_at: '2026-01-01T00:00:00Z',
+          stale: false,
+          page_size: 20,
+          total: 2,
+        }
+      }
+      if (url === '/api/option/model_pricing') {
+        if (method === 'PATCH' && !pricingFailed) {
+          pricingFailed = true
+          throw new Error('报价暂时无法写入')
+        }
+        return {
+          entries: [
+            {
+              model_name: 'policy-model',
+              version: 'existing-price-version',
+              configured: { ModelRatio: 1, CompletionRatio: 2 },
+              effective: { ModelRatio: 1, CompletionRatio: 2 },
+              cache_write_mode: 'standard',
+            },
+          ],
+          options: {},
+          empty_version: 'empty',
+        }
+      }
       return undefined
     }
   )
   await expect
-    .element(page.getByRole('button', { name: '访问管理', exact: true }))
+    .element(page.getByRole('button', { name: '使用设置', exact: true }))
     .not.toBeInTheDocument()
   await page
     .getByRole('row')
     .filter({ hasText: 'policy-model' })
     .getByRole('button', { name: 'policy-model', exact: true })
     .click()
-  await page.getByRole('tab', { name: '访问管理', exact: true }).click()
+  await page.getByRole('tab', { name: '使用设置', exact: true }).click()
   await expect
     .element(page.getByRole('switch', { name: '开放使用', exact: true }))
     .toBeVisible()
-  for (const name of ['模型资料', '定价', '渠道与分组', '访问管理'])
+  for (const name of ['模型资料', '定价', '渠道与分组', '使用设置'])
     await expect
       .element(page.getByRole('tab', { name, exact: true }))
       .toBeVisible()
@@ -669,27 +767,133 @@ it('keeps organization access in the host session outside the native query cache
     .not.toBeInTheDocument()
   await page.getByRole('radio', { name: '全体成员', exact: true }).click()
   await page.getByRole('tab', { name: '模型资料', exact: true }).click()
+  await page
+    .getByRole('textbox', { name: '上下文上限（Token）', exact: true })
+    .fill('64000')
+  await page.getByRole('button', { name: '从远程拉取' }).click()
+  await expect
+    .element(page.getByLabelText('搜索公开模型'))
+    .toHaveValue('policy-model')
+  await page.getByRole('button', { name: /公共模型.*供应商 A/ }).click()
+  await expect.element(page.getByText('与已填参数冲突')).toBeVisible()
+  await page.getByRole('button', { name: /公共模型.*供应商 B/ }).click()
+  const preview = page.getByRole('table', { name: '模型参数预览' })
+  await expect
+    .element(preview.getByRole('row').filter({ hasText: '上下文上限' }))
+    .toHaveTextContent(/64,000.*128,000.*保留.*更新/)
+  await expect
+    .element(preview.getByRole('row').filter({ hasText: '结构化输出' }))
+    .toHaveTextContent(/未提供.*留空/)
+  await page.getByRole('button', { name: '填入空白', exact: true }).click()
+  await expect
+    .element(page.getByText('已应用远程报价，请核对后保存定价。'))
+    .not.toBeInTheDocument()
+  await expect
+    .element(
+      page.getByRole('textbox', { name: '最大输出（Token）', exact: true })
+    )
+    .toHaveValue('8000')
+  await page.getByRole('tab', { name: '模型资料', exact: true }).click()
   await expect
     .element(page.getByLabelText('调用 ID *', { exact: true }))
     .toBeVisible()
-  await page.getByRole('tab', { name: '访问管理', exact: true }).click()
+  await page.getByRole('tab', { name: '使用设置', exact: true }).click()
   await expect
     .element(page.getByRole('radio', { name: '全体成员', exact: true }))
     .toBeChecked()
-  await page.getByRole('button', { name: 'Close', exact: true }).click()
+  await page.getByRole('tab', { name: '模型资料', exact: true }).click()
+  await expect
+    .element(
+      page.getByRole('textbox', { name: '上下文上限（Token）', exact: true })
+    )
+    .toHaveValue('64000')
+  await page.getByRole('tab', { name: '使用设置', exact: true }).click()
+  await page.getByRole('button', { name: /policy-model.*返回模型列表/ }).click()
   await expect.element(page.getByRole('alertdialog')).toBeVisible()
   await page.getByRole('button', { name: '取消', exact: true }).click()
   await expect
     .element(page.getByRole('radio', { name: '全体成员', exact: true }))
     .toBeChecked()
   expect(writes).toHaveLength(0)
+  await page.getByRole('button', { name: '从远程拉取' }).click()
+  await page.getByRole('button', { name: /policy-model.*返回模型详情/ }).click()
+  await expect
+    .element(page.getByRole('radio', { name: '全体成员', exact: true }))
+    .toBeChecked()
+  await page.getByRole('button', { name: '从远程拉取' }).click()
+  await page.getByRole('button', { name: /公共模型.*供应商 B/ }).click()
+  await page.getByRole('button', { name: '覆盖已有值', exact: true }).click()
+  await expect
+    .element(page.getByText(/模型参数已保存，定价保存失败/))
+    .toBeVisible()
+  const parameterUrl = '/api/v1/model-gateway/parameters?model=policy-model'
+  expect(writes.find(({ url }) => url === parameterUrl)?.body).toMatchObject({
+    version: 2,
+    context_window: 128000,
+    max_output: 8000,
+  })
+  await page.getByRole('button', { name: '覆盖已有值', exact: true }).click()
+  await expect
+    .element(page.getByRole('heading', { name: 'Models.dev 模型资料' }))
+    .not.toBeInTheDocument()
+  await expect
+    .element(page.getByRole('tab', { name: '使用设置', exact: true }))
+    .toHaveAttribute('aria-selected', 'true')
+  await expect
+    .element(page.getByRole('radio', { name: '全体成员', exact: true }))
+    .toBeChecked()
+  await page.getByRole('button', { name: '保存为未开放', exact: true }).click()
+  await expect
+    .poll(() => writes.find(({ url }) => url.endsWith('/publication'))?.body)
+    .toMatchObject({
+      version: 3,
+      audience: 'organization',
+      context_window: 128000,
+    })
+  await page.getByRole('tab', { name: '模型资料', exact: true }).click()
+  await expect
+    .element(page.getByLabelText('上下文上限（Token）', { exact: true }))
+    .toHaveValue('128000')
+  expect(writes.filter(({ url }) => url === parameterUrl)).toHaveLength(1)
+  const priceWrites = writes.filter(
+    ({ url }) => url === '/api/option/model_pricing'
+  )
+  expect(priceWrites).toHaveLength(2)
+  expect(priceWrites[1].body).toMatchObject({
+    changes: [
+      {
+        model_name: 'policy-model',
+        expected_version: 'existing-price-version',
+        pricing: {
+          'billing_setting.billing_mode': 'tiered_expr',
+          'billing_setting.billing_expr':
+            'tier("base", p * 0.15 + c * 0.47 + cr * 0.016 + cc * 0.2)',
+        },
+      },
+    ],
+  })
 })
 
-it('checks aliases with spaces and reports specific missing configuration without endless loading', async () => {
-  const names = ['DeepSeek Flash', 'orphan-model', 'unknown-model', 'bad,model']
-  const states = names.slice(0, 3).map((model_name, index) => ({
+it('summarizes model publication and shows maintenance details in usage settings', async () => {
+  const names = [
+    'DeepSeek Flash',
+    'orphan-model',
+    'unknown-model',
+    'pending-check',
+    'bad,model',
+  ]
+  const models = names.map((model_name, index) => ({
+    id: index + 21,
     model_name,
-    enabled: false,
+    status: 1,
+    sync_official: 1,
+    name_rule: 0,
+    created_time: 100,
+    updated_time: 100,
+  }))
+  const states = names.slice(0, 4).map((model_name, index) => ({
+    model_name,
+    enabled: index !== 1,
     audience: 'administrators',
     member_count: 0,
     ready: index === 0,
@@ -701,7 +905,7 @@ it('checks aliases with spaces and reports specific missing configuration withou
         : [
             {
               key: index === 1 ? 'channels' : 'parameters',
-              status: 'blocked',
+              status: index === 3 ? 'unknown' : 'blocked',
               message:
                 index === 1
                   ? '未关联当前调用分组的启用渠道'
@@ -713,43 +917,47 @@ it('checks aliases with spaces and reports specific missing configuration withou
     <NativeLanguage>
       <NativeModelManagement />
     </NativeLanguage>,
-    (url) =>
-      url === '/api/models/'
-        ? {
-            items: names.map((model_name, index) => ({
-              id: index + 21,
-              model_name,
-              status: 1,
-              sync_official: 1,
-              name_rule: 0,
-              created_time: 100,
-              updated_time: 100,
-            })),
-            total: names.length,
-          }
-        : url.endsWith('/publication/status')
-          ? { items: states }
-          : undefined
+    (url) => {
+      if (url === '/api/models/') return { items: models, total: models.length }
+      if (url === '/api/models/23') return models[2]
+      if (url.endsWith('/publication/status')) return { items: states }
+      if (url.includes('/publication?model=unknown-model'))
+        return { data: { ...states[2], version: 1, relay_ready: true } }
+      if (url.endsWith('/publication/preview'))
+        return { configuration: states[2] }
+      return undefined
+    }
   )
   await expect
     .element(page.getByRole('row').filter({ hasText: 'DeepSeek Flash' }))
-    .toHaveTextContent('配置就绪')
+    .toHaveTextContent('已发布')
   await expect
     .element(page.getByRole('row').filter({ hasText: 'orphan-model' }))
-    .toHaveTextContent('未关联渠道')
+    .toHaveTextContent('未发布')
   await expect
     .element(page.getByRole('row').filter({ hasText: 'unknown-model' }))
-    .toHaveTextContent('缺少能力资料')
+    .toHaveTextContent('待维护')
+  await expect
+    .element(page.getByRole('row').filter({ hasText: 'pending-check' }))
+    .toHaveTextContent('已发布')
   await expect
     .element(page.getByRole('row').filter({ hasText: 'bad,model' }))
     .toHaveTextContent('名称格式不支持')
-  await expect.element(page.getByText('检查中…')).not.toBeInTheDocument()
+  await expect
+    .element(page.getByText('尚无可靠能力资料'))
+    .not.toBeInTheDocument()
   const statusCall = vi
     .mocked(fetch)
     .mock.calls.find(([url]) => String(url).endsWith('/publication/status'))
   expect(JSON.parse(String(statusCall?.[1]?.body)).models).toEqual(
-    [...names.slice(0, 3)].sort()
+    [...names.slice(0, 4)].sort()
   )
+  await page
+    .getByRole('button', { name: /unknown-model.*待维护.*查看使用设置/ })
+    .click()
+  await expect
+    .element(page.getByText('尚无可靠能力资料', { exact: true }))
+    .toBeVisible()
 })
 it('blocks opening an incomplete model while allowing its disabled draft to be saved', async () => {
   await show(<ModelPublication model='team' />, (url) => {
@@ -896,6 +1104,7 @@ it('opens a common model with automatic desktop controls and no fixed dollar res
           data: {
             version: 0,
             relay_ready: true,
+            capability_mode: 'auto',
             automatic: {
               status: 'resolved',
               source: { provider: 'deepseek', model: 'deepseek-flash' },
@@ -922,7 +1131,7 @@ it('opens a common model with automatic desktop controls and no fixed dollar res
   )
   await expect
     .element(page.getByText('自动识别', { exact: true }))
-    .toBeVisible()
+    .not.toBeInTheDocument()
   await expect
     .element(page.getByRole('combobox', { name: '模型参数' }))
     .not.toBeInTheDocument()
@@ -931,7 +1140,10 @@ it('opens a common model with automatic desktop controls and no fixed dollar res
   await expect
     .element(page.getByText('输入：文本、图片 · 输出：文本', { exact: true }))
     .toBeVisible()
-  await expect.element(page.getByText(/结构化输出：未识别/)).toBeVisible()
+  await expect
+    .element(page.getByText(/结构化输出：未识别/))
+    .not.toBeInTheDocument()
+  await expect.element(page.getByText(/流式输出/)).not.toBeInTheDocument()
   await expect.element(page.getByText(/默认输出 8,192 Token/)).toBeVisible()
   await expect
     .element(
@@ -945,4 +1157,143 @@ it('opens a common model with automatic desktop controls and no fixed dollar res
     capability_mode: 'auto',
   })
   expect(writes[0].body).not.toHaveProperty('reserve_usd')
+})
+
+it('collects unknown model facts in metadata without changing prices or publication', async () => {
+  let state: ParameterDraftState | undefined
+  await show(
+    <ModelParameters
+      model='unlisted'
+      onChange={(value) => {
+        state = value
+      }}
+    />,
+    (url) =>
+      url.includes('/parameters?')
+        ? { data: { capabilities: { streaming: 'unsupported' } } }
+        : undefined
+  )
+  await expect
+    .element(page.getByRole('combobox', { name: '参数来源' }))
+    .not.toBeInTheDocument()
+  await expect.poll(() => state?.valid).toBe(true)
+  expect(state?.draft).toMatchObject({ context_window: null, max_output: null })
+  await page
+    .getByRole('textbox', { name: '上下文上限（Token）', exact: true })
+    .fill('4000')
+  await page
+    .getByRole('textbox', { name: '最大输出（Token）', exact: true })
+    .fill('8000')
+  await expect.poll(() => state?.valid).toBe(false)
+  await page
+    .getByRole('textbox', { name: '上下文上限（Token）', exact: true })
+    .fill('64000')
+  await expect.poll(() => state?.valid).toBe(true)
+  await expect
+    .element(page.getByRole('combobox', { name: '流式输出' }))
+    .not.toBeInTheDocument()
+  expect(state?.dirty).toBe(true)
+  expect(state?.draft).toMatchObject({
+    version: 0,
+    capability_mode: 'manual',
+    context_window: 64000,
+    max_output: 8000,
+    capabilities: { streaming: 'supported' },
+  })
+  expect(state?.draft).not.toHaveProperty('chat_policy')
+  expect(state?.draft).not.toHaveProperty('enabled')
+  expect(writes).toHaveLength(0)
+})
+
+it('uses native statistics tabs for current organization usage', async () => {
+  await show(<GatewayStatistics />, (url) => {
+    if (url === '/api/v1/model-gateway/status')
+      return {
+        configured: true,
+        connected: true,
+        backend: 'newapi',
+        error: null,
+      }
+    if (url.startsWith('/api/data')) return []
+    if (url === '/api/perf-metrics/summary') return { models: [] }
+    return undefined
+  })
+  for (const name of ['模型调用分析', '分流', '用户统计'])
+    await expect
+      .element(page.getByRole('tab', { name, exact: true }))
+      .toBeVisible()
+  await expect.poll(() => reads.some((url) => url === '/api/data')).toBe(true)
+})
+
+it('shows an unavailable gateway and retries with the flat status contract', async () => {
+  let connected = false
+  await show(<GatewayStatistics />, (url) => {
+    if (url === '/api/v1/model-gateway/status')
+      return {
+        configured: true,
+        connected,
+        backend: 'newapi',
+        error: connected ? null : '网关连接失败',
+      }
+    if (url.startsWith('/api/data')) return []
+    if (url === '/api/perf-metrics/summary') return { models: [] }
+    return undefined
+  })
+  await expect
+    .element(page.getByText('网关连接失败', { exact: true }))
+    .toBeVisible()
+  expect(reads).not.toContain('/api/data')
+  connected = true
+  await page.getByRole('button', { name: '重试', exact: true }).click()
+  await expect
+    .element(page.getByRole('tab', { name: '模型调用分析', exact: true }))
+    .toBeVisible()
+  await expect.poll(() => reads.includes('/api/data')).toBe(true)
+})
+
+it('keeps unconfigured statistics explicit without starting native requests', async () => {
+  await show(<GatewayStatistics />, (url) =>
+    url === '/api/v1/model-gateway/status'
+      ? { configured: false, connected: false, backend: 'direct', error: null }
+      : undefined
+  )
+  await expect
+    .element(page.getByText(/连接 New API 网关后可查看原生统计/))
+    .toBeVisible()
+  expect(reads).not.toContain('/api/data')
+  expect(reads).not.toContain('/api/status')
+})
+
+it('preserves manual parameters when saving member access despite a different automatic profile', async () => {
+  await show(<ModelPublication model='team' />, (url) =>
+    url.includes('/publication?')
+      ? {
+          data: {
+            version: 4,
+            capability_mode: 'manual',
+            context_window: 64000,
+            max_output: 8000,
+            chat_policy: { default_max_output: 2000 },
+            automatic: {
+              status: 'resolved',
+              context_window: 1000000,
+              max_output: 256000,
+            },
+          },
+        }
+      : undefined
+  )
+  await expect
+    .element(page.getByText('管理员填写', { exact: true }))
+    .not.toBeInTheDocument()
+  await expect.element(page.getByText(/上下文 64,000/)).toBeVisible()
+  await page.getByRole('button', { name: '保存为未开放', exact: true }).click()
+  await expect.poll(() => writes.length).toBe(1)
+  expect(writes[0].body).toMatchObject({
+    version: 4,
+    capability_mode: 'manual',
+    context_window: 64000,
+    max_output: 8000,
+    chat_policy: { default_max_output: 2000 },
+  })
 })

@@ -85,12 +85,16 @@
     "docs/contracts/expert-release-v2.example.json": "公开接口或依赖来源定义",
     "docs/upstream.lock.json": "公开接口或依赖来源定义",
     "frontend/README.md": "Actvero Web 后台",
+    "frontend/public/notices/pdfjs.txt": "PDF.js 第三方许可证声明",
     "frontend/public/notices/lucide.txt": "第三方许可证声明",
     "frontend/public/notices/magic-ui.txt": "第三方许可证声明",
     "frontend/public/notices/tabler-icons.txt": "第三方许可证声明",
     "frontend/src/assets/provider-avatars/README.md": "Provider avatar artwork",
     "frontend/src/vendor/newapi/README.md": "New API gateway UI",
-    "integrations/newapi/README.md": "New API integration"
+    "integrations/newapi/README.md": "New API integration",
+    "docs/KNOWLEDGE.md": "知识库",
+    "backend/app/modules/knowledge/licenses/LICENSE.txt": "知识库结构合并算法 LGPL v3 与 GPL v3 许可全文",
+    "backend/app/modules/knowledge/licenses/engi-rag-NOTICE.txt": "知识库结构合并算法来源与适配说明"
   },
   "restricted_identifier_sha256": [
     "0686ae9f1c93b431e26b7d4771af47bb2fe213af1e138bf0972edf1d56541daf",

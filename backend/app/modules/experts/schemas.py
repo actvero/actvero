@@ -12,6 +12,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.experts.categories import CategoryId
 from app.modules.experts.categories import ExpertCategory as ExpertCategory
 from app.modules.experts.dependency_schemas import ExactSkillChange
@@ -250,6 +251,7 @@ class ExpertSummary(BaseModel):
 class ExpertView(ExpertSummary):
     content: ExpertContent
     member_ids: list[UUID]
+    department_grants: list[DepartmentGrant] = Field(default_factory=list)
     releases: list[ExpertReleaseView]
     check: ExpertCheck
 

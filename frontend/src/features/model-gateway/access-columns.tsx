@@ -8,26 +8,6 @@ import { Button } from '@/components/ui/button'
 import { useOrganization } from '@/features/auth/session'
 import { supportsMemberAccess } from './model-name'
 
-function problemLabel(state: Schema['PublicationStatus']) {
-  const problem = state.checks.find((check) => check.status !== 'ready')
-  if (state.checks.some((check) => check.status === 'unknown'))
-    return '状态待确认'
-  if (problem?.key === 'parameters') {
-    if (state.automatic?.status === 'conflict') return '能力冲突'
-    if (state.automatic?.status === 'unresolved') return '缺少能力资料'
-    return '参数不完整'
-  }
-  const labels: Record<Schema['PublicationCheck']['key'], string> = {
-    relay: '调用未配置',
-    channels: '未关联渠道',
-    pricing: '未配置价格',
-    conversion: '未配置积分换算',
-    parameters: '参数不完整',
-    members: '成员未配置',
-  }
-  return problem ? labels[problem.key] : '配置不完整'
-}
-
 export function useAccessColumns(onManage: (model: Model) => void) {
   const { organization, csrf } = useOrganization()
   const [names, setNames] = useState<string[]>([])
@@ -61,7 +41,7 @@ export function useAccessColumns(onManage: (model: Model) => void) {
     staleTime: 10000,
     refetchOnWindowFocus: true,
   })
-  const { data, isError, refetch } = query
+  const { data } = query
   const accessColumns = useMemo<ColumnDef<Model>[]>(() => {
     const statuses = new Map(data?.items.map((item) => [item.model_name, item]))
     return [
@@ -70,7 +50,6 @@ export function useAccessColumns(onManage: (model: Model) => void) {
         header: '开放范围',
         size: 105,
         enableSorting: false,
-        meta: { mobileBadge: true },
         cell: ({ row }) => {
           const state = statuses.get(row.original.model_name)
           if (row.original.name_rule !== 0)
@@ -89,6 +68,9 @@ export function useAccessColumns(onManage: (model: Model) => void) {
             <Button
               variant='link'
               className='h-auto justify-start p-0'
+              aria-label={
+                state ? undefined : `查看 ${row.original.model_name} 的使用设置`
+              }
               onClick={() => onManage(row.original)}
             >
               {state
@@ -97,69 +79,48 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                   : state.audience === 'organization'
                     ? '全体成员'
                     : state.audience === 'selected'
-                      ? `指定 ${state.member_count} 人`
+                      ? '指定范围'
                       : '仅管理员'
-                : isError
-                  ? '读取失败'
-                  : '读取中…'}
+                : '—'}
             </Button>
           )
         },
       },
       {
         id: 'access_readiness',
-        header: '接入检查',
-        size: 170,
+        header: '状态',
+        size: 100,
         enableSorting: false,
+        meta: { mobileBadge: true },
         cell: ({ row }) => {
           const state = statuses.get(row.original.model_name)
-          if (row.original.name_rule !== 0)
-            return (
-              <span className='text-xs text-muted-foreground'>
-                资料匹配规则
-              </span>
-            )
-          if (!supportsMemberAccess(row.original.model_name))
-            return (
-              <span className='text-xs text-muted-foreground'>
-                调用名称需为 128 字符以内的英文标识，可含内部空格
-              </span>
-            )
-          if (isError)
-            return (
-              <Button variant='link' size='sm' onClick={() => void refetch()}>
-                检查失败 · 重试
-              </Button>
-            )
-          if (!state)
-            return (
-              <span className='text-xs text-muted-foreground'>检查中…</span>
-            )
-          const problems = state.checks.filter(
-            (check) => check.status !== 'ready'
-          )
+          if (!state || row.original.name_rule !== 0)
+            return <span className='text-muted-foreground'>—</span>
+          const status = !state.enabled
+            ? '未发布'
+            : state.checks.some((check) => check.status === 'blocked')
+              ? '待维护'
+              : '已发布'
           return (
-            <button
+            <Button
               type='button'
-              className='flex min-w-0 flex-col items-start gap-1 text-left'
+              variant='ghost'
+              size='sm'
+              className='-mx-2 px-2'
+              aria-label={`${row.original.model_name} · ${status}，查看使用设置`}
               onClick={() => onManage(row.original)}
             >
-              <Badge variant={state.ready ? 'secondary' : 'outline'}>
-                {state.ready ? '配置就绪' : problemLabel(state)}
-              </Badge>
-              <span
-                className='max-w-48 truncate text-xs text-muted-foreground'
-                title={problems.map((c) => c.message).join('；')}
+              <Badge
+                variant={status === '已发布' ? 'secondary' : 'outline'}
+                dot={status === '待维护'}
               >
-                {state.ready
-                  ? `${state.active_channels} 个可用渠道`
-                  : problems[0]?.message}
-              </span>
-            </button>
+                {status}
+              </Badge>
+            </Button>
           )
         },
       },
     ]
-  }, [data, isError, refetch, onManage])
+  }, [data, onManage])
   return { accessColumns, onModelsVisible }
 }

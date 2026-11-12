@@ -12,6 +12,7 @@ from sqlalchemy import delete, func, or_, select
 
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, provider
+from app.modules.departments.access import resolve_grants
 from app.modules.mcp import credentials
 from app.modules.mcp import service as logic
 from app.modules.mcp.importing import parse_import
@@ -58,7 +59,8 @@ async def validate_config(
     actor: BusinessActor,
     body: McpServiceInput,
     service_id: UUID | None = None,
-) -> None:
+    current_grants: list[dict[str, object]] | None = None,
+) -> list[dict[str, object]]:
     logic.administrator(actor)
     duplicate = await db.scalar(
         select(McpService).where(
@@ -84,6 +86,15 @@ async def validate_config(
     if body.oauth:
         await resolve(body.oauth.authorization_url, provider(request).settings)
         await resolve(body.oauth.token_url, provider(request).settings)
+    return await resolve_grants(
+        db,
+        actor.tenant.id,
+        body.audience,
+        body.member_ids,
+        body.department_grants,
+        current_grants,
+        require_selection=False,
+    )
 
 
 async def services(actor: BusinessActor, request: Request, db: DB) -> McpServicePage:
@@ -106,10 +117,12 @@ async def services(actor: BusinessActor, request: Request, db: DB) -> McpService
 async def create_service(
     actor: BusinessActor, request: Request, db: DB, body: McpServiceWrite
 ) -> McpServiceView:
-    await validate_config(request, db, actor, body)
+    grants = await validate_config(request, db, actor, body)
     body.icon = normalize_icon(body.icon)
     row = McpService(
-        tenant_id=actor.tenant.id, **body.model_dump(mode="json", exclude={"credential_values"})
+        tenant_id=actor.tenant.id,
+        department_grants=grants,
+        **body.model_dump(mode="json", exclude={"credential_values", "department_grants"}),
     )
     row.enabled = False
     db.add(row)
@@ -129,10 +142,11 @@ async def update_service(
     row = await logic.get_service(db, actor, service_id, admin=True)
     if body.version != row.version:
         raise HTTPException(409, "配置已被修改，请刷新后重试")
-    await validate_config(request, db, actor, body, row.id)
+    grants = await validate_config(request, db, actor, body, row.id, row.department_grants)
     if row.transport != "builtin" and body.transport == "builtin":
         raise HTTPException(422, "远程服务不能切换为内置内容")
     data = body.model_dump(mode="json", exclude={"version", "credential_values"})
+    data["department_grants"] = grants
     if data["icon"] != row.icon:
         data["icon"] = normalize_icon(data["icon"])
     changed = any(getattr(row, k) != data[k] for k in ("url", "transport", "auth_mode", "oauth"))
@@ -220,9 +234,11 @@ async def import_services(
     rows = []
     for _, item in parsed:
         assert item is not None
-        await validate_config(request, db, actor, item)
+        grants = await validate_config(request, db, actor, item)
         row = McpService(
-            tenant_id=actor.tenant.id, **item.model_dump(mode="json", exclude={"credential_values"})
+            tenant_id=actor.tenant.id,
+            department_grants=grants,
+            **item.model_dump(mode="json", exclude={"credential_values", "department_grants"}),
         )
         db.add(row)
         await db.flush()
@@ -257,6 +273,7 @@ async def export_services(actor: BusinessActor, request: Request, db: DB) -> Mcp
                     "enabled": False,
                     "audience": "selected",
                     "member_ids": [],
+                    "department_grants": [],
                 }
             )
             for s in rows

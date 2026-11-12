@@ -104,6 +104,16 @@ func ActveroOrganizationBridge(c *gin.Context) {
 		return
 	}
 	input.Path = path
+	var testState *actveroTestContext
+	if input.Method == "GET" && regexp.MustCompile(`^/api/channel/test/[0-9]+$`).MatchString(path) {
+		var err error
+		testState, err = actveroPrepareChannelTest(c)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		testState.Endpoint = params.Get("endpoint_type")
+	}
 	handler, err := actveroBridgeHandler(c, prefix, &input, params)
 	if err != nil {
 		c.JSON(404, gin.H{"success": false, "message": "Organization resource or operation is unavailable"})
@@ -130,6 +140,10 @@ func ActveroOrganizationBridge(c *gin.Context) {
 	if err := json.Unmarshal(capture.body.Bytes(), &packet); err != nil {
 		common.ApiErrorMsg(c, "Invalid organization gateway response")
 		return
+	}
+	actveroAnnotateTestResponse(packet, testState)
+	if strings.HasPrefix(path, "/api/data") {
+		packet = actveroPublicStatistics(packet)
 	}
 	// Billing identifiers remain native; Actvero correlates them to its immutable attempt record.
 	if path != "/api/log" {
@@ -199,6 +213,29 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 		case "/api/log":
 			actveroLogs(c, prefix, q)
 			return nil, nil
+		case "/api/data", "/api/data/self", "/api/data/users", "/api/data/flow", "/api/data/flow/self":
+			if err := actveroStatisticIdentity(c, q); err != nil {
+				return nil, err
+			}
+			if strings.Contains(path, "/flow") {
+				return GetUserFlowQuotaDates, nil
+			}
+			return GetUserQuotaDates, nil
+		case "/api/perf-metrics/summary":
+			recent := q["recent_model"]
+			q.Del("recent_model")
+			for _, name := range recent {
+				q.Add("recent_model", prefix+name)
+			}
+			return GetPerfMetricsSummary, nil
+		case "/api/perf-metrics":
+			if name := q.Get("model"); name != "" {
+				q.Set("model", prefix+name)
+			} else {
+				return nil, bad
+			}
+			q.Set("group", prefix+"default")
+			return GetPerfMetrics, nil
 		}
 	}
 	parts := strings.Split(strings.Trim(path, "/"), "/")

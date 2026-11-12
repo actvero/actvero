@@ -491,7 +491,12 @@ export function FlowChart({
                       disabled={
                         !path.member_id ||
                         !path.model_id ||
-                        !['access_key', 'desktop'].includes(path.source)
+                        ![
+                          'access_key',
+                          'desktop',
+                          'knowledge_index',
+                          'knowledge_search',
+                        ].includes(path.source)
                       }
                       onClick={() => onDetails(path)}
                     >

@@ -155,7 +155,10 @@ def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
     scopes = [
         ExpertRecord.audience == "organization",
         (ExpertRecord.audience == "selected")
-        & ExpertRecord.member_ids.contains([str(actor.member.id)]),
+        & or_(
+            ExpertRecord.member_ids.contains([str(actor.member.id)]),
+            actor.departments.predicate(ExpertRecord.department_grants),
+        ),
     ]
     if actor.member.role == "administrator":
         scopes.append(ExpertRecord.audience == "administrators")

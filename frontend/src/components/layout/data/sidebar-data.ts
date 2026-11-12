@@ -10,6 +10,7 @@ import {
   Bot,
   LayoutDashboard,
   LayoutTemplate,
+  BookOpen,
 } from 'lucide-react'
 import type { NavGroup } from '../types'
 
@@ -32,10 +33,9 @@ export function navigation(
                 title: '模型网关',
                 icon: Network,
                 items: [
-                  { title: '渠道管理', url: '/model-channels' },
-                  { title: '模型管理', url: '/models' },
+                  { title: '渠道', url: '/model-channels' },
+                  { title: '模型', url: '/models' },
                   { title: '额度策略', url: '/quota-policies' },
-                  { title: '调用记录', url: '/llm-calls' },
                   { title: '数据看板', url: '/llm-usage' },
                 ],
               },
@@ -43,7 +43,7 @@ export function navigation(
                 title: 'Skills',
                 icon: PackageOpen,
                 items: [
-                  { title: '技能管理', url: '/skills' },
+                  { title: '技能', url: '/skills' },
                   { title: '分发记录', url: '/skill-distributions' },
                 ],
               },
@@ -51,11 +51,12 @@ export function navigation(
                 title: 'MCP',
                 icon: Plug,
                 items: [
-                  { title: '服务管理', url: '/mcp' },
+                  { title: '服务', url: '/mcp' },
                   { title: '调用记录', url: '/mcp-calls' },
                   { title: '连接日志', url: '/mcp-logs' },
                 ],
               },
+              { title: '知识库', icon: BookOpen, url: '/knowledge' },
               { title: '工作台', icon: LayoutTemplate, url: '/workbenches' },
             ],
           },
@@ -67,6 +68,7 @@ export function navigation(
                 icon: Users,
                 items: [
                   { title: '组织设置', url: '/organization-settings' },
+                  { title: '部门管理', url: '/departments' },
                   { title: '成员管理', url: '/users' },
                   { title: '操作记录', url: '/audit' },
                   { title: '密钥管理', url: '/access-keys' },
@@ -96,6 +98,7 @@ export function navigation(
           {
             title: '能力管理',
             items: [
+              { title: '知识库', icon: BookOpen, url: '/knowledge' },
               {
                 title: 'MCP',
                 icon: Plug,

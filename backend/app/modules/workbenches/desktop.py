@@ -43,7 +43,10 @@ def visible(actor: NativeActor) -> tuple[ColumnElement[bool], ColumnElement[bool
         else or_(
             Workbench.audience == "organization",
             (Workbench.audience == "selected")
-            & Workbench.member_ids.contains([str(actor.member.id)]),
+            & or_(
+                Workbench.member_ids.contains([str(actor.member.id)]),
+                actor.departments.predicate(Workbench.department_grants),
+            ),
         )
     )
     return (Workbench.tenant_id == actor.tenant.id, audience)
@@ -66,6 +69,8 @@ async def catalog(request: Request, db: DB) -> DesktopWorkbenchCatalog:
                 package_name=row.package_name,
                 display_name=row.display_name,
                 description=row.description,
+                icon_data_url=version.icon_data_url,
+                preview_data_urls=version.preview_data_urls or [],
                 category=row.category,
                 version=version.version,
                 dsh_requirement=version.dsh_requirement,

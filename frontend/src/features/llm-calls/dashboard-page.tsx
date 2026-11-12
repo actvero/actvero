@@ -738,7 +738,11 @@ function DashboardPage({ search }: { search: DashboardSearch }) {
                     details({
                       member_id: path.member_id || '',
                       model_id: path.model_id || '',
-                      source: path.source as 'desktop' | 'access_key',
+                      source: path.source as
+                        | 'desktop'
+                        | 'access_key'
+                        | 'knowledge_index'
+                        | 'knowledge_search',
                       channel_id: path.channel_id || '',
                       unknown_channel: !path.channel_id,
                     })

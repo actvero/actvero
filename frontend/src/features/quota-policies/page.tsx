@@ -1,7 +1,14 @@
 import { useDeferredValue, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Archive, Ellipsis, Plus, RotateCcw, RefreshCw } from 'lucide-react'
+import {
+  Archive,
+  ArrowRightLeft,
+  Ellipsis,
+  Plus,
+  RotateCcw,
+  RefreshCw,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { api, type Schema } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +28,7 @@ import { FilterSelect } from '@/components/filter-select'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
-import { PointConversionButton } from '@/features/model-catalog/point-conversion'
+import { PointConversionDialog } from '@/features/model-catalog/point-conversion'
 import { MemberMatches } from './member-matches'
 import { PolicyEditor } from './policy-editor'
 import { ruleLabel, type Policy } from './policy-form'
@@ -38,7 +45,9 @@ export function QuotaPoliciesPage() {
   const [archive, setArchive] = useState<Policy | null>(null)
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
+  const [conversionOpen, setConversionOpen] = useState(false)
   const add = useRef<HTMLButtonElement>(null)
+  const more = useRef<HTMLButtonElement>(null)
   const trigger = useRef<HTMLElement | null>(null)
   const prefix = ['organization', organization.tenant_id, 'quota']
   const params = new URLSearchParams({
@@ -91,7 +100,7 @@ export function QuotaPoliciesPage() {
       setBusy(false)
     }
   }
-  const columns: ColumnDef<Policy>[] = [
+  const columns: ColumnDef<Schema['QuotaPolicyListItem']>[] = [
     {
       id: 'name',
       header: '策略',
@@ -115,42 +124,22 @@ export function QuotaPoliciesPage() {
       ),
     },
     {
-      id: 'members',
-      header: '额度方式',
-      meta: { className: 'w-32' },
-      cell: ({ row: { original: p } }) => (
-        <span className='whitespace-nowrap'>
-          {p.mode === 'unlimited' ? '不限额度' : '周期限额'}
-        </span>
-      ),
-    },
-    {
       id: 'rules',
-      header: '周期额度',
+      header: '额度',
       cell: ({ row: { original: p } }) => (
-        <div className='flex min-w-48 flex-col gap-2 py-2'>
+        <div className='min-w-40 whitespace-normal tabular-nums'>
           {p.mode === 'unlimited'
-            ? '—'
-            : p.rules.map((r, i) => (
-                <span key={i} className='tabular-nums'>
-                  {ruleLabel(r)}
-                </span>
-              ))}
+            ? '不限额度'
+            : p.rules.map(ruleLabel).join(' · ')}
         </div>
       ),
     },
     {
-      id: 'reset',
-      header: '重置规则',
-      cell: ({ row: { original: p } }) => (
-        <div className='flex min-w-48 flex-col gap-2 text-sm text-muted-foreground'>
-          {p.mode === 'unlimited'
-            ? '无周期上限'
-            : p.rules.map((_, i) => (
-                <span key={i}>首次使用起算，到期后下次使用重新计时</span>
-              ))}
-        </div>
-      ),
+      id: 'members',
+      header: '生效人数',
+      meta: { className: 'w-28 whitespace-nowrap tabular-nums' },
+      cell: ({ row }) =>
+        `${row.original.active_member_count.toLocaleString('zh-CN')} 人`,
     },
     {
       id: 'actions',
@@ -201,7 +190,6 @@ export function QuotaPoliciesPage() {
       title='额度策略'
       action={
         <div className='flex flex-wrap gap-2'>
-          <PointConversionButton />
           <Button
             ref={add}
             disabled={!query.data}
@@ -213,9 +201,34 @@ export function QuotaPoliciesPage() {
             <Plus />
             {query.data?.has_default ? '新建策略' : '设置默认策略'}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                ref={more}
+                variant='outline'
+                size='icon'
+                aria-label='更多额度操作'
+              >
+                <Ellipsis />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={() => setConversionOpen(true)}>
+                  <ArrowRightLeft />
+                  积分换算
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       }
     >
+      <PointConversionDialog
+        open={conversionOpen}
+        onOpenChange={setConversionOpen}
+        restoreFocus={() => more.current?.focus()}
+      />
       <Tabs defaultValue='policies' className='min-w-0 gap-4'>
         <TabsList>
           <TabsTrigger value='policies'>策略</TabsTrigger>

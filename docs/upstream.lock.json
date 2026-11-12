@@ -103,5 +103,15 @@
         }
       ]
     }
-  ]
+  ],
+  "knowledgeStructuralChunking": {
+    "project": "engi-one",
+    "revision": "166b264ba6c93c81bfff4ecfd49d70d53c674616",
+    "source": "addons/custom/engi_smart_document_rag/models/smart_document_rag.py",
+    "symbol": "_SmartDocumentRagChunkBuilder",
+    "sourceSha256": "27dded9d612d5c48399faf8367b0e1e1aa4c8af57682be499f4be2f21d8d34cc",
+    "location": "backend/app/modules/knowledge/structural.py",
+    "license": "backend/app/modules/knowledge/licenses/LICENSE.txt",
+    "notice": "backend/app/modules/knowledge/licenses/engi-rag-NOTICE.txt"
+  }
 }

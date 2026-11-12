@@ -62,13 +62,12 @@ def connection(service: McpService) -> str:
     )
 
 
-def authorization(service: McpService, entries: list[dict[str, Any]], member_id: str) -> str:
+def authorization(service: McpService, entries: list[dict[str, Any]], member_in_scope: bool) -> str:
     return digest(
         {
             "enabled": service.enabled,
             "audience": service.audience,
-            "member_in_scope": service.audience == "organization"
-            or member_id in service.member_ids,
+            "member_in_scope": member_in_scope,
             "capabilities": sorted(
                 (entry["kind"], entry["key"], entry["contract_revision"])
                 for entry in entries

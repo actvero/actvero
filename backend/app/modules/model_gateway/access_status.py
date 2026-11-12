@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 
 from app.modules.auth.service import DB
+from app.modules.departments.access import resolve_grants
 from app.modules.llm.catalog_schemas import (
     ChatPolicy,
     ModelCapabilities,
@@ -20,8 +21,9 @@ from app.modules.llm.models import CatalogModel
 from app.modules.llm.points import current_conversion
 from app.modules.llm.settlement import snapshot
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor
+from app.modules.members.service import BusinessActor, with_departments
 from app.modules.model_gateway import client, publication, service
+from app.modules.model_gateway.capabilities import channel_provider
 from app.modules.users.models import User
 
 ModelName = Annotated[ModelIdentifier, Field(max_length=128)]
@@ -62,6 +64,7 @@ class PublicationStatus(BaseModel):
     active_channels: int
     latest_test_at: int | None = None
     automatic: dict[str, Any] = Field(default_factory=dict)
+    transport_provider: str = ""
     kind: OperationKind
     context_window: int | None = None
     max_output: int | None = None
@@ -143,6 +146,14 @@ async def inspect(
                 )
             )
         )
+        from app.modules.model_gateway import parameters
+
+        facts = await parameters.get(db, actor.tenant.id, name)
+        if facts:
+            body = publication.PublicationInput.model_validate(
+                body.model_dump()
+                | {k: v for k, v in facts.configuration.items() if k in parameters.FACT_FIELDS}
+            )
         checks = Checks()
 
         add = checks.add
@@ -162,6 +173,7 @@ async def inspect(
             and name in (c.get("models") or "").split(",")
             and connection.relay_group in (c.get("group") or "").split(",")
         ]
+        providers = {channel_provider(channel) for channel in routes}
         add(
             "channels",
             "渠道映射",
@@ -193,7 +205,11 @@ async def inspect(
             "quota",
         )
         resolved_body, automatic = publication.resolve_body(
-            body, connection.relay_group, channels or []
+            body,
+            connection.relay_group,
+            channels or [],
+            reference_model=facts.configuration.get("reference_model", "") if facts else "",
+            preserve_policy=facts is not None,
         )
         try:
             publication.configuration(
@@ -233,12 +249,23 @@ async def inspect(
                     )
                 )
             )
-            members_ready = bool(active) and active == set(body.member_ids)
+            try:
+                await resolve_grants(
+                    db,
+                    actor.tenant.id,
+                    body.audience,
+                    body.member_ids,
+                    body.department_grants,
+                    saved.get("department_grants"),
+                )
+                members_ready = active == set(body.member_ids)
+            except HTTPException:
+                members_ready = False
             add(
                 "members",
-                "指定成员",
+                "指定范围",
                 members_ready,
-                "所选成员有效" if members_ready else "请选择本组织的有效成员",
+                "所选范围有效" if members_ready else "请选择本组织的有效部门或成员",
                 "members",
             )
         results.append(
@@ -253,6 +280,7 @@ async def inspect(
                 latest_test_at=max((int(c.get("test_time") or 0) for c in routes), default=0)
                 or None,
                 automatic=automatic,
+                transport_provider=next(iter(providers)) if len(providers) == 1 else "",
                 kind=resolved_body.kind,
                 context_window=resolved_body.context_window,
                 max_output=resolved_body.max_output,
@@ -284,13 +312,17 @@ async def preview(
         return result
     user = await db.get(User, member.user_id)
     assert user is not None
+    target = await with_departments(db, BusinessActor(user, member, actor.tenant))
     result.member_name = user.name
     allowed = body.draft.enabled and (
         body.draft.audience == "organization"
         or body.draft.audience == "administrators"
         and member.role == "administrator"
         or body.draft.audience == "selected"
-        and member.id in body.draft.member_ids
+        and (
+            member.id in body.draft.member_ids
+            or target.departments.matches(body.draft.department_grants)
+        )
     )
     result.discoverable = member.status == "active" and allowed and status.ready
     result.access_message = (
@@ -304,7 +336,7 @@ async def preview(
         if not status.ready
         else "该成员可在桌面模型目录中发现此模型"
     )
-    state = await snapshot(db, BusinessActor(user, member, actor.tenant))
+    state = await snapshot(db, target)
     result.quota_status = "active" if state["status"] == "active" else "unconfigured"
     if state["windows"]:
         limiting = min(state["windows"], key=lambda w: Decimal(w["remaining"]))

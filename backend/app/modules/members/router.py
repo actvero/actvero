@@ -1,10 +1,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 
 from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB, now, provider
+from app.modules.departments.models import DepartmentMember
 from app.modules.members.models import Membership
 from app.modules.members.provisioning import create_member
 from app.modules.members.schemas import (
@@ -182,6 +183,12 @@ async def change(
         if not identity or not await provider(request).user_enabled(identity.subject):
             raise HTTPException(409, "该成员的登录身份不可用，无法恢复或授予管理权限")
     member.role, member.status = new_role, new_status
+    if new_status == "removed":
+        await db.execute(
+            delete(DepartmentMember).where(
+                DepartmentMember.tenant_id == tenant_id, DepartmentMember.member_id == member.id
+            )
+        )
     member.version += 1
     if new_status != "active":
         member.revoked_at = now()

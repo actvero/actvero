@@ -18,7 +18,11 @@ def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
     # never the Web administrator's blanket inspection bypass.
     scopes = [
         Skill.audience == "organization",
-        (Skill.audience == "selected") & Skill.member_ids.contains([str(actor.member.id)]),
+        (Skill.audience == "selected")
+        & or_(
+            Skill.member_ids.contains([str(actor.member.id)]),
+            actor.departments.predicate(Skill.department_grants),
+        ),
     ]
     if actor.member.role == "administrator":
         scopes.append(Skill.audience == "administrators")

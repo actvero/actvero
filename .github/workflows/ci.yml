@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   gateway:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Build pinned New API integration
@@ -49,7 +49,7 @@ jobs:
         if: always()
         run: docker rm --force actvero-newapi-test || true
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17
