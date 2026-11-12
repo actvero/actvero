@@ -60,6 +60,12 @@ Actvero serializes member admission, reserves the returned amount using the curr
 
 The estimate is conservative and may reserve more than the eventual charge. Input tokenization is an estimate rather than confirmed usage. It is not a supplier spending guarantee: concurrent native price/group changes, channel parameter overrides and provider-reported usage can exceed the estimate. Actual confirmed charges are retained rather than clamped; additional calls then use the remaining quota. Native channel retries remain owned by New API. Actvero does not replay an uncertain invocation to recover a missing bill.
 
+### 向量与重排序计量
+
+OpenAI 兼容向量响应须明确提供一致的正数 `prompt_tokens` 和 `total_tokens`；允许省略输出计数，显式输出计数必须为零。百炼文本重排序须在原始响应中明确返回正数 `usage.total_tokens`，并与适配后的输入用量一致。通过校验后，网关为消费日志添加 `actvero_upstream_usage_confirmed` 标记。缺失、矛盾或本地估算的计数不获得确认，也不放宽对话计量规则。
+
+升级网关不会补写旧消费日志的证据。旧的待核对结算仍需依据当时的真实账单处理，不能通过重新调用模型推定原调用费用。
+
 ## Maintain and verify
 
 Before changing the upstream version, review `apply.py` anchors, token-scope guards, expression semantics and native log evidence. Run the native `TestActvero` and `AdmissionBound` tests, then Actvero's isolated database and native gateway contract tests. `backend/tests/test_shared_model_gateway.py` optionally uses a disposable gateway configured through `ACTVERO_TEST_SHARED_NEWAPI_URL` and `ACTVERO_TEST_SHARED_NEWAPI_TOKEN`; never point it at an organization's live gateway. `scripts/test-gateway-deployment.py` renders managed and external Compose contracts without starting services. The integration test creates and removes its own temporary channel and pricing fixture; it does not use supplier credentials.
