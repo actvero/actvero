@@ -135,7 +135,7 @@ export function AccessFields({
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value='administrators'>仅管理员</SelectItem>
-                    <SelectItem value='selected'>指定成员</SelectItem>
+                    <SelectItem value='selected'>指定范围</SelectItem>
                     <SelectItem value='organization'>组织全员</SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -153,6 +153,14 @@ export function AccessFields({
                 <FormLabel>可用成员</FormLabel>
                 <FormControl>
                   <MemberPicker
+                    departmentScope={{
+                      value: policy.department_grants ?? [],
+                      onChange: (value) =>
+                        form.setValue('access.department_grants', value, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }),
+                    }}
                     value={field.value}
                     onChange={field.onChange}
                     disabled={disabled}

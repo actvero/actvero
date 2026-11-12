@@ -33,6 +33,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RequestError, LoadingState } from '@/components/request-state'
 import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
+import { MemberDepartmentEditor } from '@/features/departments/member-editor'
 import { roleName, states } from './labels'
 
 type Change = Schema['MemberChange']
@@ -51,6 +52,7 @@ export function MemberDetails({
   const [action, setAction] = useState<Change['action'] | null>(null)
   const [role, setRole] = useState<'administrator' | 'member' | null>(null)
   const [reason, setReason] = useState('')
+  const [editDepartments, setEditDepartments] = useState(false)
   const query = useQuery({
     queryKey: [
       'organization',
@@ -203,7 +205,27 @@ export function MemberDetails({
                   </dd>
                   <dt className='text-muted-foreground'>加入时间</dt>
                   <dd>{dateTime(member.joined_at)}</dd>
+                  {member.status !== 'removed' && (
+                    <>
+                      <dt className='text-muted-foreground'>所属部门</dt>
+                      <dd>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setEditDepartments(true)}
+                        >
+                          设置部门
+                        </Button>
+                      </dd>
+                    </>
+                  )}
                 </dl>
+                {editDepartments && (
+                  <MemberDepartmentEditor
+                    memberId={member.id}
+                    close={() => setEditDepartments(false)}
+                  />
+                )}
                 <p className='text-sm text-muted-foreground'>
                   所有管理员权限相同。最后一名有效管理员不能被降级、暂停或移出。
                 </p>

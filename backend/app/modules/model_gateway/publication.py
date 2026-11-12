@@ -9,6 +9,8 @@ from pydantic import Field
 from sqlalchemy import select
 
 from app.modules.auth.service import DB, now, provider
+from app.modules.departments.access import resolve_grants
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.llm.audio_schemas import SpeechOptions, TranscriptionOptions
 from app.modules.llm.catalog_schemas import (
     CatalogInput,
@@ -40,6 +42,7 @@ class PublicationInput(Input):
         default="administrators", pattern=r"^(administrators|organization|selected)$"
     )
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
     kind: OperationKind = "chat"
     context_window: int | None = Field(default=None, ge=1, le=100000000)
     max_output: int | None = Field(default=None, ge=1, le=100000000)
@@ -86,6 +89,9 @@ def view(row: CatalogModel | None) -> dict[str, Any]:
         "enabled": c.access.enabled and not row.archived,
         "audience": c.access.audience,
         "member_ids": [str(x) for x in c.access.member_ids],
+        "department_grants": [
+            grant.model_dump(mode="json") for grant in c.access.department_grants or []
+        ],
         "reserve_usd": c.gateway.reserve_usd,
         "capability_mode": c.gateway.capability_mode,
         "capability_source": c.gateway.capability_source,
@@ -116,7 +122,18 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
         raise HTTPException(409, "已有同名旧模型，请先为旧模型改名，再开放网关模型")
     if body.version != (row.version if row else 0):
         raise HTTPException(409, "模型参数或访问配置已变化，请刷新后重试")
-    if body.audience == "selected":
+    grants = await resolve_grants(
+        db,
+        actor.tenant.id,
+        body.audience,
+        body.member_ids,
+        body.department_grants,
+        view(row).get("department_grants"),
+    )
+    body = body.model_copy(
+        update={"department_grants": [DepartmentGrant.model_validate(grant) for grant in grants]}
+    )
+    if body.audience == "selected" and body.member_ids:
         members = set(
             await db.scalars(
                 select(Membership.id).where(
@@ -126,7 +143,7 @@ async def save(request: Request, db: DB, actor: Access, body: PublicationInput) 
                 )
             )
         )
-        if not members or members != set(body.member_ids):
+        if members != set(body.member_ids):
             raise HTTPException(422, "请选择本组织的有效成员")
     from app.modules.model_gateway import parameters
 
@@ -257,6 +274,7 @@ def configuration(
                 "enabled",
                 "audience",
                 "member_ids",
+                "department_grants",
                 "reserve_usd",
                 "capability_mode",
             }
@@ -272,6 +290,7 @@ def configuration(
             enabled=body.enabled,
             audience=body.audience,
             member_ids=body.member_ids,
+            department_grants=body.department_grants,
             channel_id=channel_id,
             upstream_id=body.model_name,
         ),

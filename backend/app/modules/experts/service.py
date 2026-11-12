@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.departments.access import DepartmentAccess, load_access
 from app.modules.experts.categories import require_category
 from app.modules.experts.dependencies import connector_option
 from app.modules.experts.models import ExpertRecord, ExpertRelease
@@ -39,11 +40,19 @@ def revision(row: ExpertRecord, expected: int) -> None:
         raise HTTPException(409, "专家已被修改，请重新载入后重试")
 
 
-def allowed(audience: str, member_ids: list[str], member: Membership) -> bool:
+def allowed(
+    audience: str,
+    member_ids: list[str],
+    member: Membership,
+    departments: DepartmentAccess,
+    grants: list[dict[str, Any]],
+) -> bool:
     return (
         audience == "organization"
         or (audience == "administrators" and member.role == "administrator")
-        or (audience == "selected" and str(member.id) in member_ids)
+        or (
+            audience == "selected" and (str(member.id) in member_ids or departments.matches(grants))
+        )
     )
 
 
@@ -97,14 +106,24 @@ async def check(
     content: ExpertContent,
     connector_refs: list[dict[str, Any]] | None = None,
 ) -> ExpertCheck:
-    members = [
-        m
-        for m in await db.scalars(
+    active = list(
+        await db.scalars(
             select(Membership).where(
                 Membership.tenant_id == row.tenant_id, Membership.status == "active"
             )
         )
-        if allowed(row.audience, row.member_ids, m)
+    )
+    access = await load_access(db, row.tenant_id, [member.id for member in active])
+    members = [
+        m
+        for m in active
+        if allowed(
+            row.audience,
+            row.member_ids,
+            m,
+            access.get(m.id, DepartmentAccess()),
+            row.department_grants,
+        )
     ]
     dependencies = []
     for ref in content.skills:
@@ -136,7 +155,17 @@ async def check(
                 ),
                 locked_version=version.version if valid and version else None,
                 missing_members=sum(
-                    not (valid and skill and allowed(skill.audience, skill.member_ids, m))
+                    not (
+                        valid
+                        and skill
+                        and allowed(
+                            skill.audience,
+                            skill.member_ids,
+                            m,
+                            access.get(m.id, DepartmentAccess()),
+                            skill.department_grants,
+                        )
+                    )
                     for m in members
                 ),
             )
@@ -186,6 +215,9 @@ async def check(
                         and (
                             connector.audience == "organization"
                             or str(m.id) in connector.member_ids
+                            or access.get(m.id, DepartmentAccess()).matches(
+                                connector.department_grants
+                            )
                         )
                     )
                     for m in members
@@ -262,6 +294,7 @@ async def view(db: AsyncSession, row: ExpertRecord) -> ExpertView:
         **(await summary(db, row)).model_dump(),
         content=content,
         member_ids=row.member_ids,
+        department_grants=row.department_grants,
         releases=[ExpertReleaseView.model_validate(r) for r in releases],
         check=await check(db, row, content),
     )

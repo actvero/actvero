@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 
 from app.modules.auth.service import DB
+from app.modules.departments.access import resolve_grants
 from app.modules.llm.catalog_schemas import (
     ChatPolicy,
     ModelCapabilities,
@@ -20,7 +21,7 @@ from app.modules.llm.models import CatalogModel
 from app.modules.llm.points import current_conversion
 from app.modules.llm.settlement import snapshot
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor
+from app.modules.members.service import BusinessActor, with_departments
 from app.modules.model_gateway import client, publication, service
 from app.modules.model_gateway.capabilities import channel_provider
 from app.modules.users.models import User
@@ -248,12 +249,23 @@ async def inspect(
                     )
                 )
             )
-            members_ready = bool(active) and active == set(body.member_ids)
+            try:
+                await resolve_grants(
+                    db,
+                    actor.tenant.id,
+                    body.audience,
+                    body.member_ids,
+                    body.department_grants,
+                    saved.get("department_grants"),
+                )
+                members_ready = active == set(body.member_ids)
+            except HTTPException:
+                members_ready = False
             add(
                 "members",
-                "指定成员",
+                "指定范围",
                 members_ready,
-                "所选成员有效" if members_ready else "请选择本组织的有效成员",
+                "所选范围有效" if members_ready else "请选择本组织的有效部门或成员",
                 "members",
             )
         results.append(
@@ -300,13 +312,17 @@ async def preview(
         return result
     user = await db.get(User, member.user_id)
     assert user is not None
+    target = await with_departments(db, BusinessActor(user, member, actor.tenant))
     result.member_name = user.name
     allowed = body.draft.enabled and (
         body.draft.audience == "organization"
         or body.draft.audience == "administrators"
         and member.role == "administrator"
         or body.draft.audience == "selected"
-        and member.id in body.draft.member_ids
+        and (
+            member.id in body.draft.member_ids
+            or target.departments.matches(body.draft.department_grants)
+        )
     )
     result.discoverable = member.status == "active" and allowed and status.ready
     result.access_message = (
@@ -320,7 +336,7 @@ async def preview(
         if not status.ready
         else "该成员可在桌面模型目录中发现此模型"
     )
-    state = await snapshot(db, BusinessActor(user, member, actor.tenant))
+    state = await snapshot(db, target)
     result.quota_status = "active" if state["status"] == "active" else "unconfigured"
     if state["windows"]:
         limiting = min(state["windows"], key=lambda w: Decimal(w["remaining"]))

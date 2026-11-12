@@ -15,7 +15,7 @@ from app.modules.desktop.errors import fail
 from app.modules.desktop.oidc import NativeIdentity
 from app.modules.desktop.service import native_request
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor, membership_state
+from app.modules.members.service import BusinessActor, membership_state, with_departments
 from app.modules.tenants.models import Installation, Tenant
 from app.modules.users.models import LoginIdentity, User
 
@@ -151,7 +151,7 @@ async def authorize(
     if not permits(actor, kind, resource_id, action):
         fail(403, "key_scope_denied", "此密钥未获准访问该资源或操作")
     request.state.access_key_id = row.id
-    return actor
+    return await with_departments(db, actor)
 
 
 async def resources(

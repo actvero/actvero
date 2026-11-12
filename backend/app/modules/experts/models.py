@@ -38,6 +38,7 @@ class ExpertRecord(Base):
     draft: Mapped[dict[str, Any]] = mapped_column(JSONB)
     audience: Mapped[str] = mapped_column(String(20), default="administrators")
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    department_grants: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     current_release_id: Mapped[UUID | None] = mapped_column(nullable=True)
     revision: Mapped[int] = mapped_column(default=1)
     metadata_revision: Mapped[int] = mapped_column(default=1)

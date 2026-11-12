@@ -43,7 +43,10 @@ def visible(actor: NativeActor) -> tuple[ColumnElement[bool], ColumnElement[bool
         else or_(
             Workbench.audience == "organization",
             (Workbench.audience == "selected")
-            & Workbench.member_ids.contains([str(actor.member.id)]),
+            & or_(
+                Workbench.member_ids.contains([str(actor.member.id)]),
+                actor.departments.predicate(Workbench.department_grants),
+            ),
         )
     )
     return (Workbench.tenant_id == actor.tenant.id, audience)

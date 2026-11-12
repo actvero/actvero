@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.experts.dependency_schemas import ExpertDraftSelection
 from app.modules.skills.categories import CategoryId
 from app.modules.skills.icons import library_image, uploaded_image
@@ -50,10 +51,11 @@ class SkillIconOption(BaseModel):
 class SkillScope(BaseModel):
     audience: Audience
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
 
     @model_validator(mode="after")
     def scope(self) -> "SkillScope":
-        if self.audience == "selected" and not self.member_ids:
+        if self.audience == "selected" and not self.member_ids and self.department_grants == []:
             raise ValueError("请选择至少一名成员")
         if self.audience != "selected" and self.member_ids:
             raise ValueError("此范围不应包含指定成员")
@@ -126,6 +128,7 @@ class SkillView(BaseModel):
     description: str
     audience: Audience
     member_ids: list[UUID]
+    department_grants: list[DepartmentGrant] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     name: str

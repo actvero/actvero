@@ -12,6 +12,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
+import {
+  DepartmentGrantPicker,
+  type DepartmentSelection,
+} from '@/features/departments/picker'
+import { DepartmentScopePreview } from '@/features/departments/scope-preview'
 
 export function MemberPicker({
   value,
@@ -19,6 +24,7 @@ export function MemberPicker({
   disabled = false,
   includeAdministrators = false,
   selectionLabel = '共享给成员',
+  departmentScope,
   ...props
 }: Omit<ComponentProps<'div'>, 'onChange'> & {
   value: string[]
@@ -26,6 +32,7 @@ export function MemberPicker({
   disabled?: boolean
   includeAdministrators?: boolean
   selectionLabel?: string
+  departmentScope?: DepartmentSelection
 }) {
   const id = useId()
   const { organization, user, csrf } = useOrganization()
@@ -115,6 +122,18 @@ export function MemberPicker({
       className='overflow-hidden'
     >
       <CardContent tone='muted' className='flex min-w-0 flex-col gap-3 p-4'>
+        {departmentScope && (
+          <>
+            <DepartmentGrantPicker {...departmentScope} disabled={disabled} />
+            <div>
+              <DepartmentScopePreview
+                members={value}
+                grants={departmentScope.value}
+                disabled={disabled}
+              />
+            </div>
+          </>
+        )}
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <span className='text-sm' aria-live='polite'>
             已选择 {value.length} 人

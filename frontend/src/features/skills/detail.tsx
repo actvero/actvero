@@ -565,6 +565,9 @@ function DetailContent({ skill }: { skill: Skill }) {
                     {scopeLabels[skill.audience]}
                     {skill.audience === 'selected' &&
                       ` · ${skill.member_ids.length} 人`}
+                    {skill.audience === 'selected' &&
+                      !!skill.department_grants?.length &&
+                      ` · ${skill.department_grants.length} 个部门`}
                   </dd>
                 </div>
                 <Separator />

@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.core.outbound import endpoint
 from app.modules.account.service import normalize_avatar
+from app.modules.departments.schemas import DepartmentGrant
 
 Kind = Literal["tools", "prompts", "resources", "templates"]
 
@@ -102,6 +103,7 @@ class McpServiceInput(McpPresentation):
     enabled: bool = False
     audience: Literal["organization", "selected"] = "organization"
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
     auth_mode: Literal["none", "organization", "personal", "oauth"] = "none"
     credential_fields: list[CredentialField] = Field(default_factory=list, max_length=10)
     oauth: OAuthConfig | None = None

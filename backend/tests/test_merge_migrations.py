@@ -11,7 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.modules.llm.models import CatalogModel
-from app.modules.skills.models import Skill, SkillCategoryRecord
+from app.modules.skills.models import SkillCategoryRecord
 from app.modules.tenants.models import Tenant
 
 
@@ -78,14 +78,13 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
                         )
                     )
                     await connection.execute(
-                        Skill.__table__.insert().values(
-                            tenant_id=tenant,
-                            name="preserved-skill",
-                            display_name="保留技能",
-                            description="original",
-                            audience="selected",
-                            member_ids=[],
-                        )
+                        text(
+                            "INSERT INTO skills (id, tenant_id, name, display_name, description, "
+                            "category, audience, member_ids, revision, created_at, icon_selection) "
+                            "VALUES (:id, :tenant, 'preserved-skill', '保留技能', 'original', "
+                            "'uncategorized', 'selected', '[]', 1, now(), CAST(:icon AS jsonb))"
+                        ),
+                        {"id": uuid4(), "tenant": tenant, "icon": '{"source": "auto"}'},
                     )
                     tables = ["tenants", "skills", "skill_categories"]
                 else:
@@ -113,14 +112,21 @@ async def test_both_migration_branches_upgrade_with_data_preserved(start):
                 await connection.execute(text("SELECT version_num FROM alembic_version"))
             ).scalars().all() == [head]
             for table, rows in preserved.items():
+                projection = (
+                    "to_jsonb(t) - 'department_grants'" if table == "skills" else "to_jsonb(t)"
+                )
                 assert (
                     list(
                         (
-                            await connection.execute(text(f'SELECT to_jsonb(t) FROM "{table}" t'))
+                            await connection.execute(text(f'SELECT {projection} FROM "{table}" t'))
                         ).scalars()
                     )
                     == rows
                 )
+                if table == "skills":
+                    assert (
+                        await connection.scalar(text("SELECT department_grants FROM skills")) == []
+                    )
             for table in [
                 "skills",
                 "skill_categories",

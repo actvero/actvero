@@ -1,4 +1,4 @@
-import type { UseFormReturn } from 'react-hook-form'
+import { useWatch, type UseFormReturn } from 'react-hook-form'
 import {
   FormControl,
   FormDescription,
@@ -33,7 +33,10 @@ export function MetadataFields({
   packageIcon?: string
   iconWarning?: string
 }) {
-  const audience = form.watch('audience')
+  const [audience, displayName, departmentGrants] = useWatch({
+    control: form.control,
+    name: ['audience', 'display_name', 'department_grants'],
+  })
   return (
     <>
       <div className='flex items-center gap-4'>
@@ -44,7 +47,7 @@ export function MetadataFields({
             <SkillIconField
               value={field.value}
               onChange={field.onChange}
-              name={form.watch('display_name')}
+              name={displayName}
               disabled={disabled}
               packageIcon={packageIcon}
               warning={iconWarning}
@@ -148,6 +151,14 @@ export function MetadataFields({
               <FormLabel>指定成员</FormLabel>
               <FormControl>
                 <MemberPicker
+                  departmentScope={{
+                    value: departmentGrants ?? [],
+                    onChange: (value) =>
+                      form.setValue('department_grants', value, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      }),
+                  }}
                   value={field.value}
                   onChange={field.onChange}
                   disabled={disabled}

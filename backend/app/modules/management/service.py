@@ -16,7 +16,12 @@ from app.modules.management.models import ManagementLogin, ManagementSession, Ma
 from app.modules.management.schemas import Organization, Tokens
 from app.modules.management.settings import require_enabled
 from app.modules.members.models import Membership
-from app.modules.members.service import BusinessActor, ManagementBusinessActor, membership_state
+from app.modules.members.service import (
+    BusinessActor,
+    ManagementBusinessActor,
+    membership_state,
+    with_departments,
+)
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
 from app.modules.users.models import LoginIdentity, User
 
@@ -245,4 +250,6 @@ async def organization(
         available=True,
         permissions=permissions,
     )
-    return ManagementBusinessActor(who.user, member, tenant, who.session.id), result
+    return await with_departments(
+        db, ManagementBusinessActor(who.user, member, tenant, who.session.id)
+    ), result

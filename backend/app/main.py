@@ -25,6 +25,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.client_distribution.router import public_router as update_feed_router
 from app.modules.client_distribution.router import router as distribution_router
 from app.modules.client_distribution.worker import monitor as monitor_distribution
+from app.modules.departments.router import router as departments_router
 from app.modules.desktop.router import router as desktop_router
 from app.modules.desktop.router import web_router as devices_router
 from app.modules.desktop_mcp.gateway import router as mcp_gateway_router
@@ -220,6 +221,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         access_keys_router,
         setup_router,
         organization_settings_router,
+        departments_router,
         members_router,
         invitations_router,
         audit_router,

@@ -97,9 +97,9 @@ it('指定成员不能空提交；范围保存为技能级且保留并发版本'
   vi.stubGlobal('fetch', fetcher)
   await show(<MetadataDialog skill={skill} close={() => {}} />)
   await userEvent.click(page.getByRole('combobox', { name: '使用范围' }))
-  await userEvent.click(page.getByRole('option', { name: '指定成员' }))
+  await userEvent.click(page.getByRole('option', { name: '指定范围' }))
   await userEvent.click(page.getByRole('button', { name: '保存设置' }))
-  await expect.element(page.getByText('请至少选择一名成员')).toBeVisible()
+  await expect.element(page.getByText('请至少选择一个部门或成员')).toBeVisible()
   expect(
     fetcher.mock.calls.some(([url]) => url === '/api/v1/skills/test-skill')
   ).toBe(false)

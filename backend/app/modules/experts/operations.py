@@ -381,7 +381,7 @@ async def update_scope(
     service.administrator(actor)
     row = await service.get_expert(db, actor, expert_id)
     service.revision(row, body.revision)
-    await scope(db, actor, body)
+    row.department_grants = await scope(db, actor, body, row.department_grants)
     (row.audience, row.member_ids) = (body.audience, [str(v) for v in body.member_ids])
     row.revision += 1
     record(db, actor, "experts.scope", row.id, row.name, {"audience": row.audience})

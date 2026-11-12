@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
+from app.modules.departments.schemas import DepartmentGrant
 from app.modules.llm.audio_schemas import SpeechOptions, TranscriptionOptions
 from app.modules.llm.image_schemas import ImageOptions
 from app.modules.llm.model_identifier import ModelIdentifier
@@ -255,12 +256,13 @@ class ModelAccess(Input):
     enabled: bool = False
     audience: Literal["administrators", "organization", "selected"] = "administrators"
     member_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    department_grants: list[DepartmentGrant] | None = Field(default=None, max_length=100)
     channel_id: UUID | None = None
     upstream_id: str = Field(default="", max_length=200)
 
     @model_validator(mode="after")
     def valid_access(self) -> Self:
-        if self.audience == "selected" and not self.member_ids:
+        if self.audience == "selected" and not self.member_ids and self.department_grants == []:
             raise ValueError("指定成员至少选择一人")
         if len(set(self.member_ids)) != len(self.member_ids):
             raise ValueError("成员不能重复")

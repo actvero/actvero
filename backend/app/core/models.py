@@ -12,6 +12,7 @@ from app.modules.client_distribution.models import (
     ClientUpdateHead,
     ClientUpload,
 )
+from app.modules.departments.models import Department, DepartmentMember
 from app.modules.desktop.models import DesktopLogin, DeviceSession, DeviceToken
 from app.modules.desktop_mcp.models import NativeOAuthAttempt, ResourceToken
 from app.modules.experts.models import ExpertCategoryRecord, ExpertRecord, ExpertRelease
@@ -70,6 +71,8 @@ from app.modules.users.models import LoginIdentity, User
 from app.modules.workbenches.models import Workbench, WorkbenchPackage, WorkbenchVersion
 
 __all__ = [
+    "Department",
+    "DepartmentMember",
     "Workbench",
     "WorkbenchPackage",
     "WorkbenchVersion",

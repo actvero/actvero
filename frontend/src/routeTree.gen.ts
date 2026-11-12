@@ -43,6 +43,7 @@ import { Route as AuthenticatedMcpCallsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
 import { Route as AuthenticatedLlmUsageRouteImport } from './routes/_authenticated/llm-usage'
 import { Route as AuthenticatedLlmCallsRouteImport } from './routes/_authenticated/llm-calls'
+import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAccessKeysRouteImport } from './routes/_authenticated/access-keys'
@@ -247,6 +248,12 @@ const AuthenticatedLlmCallsRoute = AuthenticatedLlmCallsRouteImport.update({
   path: '/llm-calls',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDepartmentsRoute =
+  AuthenticatedDepartmentsRouteImport.update({
+    id: '/departments',
+    path: '/departments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -417,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/access-keys': typeof AuthenticatedAccessKeysRoute
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/departments': typeof AuthenticatedDepartmentsRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/mcp': typeof AuthenticatedMcpRoute
@@ -479,6 +487,7 @@ export interface FileRoutesByTo {
   '/access-keys': typeof AuthenticatedAccessKeysRoute
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/departments': typeof AuthenticatedDepartmentsRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/mcp': typeof AuthenticatedMcpRoute
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/_authenticated/access-keys': typeof AuthenticatedAccessKeysRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/departments': typeof AuthenticatedDepartmentsRoute
   '/_authenticated/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/_authenticated/llm-usage': typeof AuthenticatedLlmUsageRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/access-keys'
     | '/account'
     | '/audit'
+    | '/departments'
     | '/llm-calls'
     | '/llm-usage'
     | '/mcp'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/access-keys'
     | '/account'
     | '/audit'
+    | '/departments'
     | '/llm-calls'
     | '/llm-usage'
     | '/mcp'
@@ -731,6 +743,7 @@ export interface FileRouteTypes {
     | '/_authenticated/access-keys'
     | '/_authenticated/account'
     | '/_authenticated/audit'
+    | '/_authenticated/departments'
     | '/_authenticated/llm-calls'
     | '/_authenticated/llm-usage'
     | '/_authenticated/mcp'
@@ -1036,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLlmCallsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/departments': {
+      id: '/_authenticated/departments'
+      path: '/departments'
+      fullPath: '/departments'
+      preLoaderRoute: typeof AuthenticatedDepartmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audit': {
       id: '/_authenticated/audit'
       path: '/audit'
@@ -1264,6 +1284,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccessKeysRoute: typeof AuthenticatedAccessKeysRoute
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedDepartmentsRoute: typeof AuthenticatedDepartmentsRoute
   AuthenticatedLlmCallsRoute: typeof AuthenticatedLlmCallsRoute
   AuthenticatedLlmUsageRoute: typeof AuthenticatedLlmUsageRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
@@ -1296,6 +1317,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccessKeysRoute: AuthenticatedAccessKeysRoute,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedDepartmentsRoute: AuthenticatedDepartmentsRoute,
   AuthenticatedLlmCallsRoute: AuthenticatedLlmCallsRoute,
   AuthenticatedLlmUsageRoute: AuthenticatedLlmUsageRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,

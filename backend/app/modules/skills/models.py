@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -52,6 +53,7 @@ class Skill(Base):
     )
     audience: Mapped[str] = mapped_column(String(20))
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    department_grants: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     default_version_id: Mapped[UUID | None] = mapped_column(nullable=True)
     revision: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

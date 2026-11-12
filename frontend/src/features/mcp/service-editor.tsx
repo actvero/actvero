@@ -36,6 +36,7 @@ import { AvatarEditor } from '@/components/avatar-editor'
 import { MemberPicker } from '@/components/member-picker'
 import { PasswordInput } from '@/components/password-input'
 import { RequestError } from '@/components/request-state'
+import { departmentGrantSchema } from '@/features/departments/scope'
 import { Choice } from './choice'
 import {
   useReturnFocus,
@@ -49,6 +50,7 @@ const schema = z
   .object({
     usage_scope: z.enum(['administrators', 'selected', 'organization']),
     member_ids: z.array(z.string()).max(1000, '最多选择 1000 名成员'),
+    department_grants: z.array(departmentGrantSchema).max(100),
     connection_options: z.object({
       connect_timeout: z.number().int().min(1).max(120),
       request_timeout: z.number().int().min(1).max(600),
@@ -78,11 +80,15 @@ const schema = z
     scopes: z.string().trim(),
   })
   .superRefine((v, ctx) => {
-    if (v.usage_scope === 'selected' && !v.member_ids.length)
+    if (
+      v.usage_scope === 'selected' &&
+      !v.member_ids.length &&
+      !v.department_grants.length
+    )
       ctx.addIssue({
         code: 'custom',
         path: ['member_ids'],
-        message: '请选择至少一名成员，或改为仅管理员',
+        message: '请选择至少一个部门或成员，或改为仅管理员',
       })
     if (
       v.connection_options.total_timeout <
@@ -157,11 +163,12 @@ export function ServiceEditor({
     defaultValues: {
       usage_scope:
         service?.audience === 'selected'
-          ? service.member_ids?.length
+          ? service.member_ids?.length || service.department_grants?.length
             ? 'selected'
             : 'administrators'
           : 'organization',
       member_ids: service?.member_ids || [],
+      department_grants: service?.department_grants ?? [],
       connection_options: {
         connect_timeout: 30,
         request_timeout: 120,
@@ -189,9 +196,14 @@ export function ServiceEditor({
     control: form.control,
     name: 'credential_fields',
   })
-  const [mode, currentFields, usageScope] = useWatch({
+  const [mode, currentFields, usageScope, departmentGrants] = useWatch({
     control: form.control,
-    name: ['auth_mode', 'credential_fields', 'usage_scope'],
+    name: [
+      'auth_mode',
+      'credential_fields',
+      'usage_scope',
+      'department_grants',
+    ],
   })
   function selectFormat(value: string) {
     setFormat(value as Format)
@@ -277,6 +289,8 @@ export function ServiceEditor({
         audience:
           v.usage_scope === 'organization' ? 'organization' : 'selected',
         member_ids: v.usage_scope === 'selected' ? v.member_ids : [],
+        department_grants:
+          v.usage_scope === 'selected' ? v.department_grants : [],
         auth_mode: v.auth_mode,
         credential_fields: ['organization', 'personal'].includes(v.auth_mode)
           ? v.credential_fields
@@ -651,7 +665,7 @@ export function ServiceEditor({
                         disabled={pending}
                         options={{
                           administrators: '仅管理员',
-                          selected: '指定成员',
+                          selected: '指定范围',
                           organization: '组织全员',
                         }}
                       />
@@ -677,6 +691,14 @@ export function ServiceEditor({
                       <FormLabel>共享给成员</FormLabel>
                       <FormControl>
                         <MemberPicker
+                          departmentScope={{
+                            value: departmentGrants ?? [],
+                            onChange: (value) =>
+                              form.setValue('department_grants', value, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              }),
+                          }}
                           value={field.value}
                           onChange={field.onChange}
                           disabled={pending}

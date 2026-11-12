@@ -9,6 +9,7 @@ from app.modules.account.service import own_access
 from app.modules.auth.router import Mutation
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, now
+from app.modules.departments.access import resolve_grants
 from app.modules.members.models import Membership
 from app.modules.members.service import Access, record
 from app.modules.workbenches.configuration import parse_fields, resolve, validate_value
@@ -124,6 +125,7 @@ async def view(db: AsyncSession, row: Workbench) -> WorkbenchView:
         ).model_dump(),
         revision=row.revision,
         member_ids=[UUID(ident) for ident in row.member_ids],
+        department_grants=row.department_grants,
         config_values=row.config_values,
         versions=[WorkbenchVersionView.model_validate(item) for item in releases],
     )
@@ -282,6 +284,14 @@ async def update_scope(
         )
         if valid != set(body.member_ids):
             raise HTTPException(422, "请选择当前组织的有效成员")
+    row.department_grants = await resolve_grants(
+        db,
+        actor.tenant.id,
+        body.audience,
+        body.member_ids,
+        body.department_grants,
+        row.department_grants,
+    )
     row.audience = body.audience
     row.member_ids = [str(ident) for ident in body.member_ids]
     changed(row)

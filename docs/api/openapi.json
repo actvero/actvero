@@ -6025,6 +6025,246 @@
         "title": "DeliveryInput",
         "type": "object"
       },
+      "DepartmentGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "department_id": {
+            "format": "uuid",
+            "title": "Department Id",
+            "type": "string"
+          },
+          "include_descendants": {
+            "default": false,
+            "title": "Include Descendants",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "department_id"
+        ],
+        "title": "DepartmentGrant",
+        "type": "object"
+      },
+      "DepartmentInput": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DepartmentInput",
+        "type": "object"
+      },
+      "DepartmentScopeMember": {
+        "properties": {
+          "department_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Department Ids",
+            "type": "array"
+          },
+          "direct": {
+            "title": "Direct",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direct",
+          "department_ids"
+        ],
+        "title": "DepartmentScopeMember",
+        "type": "object"
+      },
+      "DepartmentScopePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentScopeMember"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ],
+        "title": "DepartmentScopePage",
+        "type": "object"
+      },
+      "DepartmentScopePreview": {
+        "properties": {
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "title": "DepartmentScopePreview",
+        "type": "object"
+      },
+      "DepartmentUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "default": false,
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "DepartmentUpdate",
+        "type": "object"
+      },
+      "DepartmentView": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "default": 0,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "archived",
+          "version"
+        ],
+        "title": "DepartmentView",
+        "type": "object"
+      },
       "DependencyCommandView": {
         "properties": {
           "action": {
@@ -9512,6 +9752,21 @@
             "title": "Audience",
             "type": "string"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "member_ids": {
             "items": {
               "format": "uuid",
@@ -9946,6 +10201,13 @@
                 "type": "null"
               }
             ]
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
           },
           "dependency_issues": {
             "default": 0,
@@ -14201,6 +14463,21 @@
             "title": "Credential Fields",
             "type": "array"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -14343,6 +14620,21 @@
             ],
             "title": "Credential Values"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "default": "",
             "maxLength": 2000,
@@ -14483,6 +14775,21 @@
             "maxItems": 10,
             "title": "Credential Fields",
             "type": "array"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "default": "",
@@ -14663,6 +14970,21 @@
               }
             ],
             "title": "Credential Values"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "default": "",
@@ -14916,6 +15238,41 @@
           "member"
         ],
         "title": "MemberCreated",
+        "type": "object"
+      },
+      "MemberDepartments": {
+        "properties": {
+          "department_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Department Ids",
+            "type": "array"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "MemberDepartments",
         "type": "object"
       },
       "MemberEndpointView": {
@@ -15689,6 +16046,21 @@
               }
             ],
             "title": "Channel Id"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "enabled": {
             "default": false,
@@ -19670,6 +20042,21 @@
               }
             ],
             "title": "Context Window"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "enabled": {
             "default": false,
@@ -24268,6 +24655,21 @@
             "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
             "title": "Category"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "description": {
             "maxLength": 1024,
             "minLength": 1,
@@ -24466,6 +24868,21 @@
             ],
             "description": "技能级单选类别；新建省略为未分类，更新省略/null 保留原值。",
             "title": "Category"
+          },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
           },
           "description": {
             "maxLength": 1024,
@@ -24689,6 +25106,13 @@
             ],
             "description": "当前唯一生效的已发布版本；无生效版本时为空。保留原字段名，不再单独设置默认版本。",
             "title": "Default Version Id"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
           },
           "description": {
             "title": "Description",
@@ -26835,6 +27259,21 @@
             "title": "Audience",
             "type": "string"
           },
+          "department_grants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentGrant"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Grants"
+          },
           "member_ids": {
             "items": {
               "format": "uuid",
@@ -27084,6 +27523,13 @@
               }
             ],
             "title": "Current Version"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "title": "Department Grants",
+            "type": "array"
           },
           "description": {
             "title": "Description",
@@ -34677,6 +35123,220 @@
         ]
       }
     },
+    "/api/v1/enterprises/{tenant_id}/departments": {
+      "get": {
+        "operationId": "departments_api_v1_enterprises__tenant_id__departments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentView"
+                  },
+                  "title": "Response Departments Api V1 Enterprises  Tenant Id  Departments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Departments",
+        "tags": [
+          "departments"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_v1_enterprises__tenant_id__departments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/departments/scope-preview": {
+      "post": {
+        "operationId": "preview_scope_api_v1_enterprises__tenant_id__departments_scope_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentScopePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentScopePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Scope",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/departments/{department_id}": {
+      "put": {
+        "operationId": "update_api_v1_enterprises__tenant_id__departments__department_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "department_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Department Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
     "/api/v1/enterprises/{tenant_id}/events": {
       "get": {
         "operationId": "events_api_v1_enterprises__tenant_id__events_get",
@@ -35481,6 +36141,120 @@
         "summary": "读取组织成员头像，权限与成员资料一致",
         "tags": [
           "members"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/members/{member_id}/departments": {
+      "get": {
+        "operationId": "member_departments_api_v1_enterprises__tenant_id__members__member_id__departments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDepartments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Member Departments",
+        "tags": [
+          "departments"
+        ]
+      },
+      "put": {
+        "operationId": "assign_api_v1_enterprises__tenant_id__members__member_id__departments_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "member_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Member Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberDepartments"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDepartments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign",
+        "tags": [
+          "departments"
         ]
       }
     },

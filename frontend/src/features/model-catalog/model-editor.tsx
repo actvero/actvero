@@ -87,9 +87,17 @@ function compareDrafts(
       JSON.stringify(server.reference),
     ],
     [
-      '成员范围',
-      JSON.stringify([current.access.audience, current.access.member_ids]),
-      JSON.stringify([server.access?.audience, server.access?.member_ids]),
+      '使用范围',
+      JSON.stringify([
+        current.access.audience,
+        current.access.member_ids,
+        current.access.department_grants,
+      ]),
+      JSON.stringify([
+        server.access?.audience,
+        server.access?.member_ids,
+        server.access?.department_grants ?? [],
+      ]),
     ],
   ]
   for (const [kind, label] of Object.entries(kinds)) {

@@ -79,7 +79,7 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                   : state.audience === 'organization'
                     ? '全体成员'
                     : state.audience === 'selected'
-                      ? `指定 ${state.member_count} 人`
+                      ? '指定范围'
                       : '仅管理员'
                 : '—'}
             </Button>

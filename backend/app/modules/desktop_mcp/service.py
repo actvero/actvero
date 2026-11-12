@@ -141,7 +141,7 @@ async def connector(
         revisions=ConnectorRevisions(
             display=revisions.display(row),
             connection=revisions.connection(row),
-            authorization=revisions.authorization(row, exposed, str(actor.member.id)),
+            authorization=revisions.authorization(row, exposed, mcp.visible(row, actor)),
             capabilities=revisions.digest(
                 [(c["kind"], c["key"], c["contract_revision"]) for c in exposed]
             ),
@@ -162,5 +162,6 @@ def visibility(actor: NativeActor) -> tuple[ColumnElement[bool], ...]:
         or_(
             McpService.audience == "organization",
             McpService.member_ids.contains([str(actor.member.id)]),
+            actor.departments.predicate(McpService.department_grants),
         ),
     )

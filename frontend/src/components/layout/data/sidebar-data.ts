@@ -66,6 +66,7 @@ export function navigation(
                 icon: Users,
                 items: [
                   { title: '组织设置', url: '/organization-settings' },
+                  { title: '部门管理', url: '/departments' },
                   { title: '成员管理', url: '/users' },
                   { title: '操作记录', url: '/audit' },
                   { title: '密钥管理', url: '/access-keys' },

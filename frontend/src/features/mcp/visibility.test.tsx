@@ -45,6 +45,29 @@ const service: Service = {
 }
 function mockApi() {
   const fetcher = vi.fn(async (url: string, options: RequestInit) => {
+    if (url.endsWith('/departments'))
+      return Response.json([
+        {
+          id: 'sales',
+          name: '销售部',
+          parent_id: null,
+          archived: false,
+          version: 1,
+        },
+      ])
+    if (url.endsWith('/departments/scope-preview'))
+      return Response.json({
+        items: [
+          {
+            id: 'member-0',
+            name: '成员 00',
+            direct: false,
+            department_ids: ['sales'],
+          },
+        ],
+        total: 1,
+        page: 1,
+      })
     if (url.includes('/members')) {
       const params =
         options.method === 'POST'
@@ -86,10 +109,43 @@ async function scope(value: string) {
   await userEvent.click(page.getByRole('combobox', { name: '可使用成员' }))
   await userEvent.click(page.getByRole('option', { name: value, exact: true }))
 }
+it('只选部门即可授权，并可预览下级成员的授权来源', async () => {
+  const fetcher = mockApi()
+  await show(<ServiceEditor service={service} close={() => {}} />)
+  await scope('指定范围')
+  await userEvent.click(
+    page.getByRole('button', { name: '选择部门', exact: true })
+  )
+  await userEvent.click(
+    page.getByRole('checkbox', { name: '销售部', exact: true })
+  )
+  await userEvent.click(page.getByRole('checkbox', { name: '包含下级' }))
+  await userEvent.click(page.getByRole('button', { name: '查看授权成员' }))
+  const preview = page.getByRole('dialog', { name: '授权成员预览' })
+  await expect
+    .element(preview.getByRole('cell', { name: '销售部' }))
+    .toBeVisible()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(preview).not.toBeInTheDocument()
+  await userEvent.click(page.getByRole('button', { name: '保存配置' }))
+  await expect
+    .poll(() =>
+      fetcher.mock.calls.find(([, options]) => options.method === 'PUT')
+    )
+    .toBeTruthy()
+  const payload = fetcher.mock.calls.find(
+    ([, options]) => options.method === 'PUT'
+  )![1].body
+  expect(JSON.parse(String(payload))).toMatchObject({
+    audience: 'selected',
+    member_ids: [],
+    department_grants: [{ department_id: 'sales', include_descendants: true }],
+  })
+})
 it('跨页搜索保留选择，已选筛选，切换范围保留草稿并保存', async () => {
   const fetcher = mockApi()
   await show(<ServiceEditor service={service} close={() => {}} />)
-  await scope('指定成员')
+  await scope('指定范围')
   await userEvent.click(
     page.getByRole('checkbox', { name: '选择 成员 00', exact: true })
   )
@@ -112,7 +168,7 @@ it('跨页搜索保留选择，已选筛选，切换范围保留草稿并保存'
   await userEvent.click(page.getByRole('tab', { name: '已选成员' }))
   await expect.element(page.getByText('共 3 人 · 第 1 / 1 页')).toBeVisible()
   await scope('仅管理员')
-  await scope('指定成员')
+  await scope('指定范围')
   await expect.element(page.getByText('已选择 3 人')).toBeVisible()
   await userEvent.click(page.getByRole('button', { name: '保存配置' }))
   await expect
@@ -138,10 +194,10 @@ it('空指定成员阻止提交；仅管理员保存空名单且回填正确', a
   await expect
     .element(page.getByRole('combobox', { name: '可使用成员' }))
     .toHaveTextContent('仅管理员')
-  await scope('指定成员')
+  await scope('指定范围')
   await userEvent.click(page.getByRole('button', { name: '保存配置' }))
   await expect
-    .element(page.getByText('请选择至少一名成员，或改为仅管理员'))
+    .element(page.getByText('请选择至少一个部门或成员，或改为仅管理员'))
     .toBeVisible()
   expect(fetcher.mock.calls.some(([, o]) => o.method === 'PUT')).toBe(false)
   await scope('仅管理员')

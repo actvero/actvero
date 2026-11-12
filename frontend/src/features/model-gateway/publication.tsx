@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch'
 import { MemberPicker } from '@/components/member-picker'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
+import { sameDepartmentGrants } from '@/features/departments/scope'
 import { ChatPolicyFields } from '@/features/model-catalog/chat-policy-fields'
 import { chatPolicyInput } from '@/features/model-catalog/chat-policy-form'
 import { gateway, useGateway, useGatewayRefresh } from './api'
@@ -51,7 +52,7 @@ type AccessControls = {
 const audiences = [
   { value: 'administrators', label: '仅管理员' },
   { value: 'organization', label: '全体成员' },
-  { value: 'selected', label: '指定成员' },
+  { value: 'selected', label: '指定范围' },
 ]
 const effortLabels: Record<string, string> = {
   none: '关闭',
@@ -89,6 +90,7 @@ export function ModelPublication({
         saved.enabled ?? false,
         saved.audience ?? 'administrators',
         saved.member_ids ?? [],
+        saved.department_grants ?? [],
         saved.chat_policy,
       ])}
       model={model}
@@ -113,6 +115,7 @@ function PublicationForm({
   const [enabled, setEnabled] = useState(saved.enabled ?? false)
   const [audience, setAudience] = useState(saved.audience ?? 'administrators')
   const [members, setMembers] = useState(saved.member_ids ?? [])
+  const [departments, setDepartments] = useState(saved.department_grants ?? [])
   const kind = saved.kind ?? 'chat'
   const formValues = parameterValues({
     ...(saved.capability_mode !== 'manual' &&
@@ -137,6 +140,7 @@ function PublicationForm({
     enabled,
     audience,
     member_ids: audience === 'selected' ? members : [],
+    department_grants: audience === 'selected' ? departments : [],
     kind,
     capability_mode: saved.capability_mode ?? 'manual',
     context_window: saved.context_window,
@@ -157,8 +161,9 @@ function PublicationForm({
     enabled !== (saved.enabled ?? false) ||
     audience !== (saved.audience ?? 'administrators') ||
     (audience === 'selected' &&
-      [...members].sort().join(',') !==
-        [...(saved.member_ids ?? [])].sort().join(','))
+      ([...members].sort().join(',') !==
+        [...(saved.member_ids ?? [])].sort().join(',') ||
+        !sameDepartmentGrants(departments, saved.department_grants ?? [])))
   const save = useMutation({
     mutationFn: () => gateway('/publication', 'PUT', draft, csrf),
     onSuccess: async () => {
@@ -281,6 +286,10 @@ function PublicationForm({
             </FieldSet>
             {audience === 'selected' && (
               <MemberPicker
+                departmentScope={{
+                  value: departments,
+                  onChange: setDepartments,
+                }}
                 value={members}
                 onChange={setMembers}
                 includeAdministrators

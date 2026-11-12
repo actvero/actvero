@@ -11,6 +11,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import DBAPIError
 
 from app.modules.auth.service import now, provider
+from app.modules.departments.access import DepartmentAccess, load_access
 from app.modules.mcp.models import McpConnection, McpService
 from app.modules.mcp.oauth_tokens import AuthorizationExpired, RefreshUnavailable
 from app.modules.members.models import Membership
@@ -65,12 +66,14 @@ async def _rotate(request: Request, original: McpService, owner_id: UUID) -> dic
                 or current.oauth != original.oauth
             ):
                 raise HTTPException(409, "连接器配置已变化，请重新读取后重试")
-            if member.role != "administrator" and (
-                not current.enabled
-                or current.audience != "organization"
-                and str(owner_id) not in current.member_ids
-            ):
-                raise HTTPException(403, "当前账号无有效连接权限")
+            if member.role != "administrator":
+                access = await load_access(db, member.tenant_id, [member.id])
+                if not current.enabled or not (
+                    current.audience == "organization"
+                    or str(owner_id) in current.member_ids
+                    or access.get(member.id, DepartmentAccess()).matches(current.department_grants)
+                ):
+                    raise HTTPException(403, "当前账号无有效连接权限")
             if not row:
                 raise HTTPException(409, "请先授权当前账号")
             values = provider(request).unseal(row.sealed)

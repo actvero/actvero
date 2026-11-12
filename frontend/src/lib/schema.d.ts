@@ -1415,6 +1415,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/enterprises/{tenant_id}/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Departments */
+        get: operations["departments_api_v1_enterprises__tenant_id__departments_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_enterprises__tenant_id__departments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enterprises/{tenant_id}/departments/scope-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Scope */
+        post: operations["preview_scope_api_v1_enterprises__tenant_id__departments_scope_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enterprises/{tenant_id}/departments/{department_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update */
+        put: operations["update_api_v1_enterprises__tenant_id__departments__department_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enterprises/{tenant_id}/events": {
         parameters: {
             query?: never;
@@ -1567,6 +1619,24 @@ export interface paths {
         /** 读取组织成员头像，权限与成员资料一致 */
         get: operations["avatar_api_v1_enterprises__tenant_id__members__member_id__avatar_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enterprises/{tenant_id}/members/{member_id}/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Member Departments */
+        get: operations["member_departments_api_v1_enterprises__tenant_id__members__member_id__departments_get"];
+        /** Assign */
+        put: operations["assign_api_v1_enterprises__tenant_id__members__member_id__departments_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -8681,6 +8751,106 @@ export interface components {
              */
             request_id: string;
         };
+        /** DepartmentGrant */
+        DepartmentGrant: {
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /**
+             * Include Descendants
+             * @default false
+             */
+            include_descendants: boolean;
+        };
+        /** DepartmentInput */
+        DepartmentInput: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+        };
+        /** DepartmentScopeMember */
+        DepartmentScopeMember: {
+            /** Department Ids */
+            department_ids: string[];
+            /** Direct */
+            direct: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** DepartmentScopePage */
+        DepartmentScopePage: {
+            /** Items */
+            items: components["schemas"]["DepartmentScopeMember"][];
+            /** Page */
+            page: number;
+            /** Total */
+            total: number;
+        };
+        /** DepartmentScopePreview */
+        DepartmentScopePreview: {
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
+            /** Member Ids */
+            member_ids?: string[];
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+        };
+        /** DepartmentUpdate */
+        DepartmentUpdate: {
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /** Version */
+            version: number;
+        };
+        /** DepartmentView */
+        DepartmentView: {
+            /** Archived */
+            archived: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /** Version */
+            version: number;
+        };
         /** DependencyCommandView */
         DependencyCommandView: {
             /** Action */
@@ -10254,6 +10424,8 @@ export interface components {
              * @enum {string}
              */
             audience: "administrators" | "selected" | "organization";
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /** Member Ids */
             member_ids?: string[];
             /** Revision */
@@ -10431,6 +10603,8 @@ export interface components {
             check: components["schemas"]["ExpertCheck"];
             content: components["schemas"]["ExpertContent"];
             current_release: components["schemas"]["ExpertReleaseView"] | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
             /**
              * Dependency Issues
              * @default 0
@@ -12139,6 +12313,8 @@ export interface components {
             connection_options?: components["schemas"]["ConnectionOptions"];
             /** Credential Fields */
             credential_fields?: components["schemas"]["CredentialField"][];
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Description
              * @default
@@ -12204,6 +12380,8 @@ export interface components {
             credential_values?: {
                 [key: string]: string;
             } | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Description
              * @default
@@ -12270,6 +12448,8 @@ export interface components {
             };
             /** Credential Fields */
             credential_fields?: components["schemas"]["CredentialField"][];
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Description
              * @default
@@ -12345,6 +12525,8 @@ export interface components {
             credential_values?: {
                 [key: string]: string;
             } | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Description
              * @default
@@ -12464,6 +12646,15 @@ export interface components {
              */
             initial_password_reused: boolean;
             member: components["schemas"]["MemberView"];
+        };
+        /** MemberDepartments */
+        MemberDepartments: {
+            /** Department Ids */
+            department_ids?: string[];
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Version */
+            version: number;
         };
         /** MemberEndpointView */
         MemberEndpointView: {
@@ -12771,6 +12962,8 @@ export interface components {
             audience: "administrators" | "organization" | "selected";
             /** Channel Id */
             channel_id?: string | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Enabled
              * @default false
@@ -14268,6 +14461,8 @@ export interface components {
             chat_policy?: components["schemas"]["ChatPolicy"];
             /** Context Window */
             context_window?: number | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /**
              * Enabled
              * @default false
@@ -15991,6 +16186,8 @@ export interface components {
              * @description 技能级单选类别；新建省略为未分类，更新省略/null 保留原值。
              */
             category?: string | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /** Description */
             description: string;
             /** Display Name */
@@ -16064,6 +16261,8 @@ export interface components {
              * @description 技能级单选类别；新建省略为未分类，更新省略/null 保留原值。
              */
             category?: string | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /** Description */
             description: string;
             /** Display Name */
@@ -16163,6 +16362,8 @@ export interface components {
              * @description 当前唯一生效的已发布版本；无生效版本时为空。保留原字段名，不再单独设置默认版本。
              */
             default_version_id: string | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
             /** Description */
             description: string;
             /** Display Name */
@@ -16965,6 +17166,8 @@ export interface components {
              * @enum {string}
              */
             audience: "administrators" | "selected" | "organization";
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][] | null;
             /** Member Ids */
             member_ids?: string[];
             /** Revision */
@@ -17062,6 +17265,8 @@ export interface components {
             };
             /** Current Version */
             current_version: string | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
             /** Description */
             description: string;
             /** Display Name */
@@ -22715,6 +22920,143 @@ export interface operations {
             };
         };
     };
+    departments_api_v1_enterprises__tenant_id__departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_enterprises__tenant_id__departments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_scope_api_v1_enterprises__tenant_id__departments_scope_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentScopePreview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentScopePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_api_v1_enterprises__tenant_id__departments__department_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                department_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     events_api_v1_enterprises__tenant_id__events_get: {
         parameters: {
             query?: {
@@ -23117,6 +23459,74 @@ export interface operations {
                 };
                 content: {
                     "image/webp": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    member_departments_api_v1_enterprises__tenant_id__members__member_id__departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDepartments"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_api_v1_enterprises__tenant_id__members__member_id__departments_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberDepartments"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDepartments"];
                 };
             };
             /** @description Validation Error */

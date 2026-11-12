@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.audit.models import AuditEvent
 from app.modules.auth.models import WebSession
 from app.modules.auth.service import authenticate, provider
+from app.modules.departments.access import DepartmentAccess, load_access
 from app.modules.members.models import Membership
 from app.modules.members.schemas import MemberView
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
@@ -20,6 +21,13 @@ class BusinessActor:
     user: User
     member: Membership
     tenant: Tenant
+    departments: DepartmentAccess = field(default_factory=DepartmentAccess, init=False)
+
+
+async def with_departments[T: BusinessActor](db: AsyncSession, actor: T) -> T:
+    current = await load_access(db, actor.tenant.id, [actor.member.id])
+    actor.departments = current.get(actor.member.id, DepartmentAccess())
+    return actor
 
 
 @dataclass
@@ -93,7 +101,7 @@ async def access(
     assert tenant is not None and member is not None
     if admin and member.role != "administrator":
         raise HTTPException(403, "此操作仅限本企业管理员")
-    return Access(user, member, tenant, session)
+    return await with_departments(db, Access(user, member, tenant, session))
 
 
 def member_view(member: Membership, user: User, actor: User) -> MemberView:

@@ -23,7 +23,7 @@ export const categories: Record<Category, string> = {
 export const audiences: Record<Audience, string> = {
   administrators: '仅管理员',
   organization: '组织全员',
-  selected: '指定成员',
+  selected: '指定范围',
 }
 
 export const statuses: Record<WorkbenchVersion['status'], string> = {
