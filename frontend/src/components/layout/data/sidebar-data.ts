@@ -32,11 +32,11 @@ export function navigation(
                 title: '模型网关',
                 icon: Network,
                 items: [
-                  { title: '数据看板', url: '/llm-usage' },
                   { title: '渠道', url: '/model-channels' },
                   { title: '模型', url: '/models' },
                   { title: '额度策略', url: '/quota-policies' },
                   { title: '调用记录', url: '/llm-calls' },
+                  { title: '数据看板', url: '/llm-usage' },
                 ],
               },
               {
