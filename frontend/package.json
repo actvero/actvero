@@ -73,6 +73,7 @@
     "marked": "18.0.5",
     "motion": "12.23.24",
     "node-forge": "1.4.0",
+    "pdfjs-dist": "6.5.438",
     "radix-ui": "^1.8.1",
     "react": "^19.2.5",
     "react-day-picker": "9.14.0",

@@ -7,6 +7,7 @@ import { Main } from './main'
 
 export function PageShell({
   title,
+  titleBefore,
   titleAfter,
   description,
   action,
@@ -15,6 +16,7 @@ export function PageShell({
   children,
 }: {
   title?: string
+  titleBefore?: ReactNode
   titleAfter?: ReactNode
   description?: string
   action?: ReactNode
@@ -36,6 +38,7 @@ export function PageShell({
           <div className='flex flex-wrap items-end justify-between gap-4'>
             <div>
               <div className='flex flex-wrap items-center gap-3'>
+                {titleBefore}
                 <h1
                   className={cn(
                     'text-2xl font-bold tracking-tight',

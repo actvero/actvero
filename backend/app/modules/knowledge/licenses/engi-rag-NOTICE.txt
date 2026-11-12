@@ -1,0 +1,17 @@
+ENGI 智慧文档 RAG 结构合并算法
+
+阅读对象：维护、分发 Actvero 知识库模块的开发者。
+
+来源项目：engi-one
+原作者：ENGI
+来源版本：166b264ba6c93c81bfff4ecfd49d70d53c674616
+来源文件：addons/custom/engi_smart_document_rag/models/smart_document_rag.py
+来源符号：_SmartDocumentRagChunkBuilder
+原模块许可声明：LGPL-3（__manifest__.py）；适配文件 structural.py 保留 LGPL-3.0-only。
+完整 LGPL v3 与 GPL v3 文本随 LICENSE.txt 分发，不适用仓库的 MIT 许可。
+
+适配内容：去除 Odoo ORM 和 Markdown 包装，直接处理已解析的原始块；
+保留标题边界、短块合并、标题与正文关联、表格合并及超长原始块完整保留规则。
+最小长度固定为目标字数的四分之一；合并长度包含段落分隔符。
+原文字符偏移和模型输入硬上限由 Actvero 的 parsing.py 单独处理。
+此模块不依赖来源项目的运行环境或本地目录。

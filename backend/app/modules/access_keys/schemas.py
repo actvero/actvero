@@ -7,7 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 class KeyGrant(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    kind: Literal["llm", "mcp"]
+    kind: Literal["llm", "mcp", "knowledge"]
     resource_id: UUID
     actions: list[Literal["read", "invoke"]] = Field(min_length=1, max_length=2)
 
@@ -82,7 +82,7 @@ class KeyPolicyView(BaseModel):
 
 
 class KeyResource(BaseModel):
-    kind: Literal["llm", "mcp"]
+    kind: Literal["llm", "mcp", "knowledge"]
     id: UUID
     name: str
     identifier: str

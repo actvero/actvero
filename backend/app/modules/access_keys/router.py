@@ -128,7 +128,7 @@ async def save_policy(request: Request, db: DB, body: KeyPolicyView, _: Mutation
 async def resources(
     request: Request,
     db: DB,
-    kind: Literal["llm", "mcp"],
+    kind: Literal["llm", "mcp", "knowledge"],
     page: int = Query(1, ge=1),
     q: str = Query("", max_length=100),
 ) -> KeyResourcePage:

@@ -10,6 +10,7 @@ import {
   Bot,
   LayoutDashboard,
   LayoutTemplate,
+  BookOpen,
 } from 'lucide-react'
 import type { NavGroup } from '../types'
 
@@ -55,6 +56,7 @@ export function navigation(
                   { title: '连接日志', url: '/mcp-logs' },
                 ],
               },
+              { title: '知识库', icon: BookOpen, url: '/knowledge' },
               { title: '工作台', icon: LayoutTemplate, url: '/workbenches' },
             ],
           },
@@ -96,6 +98,7 @@ export function navigation(
           {
             title: '能力管理',
             items: [
+              { title: '知识库', icon: BookOpen, url: '/knowledge' },
               {
                 title: 'MCP',
                 icon: Plug,

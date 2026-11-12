@@ -181,7 +181,7 @@ class HeldScope(BaseModel):
     member_id: UUID | None
     model_id: UUID | None
     operation: str | None
-    source: Literal["member", "desktop", "access_key"]
+    source: Literal["member", "desktop", "access_key", "knowledge_index", "knowledge_search"]
 
 
 class CurrentHeld(BaseModel):

@@ -39,7 +39,7 @@ from app.modules.llm.points import decimal_text
 from app.modules.members.models import Membership
 from app.modules.users.models import User
 
-FORMAL = ("access_key", "desktop")
+FORMAL = ("access_key", "desktop", "knowledge_index", "knowledge_search")
 DIAGNOSTIC = ("admin_channel_test", "admin_route_test", "channel_diagnostic")
 RESULTS = ("success", "failed", "interrupted", "cancelled", "unknown")
 SETTLEMENTS = ("reserved", "review", "settled", "released", "not_applicable")
@@ -102,7 +102,7 @@ def validate_filters(filters: CallFilters, *, summary: bool = False) -> None:
             raise HTTPException(422, "时间区间必须大于零且不超过90天")
     if filters.channel_id is not None and filters.unknown_channel:
         raise HTTPException(422, "最终渠道筛选不能同时指定未知与渠道编号")
-    if filters.source not in ("member", "desktop", "access_key", "diagnostic", "all"):
+    if filters.source not in ("member", *FORMAL, "diagnostic", "all"):
         raise HTTPException(422, "来源筛选无效")
     if summary and filters.source == "all":
         raise HTTPException(422, "统计须单独选择正式调用或诊断")

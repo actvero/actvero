@@ -147,7 +147,9 @@ async def validate_configuration(
             .where(
                 ModelCall.model_id == row.id,
                 ModelCall.kind == "embedding",
-                ModelCall.source.in_(["desktop", "access_key"]),
+                ModelCall.source.in_(
+                    ["desktop", "access_key", "knowledge_index", "knowledge_search"]
+                ),
             )
             .limit(1)
         )
@@ -166,6 +168,10 @@ async def authorize(
     *,
     in_flight: bool = False,
 ) -> BusinessActor:
+    if getattr(request.state, "knowledge_invocation", None) is not None:
+        from app.modules.knowledge.inference import model_actor
+
+        return await model_actor(request, db, resource)
     if keys.supplied(request):
         resource_id = (
             UUID(resource.removeprefix("llm:")) if resource and resource != "llm:catalog" else None
@@ -422,7 +428,9 @@ async def execute(
         actor_id=actor.user.id,
         device_id=actor.device.id if isinstance(actor, NativeActor) else None,
         access_key_id=actor.key.id if isinstance(actor, keys.KeyActor) else None,
-        source="admin_channel_test"
+        source=("knowledge_" + request.state.knowledge_invocation.purpose)
+        if getattr(request.state, "knowledge_invocation", None) is not None
+        else "admin_channel_test"
         if specific
         else "admin_route_test"
         if test

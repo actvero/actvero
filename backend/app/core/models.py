@@ -16,6 +16,14 @@ from app.modules.departments.models import Department, DepartmentMember
 from app.modules.desktop.models import DesktopLogin, DeviceSession, DeviceToken
 from app.modules.desktop_mcp.models import NativeOAuthAttempt, ResourceToken
 from app.modules.experts.models import ExpertCategoryRecord, ExpertRecord, ExpertRelease
+from app.modules.knowledge.models import (
+    KnowledgeBase,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    KnowledgeGeneration,
+    KnowledgeSettings,
+    ParserCredential,
+)
 from app.modules.llm.models import (
     CatalogModel,
     ModelCall,
@@ -71,6 +79,12 @@ from app.modules.users.models import LoginIdentity, User
 from app.modules.workbenches.models import Workbench, WorkbenchPackage, WorkbenchVersion
 
 __all__ = [
+    "KnowledgeBase",
+    "KnowledgeChunk",
+    "KnowledgeDocument",
+    "KnowledgeGeneration",
+    "KnowledgeSettings",
+    "ParserCredential",
     "Department",
     "DepartmentMember",
     "Workbench",
