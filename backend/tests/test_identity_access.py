@@ -386,6 +386,111 @@ async def test_callback_missing_cookie_is_rejected_and_logged_without_code_or_st
     env.provider.exchange.assert_not_called()
 
 
+async def expire_login(env, browser):
+    async with env.sessions() as db:
+        row = await db.get(WebSession, browser.session.id)
+        row.login_expires_at = now() - timedelta(seconds=1)
+        await db.commit()
+
+
+@pytest.mark.parametrize("mode", ["normal", "switch", "reauth", "legacy"])
+async def test_expired_login_starts_fresh_attempt_and_keeps_destination(env, mode):
+    browser = await env.client()
+    env.provider.authorization = AsyncMock(return_value="https://identity.test/authorize")
+    if mode == "reauth":
+        async with env.sessions() as db:
+            row = await db.get(WebSession, browser.session.id)
+            row.requires_reauth = True
+            row.identity_id = row.tokens = None
+            await db.commit()
+    target = "/organization-settings?tab=members#invite"
+    await browser.api.get(
+        "/api/v1/auth/login", params={"next": target, "switch": str(mode == "switch").lower()}
+    )
+    original = env.provider.authorization.call_args.args
+    if mode == "legacy":
+        async with env.sessions() as db:
+            row = await db.get(WebSession, browser.session.id)
+            row.login_data = env.provider.seal(
+                {"nonce": original[1], "verifier": original[2], "next": target}
+            )
+            await db.commit()
+    await expire_login(env, browser)
+    exchange_as(env, browser.identity.subject, browser.user.email)
+
+    params = {"state": original[0], "code": "expired-code"}
+    recovered = await browser.api.get("/api/v1/auth/callback", params=params)
+    assert recovered.status_code == 303
+    assert recovered.headers["location"] == "https://identity.test/authorize"
+    assert "set-cookie" not in recovered.headers
+    env.provider.exchange.assert_not_awaited()
+    state, nonce, verifier, forced = env.provider.authorization.call_args.args
+    assert forced is (mode != "normal")
+    assert all(new != old for new, old in zip((state, nonce, verifier), original[:3], strict=True))
+
+    replay = await browser.api.get("/api/v1/auth/callback", params=params)
+    assert replay.headers["location"] == "/login?error=callback"
+    assert env.provider.authorization.await_count == 2
+    env.provider.exchange.assert_not_awaited()
+
+    fresh = await browser.api.get("/api/v1/auth/callback", params={"state": state, "code": "fresh"})
+    assert fresh.status_code == 303 and fresh.headers["location"] == target
+    env.provider.exchange.assert_awaited_once_with("fresh", verifier, nonce)
+    assert COOKIE in fresh.cookies
+
+
+@pytest.mark.parametrize(
+    "variant", ["recovered", "wrong_issuer", "cancelled", "no_code", "provider_unavailable"]
+)
+async def test_expired_login_has_bounded_recovery_and_preserves_manual_retry(env, variant):
+    browser = await env.client()
+    target = "/models?tab=vendors"
+    env.provider.authorization = AsyncMock(return_value="https://identity.test/authorize")
+    env.provider.exchange = AsyncMock()
+    await browser.api.get("/api/v1/auth/login", params={"next": target})
+    state = env.provider.authorization.call_args.args[0]
+    await expire_login(env, browser)
+    if variant == "recovered":
+        response = await browser.api.get(
+            "/api/v1/auth/callback", params={"state": state, "code": "expired"}
+        )
+        assert response.headers["location"] == "https://identity.test/authorize"
+        state = env.provider.authorization.call_args.args[0]
+        await expire_login(env, browser)
+    elif variant == "provider_unavailable":
+        env.provider.authorization.side_effect = httpx.ConnectError("test-only")
+    env.provider.authorization.reset_mock()
+    params = {"state": state, "code": "expired"}
+    if variant == "wrong_issuer":
+        params["iss"] = "https://other-issuer.test"
+    elif variant == "cancelled":
+        params["error"] = "access_denied"
+    elif variant == "no_code":
+        del params["code"]
+    response = await browser.api.get("/api/v1/auth/callback", params=params)
+    retry = httpx.URL(response.headers["location"])
+    assert response.status_code == 303 and retry.path == "/login"
+    assert retry.params["error"] == "callback" and retry.params["next"] == target
+    assert env.provider.authorization.await_count == (variant == "provider_unavailable")
+    env.provider.exchange.assert_not_awaited()
+
+
+async def test_logout_disallows_recovery_of_prior_attempt(env):
+    browser = await env.client()
+    env.provider.authorization = AsyncMock(return_value="https://identity.test/authorize")
+    env.provider.exchange = AsyncMock()
+    await browser.api.get("/api/v1/auth/login")
+    state = env.provider.authorization.call_args.args[0]
+    await expire_login(env, browser)
+    assert (await browser.api.post("/api/v1/auth/logout")).status_code == 200
+    response = await browser.api.get(
+        "/api/v1/auth/callback", params={"state": state, "code": "expired"}
+    )
+    assert response.headers["location"] == "/login?error=callback"
+    assert env.provider.authorization.await_count == 1
+    env.provider.exchange.assert_not_awaited()
+
+
 async def test_expired_invitation_cannot_replace_a_newer_pending_one(env, monkeypatch):
     admin, recipient = await env.client(), await env.client(joined=False)
     old, _ = await invitation(env, admin, recipient)
@@ -721,7 +826,7 @@ async def test_logout_rotates_session_and_requires_fresh_login(env):
         assert await db.get(WebSession, browser.session.id) is None
 
 
-@pytest.mark.parametrize("outcome", ["success", "cancelled", "wrong_account", "error"])
+@pytest.mark.parametrize("outcome", ["success", "cancelled", "wrong_account", "error", "expired"])
 async def test_password_action_binds_account_and_handles_cancel(env, outcome):
     browser = await env.client(role="member")
     env.provider.authorization = AsyncMock(return_value="https://identity.test/password")
@@ -736,14 +841,19 @@ async def test_password_action_binds_account_and_handles_cancel(env, outcome):
         params["kc_action_status"] = "cancelled"
     if outcome == "error":
         params = {"state": state, "error": "access_denied"}
+    if outcome == "expired":
+        await expire_login(env, browser)
     response = await browser.api.get("/api/v1/auth/callback", params=params)
     assert response.status_code == 303
     expected = "/account?tab=security"
     if outcome in {"cancelled", "error"}:
         expected += "&password=cancelled"
-    elif outcome == "wrong_account":
+    elif outcome in {"wrong_account", "expired"}:
         expected += "&password=error"
     assert response.headers["location"] == expected
+    if outcome == "expired":
+        assert env.provider.authorization.await_count == 1
+        env.provider.exchange.assert_not_awaited()
     view = (await browser.api.get("/api/v1/auth/session")).json()
     assert view["user"]["id"] == str(browser.user.id)
     async with env.sessions() as db:

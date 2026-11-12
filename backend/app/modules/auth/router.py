@@ -8,6 +8,7 @@ from uuid import UUID
 import httpx
 import httpx2
 from authlib.common.errors import AuthlibBaseError
+from cryptography.fernet import InvalidToken
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from joserfc.errors import JoseError
@@ -170,6 +171,31 @@ async def context(request: Request, response: Response, db: DB, browser: Browser
     return result
 
 
+async def start_login_attempt(
+    request: Request,
+    session: WebSession,
+    destination: str,
+    *,
+    force_login: bool,
+    recovered: bool = False,
+) -> str:
+    upstream = provider(request)
+    state, nonce, verifier = (secrets.token_urlsafe(32) for _ in range(3))
+    url = await upstream.authorization(state, nonce, verifier, force_login)
+    session.login_state = digest(state)
+    session.login_data = upstream.seal(
+        {
+            "nonce": nonce,
+            "verifier": verifier,
+            "next": destination,
+            "force_login": force_login,
+            "recovered": recovered,
+        }
+    )
+    session.login_expires_at = now() + timedelta(minutes=10)
+    return url
+
+
 @router.get("/login", response_class=RedirectResponse)
 async def login(
     request: Request, db: DB, next: str = "/console", switch: bool = False, flow: UUID | None = None
@@ -184,15 +210,9 @@ async def login(
         if next != destination.split("?")[0]:
             raise HTTPException(400, "登录返回地址与开通流程不一致")
         next = destination
-    state, nonce, verifier = (secrets.token_urlsafe(32) for _ in range(3))
-    url = await provider(request).authorization(
-        state, nonce, verifier, switch or session.requires_reauth
+    url = await start_login_attempt(
+        request, session, next, force_login=switch or session.requires_reauth
     )
-    session.login_state = digest(state)
-    session.login_data = provider(request).seal(
-        {"nonce": nonce, "verifier": verifier, "next": next}
-    )
-    session.login_expires_at = now() + timedelta(minutes=10)
     if flow_context:
         flow_context.login_state = session.login_state
         flow_context.login_expires_at = session.login_expires_at
@@ -231,14 +251,14 @@ async def password_action(request: Request, db: DB, _: Mutation) -> PasswordActi
 @router.get("/callback", response_class=RedirectResponse)
 async def callback(request: Request, db: DB) -> Response:
     state = request.query_params.get("state", "")
+    state_hash = digest(state)
     session = await session_for(request, db, lock=True)
     if (
         not session
         or not session.login_state
-        or not secrets.compare_digest(session.login_state, digest(state))
+        or not secrets.compare_digest(session.login_state, state_hash)
         or not session.login_data
         or not session.login_expires_at
-        or session.login_expires_at <= now()
     ):
         # Only log rejection categories, never cookies, state, codes or tokens.
         reason = (
@@ -247,10 +267,10 @@ async def callback(request: Request, db: DB) -> Response:
             else "missing_attempt"
             if not session.login_state
             else "state_mismatch"
-            if not secrets.compare_digest(session.login_state, digest(state))
+            if not secrets.compare_digest(session.login_state, state_hash)
             else "missing_login_data"
             if not session.login_data
-            else "expired_attempt"
+            else "missing_expiry"
         )
         logger.warning(
             "OIDC callback rejected (%s; session_cookie_present=%s)",
@@ -261,7 +281,7 @@ async def callback(request: Request, db: DB) -> Response:
         flow_context = await db.scalar(
             select(OrganizationOpeningFlow).where(
                 OrganizationOpeningFlow.session_id == (session.id if session else None),
-                OrganizationOpeningFlow.login_state == digest(state),
+                OrganizationOpeningFlow.login_state == state_hash,
                 OrganizationOpeningFlow.login_expires_at > now(),
             )
         )
@@ -271,7 +291,16 @@ async def callback(request: Request, db: DB) -> Response:
             else "/login?error=callback"
         )
         return RedirectResponse(destination, status_code=303)
-    data = provider(request).unseal(session.login_data)
+    expired = session.login_expires_at <= now()
+    upstream = provider(request)
+    try:
+        data = upstream.unseal(session.login_data)
+    except (InvalidToken, ValueError):
+        logger.warning("OIDC callback rejected (invalid_login_data)")
+        return RedirectResponse("/login?error=callback", status_code=303)
+    opening_flow = data["next"].startswith(
+        ("/organization-invite?flow=", "/organization-onboarding?flow=")
+    )
 
     def failure(reason: str) -> RedirectResponse:
         destination = (
@@ -282,30 +311,57 @@ async def callback(request: Request, db: DB) -> Response:
                 {"error": reason, **({"next": data["next"]} if data["next"] != "/" else {})}
             )
         )
-        if data["next"].startswith(
-            ("/organization-invite?flow=", "/organization-onboarding?flow=")
-        ):
+        if opening_flow:
             destination = data["next"] + "&login_error=" + reason
         return RedirectResponse(destination, status_code=303)
+
+    error = request.query_params.get("error")
+    code = request.query_params.get("code")
+    issuer = upstream.settings.oidc_issuer
+    valid_issuer = request.query_params.get("iss", issuer) == issuer
+    if (
+        expired
+        and code
+        and not error
+        and valid_issuer
+        and not data.get("subject")
+        and not opening_flow
+        and not data.get("recovered")
+    ):
+        # Keycloak may restart its expired form with the original state. Keep the
+        # return path, but use a new authorization request and never exchange the old code.
+        try:
+            url = await start_login_attempt(
+                request,
+                session,
+                data["next"],
+                # Older pending requests did not record whether login was forced.
+                force_login=session.requires_reauth or data.get("force_login", True),
+                recovered=True,
+            )
+        except (httpx.HTTPError, HTTPException, KeyError, ValueError) as exc:
+            logger.warning("OIDC login recovery failed (%s)", type(exc).__name__)
+        else:
+            await db.commit()
+            logger.info("OIDC login restarted after attempt expired")
+            return RedirectResponse(url, status_code=303, headers={"Cache-Control": "no-store"})
 
     session.login_state = digest("consumed:" + state)
     session.login_data = None
     await db.commit()
-    if request.query_params.get("error") or not request.query_params.get("code"):
+    if expired:
+        logger.warning("OIDC callback rejected (expired_attempt; session_cookie_present=True)")
+        return failure("callback")
+    if error or not code:
         return failure("cancelled")
-    if (
-        request.query_params.get("iss", provider(request).settings.oidc_issuer)
-        != provider(request).settings.oidc_issuer
-    ):
+    if not valid_issuer:
         return failure("callback")
     try:
-        tokens, claims = await provider(request).exchange(
-            request.query_params["code"], data["verifier"], data["nonce"]
-        )
+        tokens, claims = await upstream.exchange(code, data["verifier"], data["nonce"])
         subject = str(claims["sub"])
         if data.get("subject") and subject != data["subject"]:
             raise HTTPException(403, "修改密码的账号与当前账号不一致")
-        await provider(request).inspect(tokens, subject)
+        await upstream.inspect(tokens, subject)
     except (
         AuthlibBaseError,
         JoseError,
@@ -318,7 +374,7 @@ async def callback(request: Request, db: DB) -> Response:
         # Never log authorization codes, tokens, exception URLs or upstream bodies.
         logger.warning("OIDC callback validation failed (%s)", type(error).__name__)
         return failure("callback")
-    identity, user = await resolve_identity(db, provider(request).settings.oidc_issuer, claims)
+    identity, user = await resolve_identity(db, issuer, claims)
     # Re-lock after remote I/O: logout or a newer login must win over this result.
     current = await session_for(request, db, lock=True)
     if current is None or current.login_state != digest("consumed:" + state):
