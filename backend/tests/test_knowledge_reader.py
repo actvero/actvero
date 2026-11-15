@@ -111,9 +111,8 @@ async def test_reader_native_scope_parent_expiry_and_parent_key_revocation(env, 
         assert (
             await client.post(endpoint + "/search", headers=headers, json={"query": "原文"})
         ).status_code == 403
-        assert (
-            await client.get(endpoint + "/citations/" + chunk_id, headers=headers)
-        ).status_code == 200
+        citation = await client.get(endpoint + "/citations/" + chunk_id, headers=headers)
+        assert citation.status_code == 200
         issued = await client.post(
             endpoint + f"/citations/{chunk_id}/reader-session",
             headers=headers,
@@ -129,6 +128,7 @@ async def test_reader_native_scope_parent_expiry_and_parent_key_revocation(env, 
         manifest = await client.get("/api/v1/knowledge-reader/manifest", headers=reader_headers)
         assert manifest.status_code == 200, manifest.text
         assert manifest.json()["citation_id"] == chunk_id
+        assert manifest.json()["chunk"] == {"sequence": 1, "content": citation.json()["content"]}
         assert (
             await client.get("/api/v1/knowledge-reader/source", headers=reader_headers)
         ).status_code == 200

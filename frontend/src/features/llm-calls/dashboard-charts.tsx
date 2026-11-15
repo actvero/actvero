@@ -493,6 +493,7 @@ export function FlowChart({
                         !path.model_id ||
                         ![
                           'access_key',
+                          'application',
                           'desktop',
                           'knowledge_index',
                           'knowledge_search',

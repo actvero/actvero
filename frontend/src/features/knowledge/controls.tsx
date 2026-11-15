@@ -10,15 +10,20 @@ import {
 import { states } from './shared'
 
 export function State({ value }: { value: string }) {
+  const attention = value === 'attention' || value === 'unconfigured'
   return (
     <Badge
+      dot
       variant={
-        ['failed', 'uncertain', 'attention'].includes(value)
+        ['failed', 'uncertain'].includes(value)
           ? 'destructive'
-          : value === 'ready'
-            ? 'success'
-            : 'secondary'
+          : attention
+            ? 'outline'
+            : value === 'ready'
+              ? 'success'
+              : 'secondary'
       }
+      className={attention ? 'border-warning/30 bg-warning/10' : undefined}
     >
       {states[value] ?? value}
     </Badge>

@@ -1,21 +1,44 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { api, dateTime, type Schema } from '@/lib/api'
+import { Button } from '@/components/ui/button'
 import { ServerTable } from '@/components/data-table/server-table'
 import { PageShell } from '@/components/layout/page-shell'
 import { RequestError, LoadingState } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { auditActions } from './actions'
 
-export function AuditPage() {
+export function AuditPage({
+  target,
+  action,
+}: {
+  target?: string
+  action?: string
+}) {
   const { organization, user } = useOrganization()
   const [page, setPage] = useState(1)
   const query = useQuery({
-    queryKey: ['organization', organization.tenant_id, user.id, 'events', page],
+    queryKey: [
+      'organization',
+      organization.tenant_id,
+      user.id,
+      'events',
+      page,
+      target,
+      action,
+    ],
     queryFn: ({ signal }) =>
       api<Schema['EventPage']>(
-        '/enterprises/' + organization.tenant_id + '/events?page=' + page,
+        '/enterprises/' +
+          organization.tenant_id +
+          '/events?' +
+          new URLSearchParams({
+            page: String(page),
+            ...(target ? { target_id: target } : {}),
+            ...(action ? { action } : {}),
+          }),
         'GET',
         undefined,
         undefined,
@@ -46,7 +69,18 @@ export function AuditPage() {
     },
   ]
   return (
-    <PageShell title='操作记录'>
+    <PageShell
+      title='操作记录'
+      action={
+        (target || action) && (
+          <Button asChild variant='outline'>
+            <Link to='/audit' search={{}}>
+              清除筛选
+            </Link>
+          </Button>
+        )
+      }
+    >
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (

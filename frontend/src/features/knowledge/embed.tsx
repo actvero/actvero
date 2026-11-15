@@ -12,10 +12,25 @@ import {
   trustedParent,
   type ReaderEvent,
 } from './reader-http'
+import { ChunkTranscript, ReaderLayout, ReaderToolbar } from './reader-layout'
+import { locationLabel } from './shared'
 
 export function EmbeddedReader({ parentOrigin }: { parentOrigin: string }) {
   const parent = trustedParent(parentOrigin)
+  if (!parent)
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>嵌入来源无效</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    )
+  return <ReaderSession key={parent} parent={parent} />
+}
+
+function ReaderSession({ parent }: { parent: string }) {
   const [token, setToken] = useState('')
+  const [failure, setFailure] = useState<unknown>()
   const send = useCallback(
     (type: string, payload: object = {}) => {
       if (parent && window.parent !== window)
@@ -25,6 +40,14 @@ export function EmbeddedReader({ parentOrigin }: { parentOrigin: string }) {
         )
     },
     [parent]
+  )
+  const unavailable = useCallback(
+    (cause: unknown) => {
+      setToken('')
+      setFailure(cause)
+      send('error', { code: 'reader_unavailable' })
+    },
+    [send]
   )
   useEffect(() => {
     if (!parent || window.parent === window) return
@@ -40,9 +63,14 @@ export function EmbeddedReader({ parentOrigin }: { parentOrigin: string }) {
         typeof event.data.token === 'string' &&
         event.data.token.startsWith('avr_') &&
         event.data.token.length <= 4096
-      )
+      ) {
+        setFailure(undefined)
         setToken(event.data.token)
-      if (event.data.type === 'clear') setToken('')
+      }
+      if (event.data.type === 'clear') {
+        setFailure(undefined)
+        setToken('')
+      }
     }
     window.addEventListener('message', receive)
     window.parent.postMessage(
@@ -51,53 +79,62 @@ export function EmbeddedReader({ parentOrigin }: { parentOrigin: string }) {
     )
     return () => window.removeEventListener('message', receive)
   }, [parent])
-  if (!parent)
-    return (
-      <Empty>
-        <EmptyHeader>
-          <EmptyTitle>嵌入来源无效</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
-    )
+  const tools = (
+    <>
+      <Button
+        variant='ghost'
+        size='icon-xs'
+        aria-label='请求展开原文'
+        onClick={() => send('expand')}
+      >
+        <Expand />
+      </Button>
+      <Button
+        variant='ghost'
+        size='icon-xs'
+        aria-label='请求关闭原文'
+        onClick={() => {
+          setToken('')
+          setFailure(undefined)
+          send('close')
+        }}
+      >
+        <X />
+      </Button>
+    </>
+  )
   return (
     <main className='flex h-dvh min-h-0 flex-col bg-background'>
-      <header className='flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4'>
-        <h1 className='font-semibold'>原文预览</h1>
-        <div className='flex gap-1'>
-          <Button
-            variant='ghost'
-            size='icon'
-            aria-label='请求展开原文'
-            onClick={() => send('expand')}
-          >
-            <Expand />
-          </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            aria-label='请求关闭原文'
-            onClick={() => {
-              setToken('')
-              send('close')
-            }}
-          >
-            <X />
-          </Button>
-        </div>
-      </header>
+      <h1 className='sr-only'>原文预览</h1>
       {token ? (
         <AuthorizedOriginal
           key={token}
           token={token}
           parent={parent}
           send={send}
+          tools={tools}
+          unavailable={unavailable}
         />
       ) : (
-        <Empty className='flex-1'>
-          <EmptyHeader>
-            <EmptyTitle>等待打开原文</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
+        <>
+          <ReaderToolbar
+            toolbar={{
+              filename: '原文预览',
+              trailing: failure != null ? tools : undefined,
+            }}
+          />
+          {failure != null ? (
+            <div className='p-6'>
+              <RequestError error={failure} />
+            </div>
+          ) : (
+            <Empty className='flex-1'>
+              <EmptyHeader>
+                <EmptyTitle>等待打开原文</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </>
       )}
     </main>
   )
@@ -107,11 +144,16 @@ function AuthorizedOriginal({
   token,
   parent,
   send,
+  tools,
+  unavailable,
 }: {
   token: string
   parent: string
   send: (type: string, payload?: object) => void
+  tools: React.ReactNode
+  unavailable: (cause: unknown) => void
 }) {
+  const [jump, setJump] = useState(0)
   const [instance] = useState(() => crypto.randomUUID())
   const credentials = { token, parentOrigin: parent }
   // Credentials must not enter the query cache key; a unique component instance isolates each token.
@@ -124,32 +166,49 @@ function AuthorizedOriginal({
     staleTime: 0,
     retry: false,
     refetchInterval: 30000,
-    queryFn: async ({ signal }): Promise<Schema['DocumentPreview']> => {
+    refetchIntervalInBackground: true,
+    queryFn: async ({ signal }): Promise<Schema['ReaderManifest']> => {
       const response = await fetch('/api/v1/knowledge-reader/manifest', {
         signal,
         credentials: 'omit',
         headers: readerHeaders(credentials),
         redirect: 'error',
       })
-      const body = await response.json()
+      const body = await response.json().catch(() => null)
       if (!response.ok)
         throw new ApiError(
           response.status,
-          body.error?.message ?? '原文预览已失效，请重新打开'
+          body?.error?.message ?? '原文预览已失效，请重新打开'
         )
+      if (
+        !body?.document_id ||
+        !body.generation_id ||
+        !body.citation_id ||
+        body.source_url !== '/api/v1/knowledge-reader/source' ||
+        typeof body.chunk?.content !== 'string' ||
+        !Number.isInteger(body.chunk.sequence)
+      )
+        throw new ApiError(422, '阅读凭证对应的文档版本或切片无效')
       return body
     },
   })
   useEffect(() => {
-    if (query.isError) send('error', { code: 'reader_unavailable' })
-  }, [query.isError, send])
-  if (query.isPending) return <LoadingState />
-  if (query.isError)
+    if (query.isError) unavailable(query.error)
+  }, [query.isError, query.error, unavailable])
+  if (query.isPending || query.isError)
     return (
-      <div className='p-6'>
-        <RequestError error={query.error} />
-      </div>
+      <>
+        <ReaderToolbar toolbar={{ filename: '原文预览', trailing: tools }} />
+        {query.isPending ? (
+          <LoadingState />
+        ) : (
+          <div className='p-6'>
+            <RequestError error={query.error} />
+          </div>
+        )}
+      </>
     )
+  const data = query.data
   const event = (value: ReaderEvent) =>
     send(
       value.type,
@@ -158,17 +217,28 @@ function AuthorizedOriginal({
         : { documentId: value.documentId }
     )
   return (
-    <>
-      <div className='truncate border-b px-4 py-2 text-sm text-muted-foreground'>
-        {query.data.filename}
-      </div>
-      <div className='min-h-0 flex-1'>
+    <ReaderLayout
+      label='引用切片'
+      toggleLabel='切片正文'
+      initialOpen={false}
+      tools={tools}
+      original={(trailing) => (
         <OriginalViewer
-          preview={query.data}
+          preview={data}
           credentials={credentials}
           onEvent={event}
+          onReadError={unavailable}
+          jump={jump}
+          toolbar={{ filename: data.filename, trailing }}
         />
-      </div>
-    </>
+      )}
+      sidebar={
+        <ChunkTranscript
+          content={data.chunk.content}
+          location={data.sources?.[0] && locationLabel(data.sources[0])}
+          onLocate={() => setJump((value) => value + 1)}
+        />
+      }
+    />
   )
 }

@@ -122,7 +122,11 @@ def complete(row: UsageSettlement, log: ModelCall | None, *, certainly_unused: b
         row.evidence = {"engine": "newapi", "decision": "settle", "ledger": ledger}
     else:
         row.status = "review"
-        row.reason = "未取得可确认的 New API 账单；预留额度保留，未按零费用结算"
+        row.reason = (
+            "未取得可确认的 New API 账单，模型金额待核对"
+            if row.member_id is None
+            else "未取得可确认的 New API 账单；预留额度保留，未按零费用结算"
+        )
         row.evidence = {
             "engine": "newapi",
             "decision": "review",

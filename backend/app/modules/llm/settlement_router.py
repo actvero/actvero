@@ -50,7 +50,7 @@ class QuotaView(BaseModel):
 
 class SettlementView(BaseModel):
     id: UUID
-    member_id: UUID
+    member_id: UUID | None
     member_name: str
     model_name: str
     kind: str
@@ -61,7 +61,7 @@ class SettlementView(BaseModel):
     terminal_reason: str | None
     version: int
     points: str | None
-    reserved_points: str
+    reserved_points: str | None
     usage: dict[str, Any]
     created_at: datetime
     settled_at: datetime | None
@@ -76,7 +76,7 @@ class SettlementPage(BaseModel):
 class ReconciliationContext(BaseModel):
     settlement: SettlementView
     price: TokenPrice
-    ratio: str
+    ratio: str | None
     currency: str
     required_fields: list[str]
     eligible: bool
@@ -98,12 +98,17 @@ def assert_reconcilable(row: UsageSettlement, version: int) -> None:
 
 
 def settlement_view(
-    row: UsageSettlement, user: User, model: CatalogModel, call: ModelCall, *, public: bool = False
+    row: UsageSettlement,
+    user: User | None,
+    model: CatalogModel,
+    call: ModelCall,
+    *,
+    public: bool = False,
 ) -> SettlementView:
     return SettlementView(
         id=row.id,
         member_id=row.member_id,
-        member_name=user.name,
+        member_name=user.name if user else "组织知识库",
         model_name=model.name,
         kind=call.kind,
         metric=row.price.get("metric", "tokens"),
@@ -113,11 +118,13 @@ def settlement_view(
         terminal_reason=safe_code(call.termination_code),
         version=row.version,
         points=decimal_text(settlement.points(row.amount, row.ratio))
-        if row.amount is not None
+        if row.amount is not None and row.ratio is not None
         else None,
         reserved_points=decimal_text(settlement.points(row.reserved_amount, row.ratio))
-        if row.status in ("reserved", "review")
-        else "0",
+        if row.ratio is not None and row.status in ("reserved", "review")
+        else "0"
+        if row.ratio is not None
+        else None,
         usage=public_usage(row.usage) if public else row.usage,
         created_at=row.created_at,
         settled_at=row.settled_at,
@@ -173,8 +180,8 @@ async def history(
     total = await db.scalar(select(func.count()).select_from(UsageSettlement).where(*filters))
     rows = await db.execute(
         select(UsageSettlement, User, CatalogModel, ModelCall)
-        .join(Membership, Membership.id == UsageSettlement.member_id)
-        .join(User, User.id == Membership.user_id)
+        .outerjoin(Membership, Membership.id == UsageSettlement.member_id)
+        .outerjoin(User, User.id == Membership.user_id)
         .join(ModelCall, ModelCall.id == UsageSettlement.id)
         .join(CatalogModel, CatalogModel.id == ModelCall.model_id)
         .where(*filters)
@@ -206,8 +213,9 @@ async def reconciliation_context(call_id: UUID, request: Request, db: DB) -> Rec
     row = await owned_settlement(db, actor.tenant.id, call_id)
     details = await db.execute(
         select(User, CatalogModel, ModelCall)
-        .join(Membership, Membership.user_id == User.id)
-        .join(UsageSettlement, UsageSettlement.member_id == Membership.id)
+        .select_from(UsageSettlement)
+        .outerjoin(Membership, Membership.id == UsageSettlement.member_id)
+        .outerjoin(User, User.id == Membership.user_id)
         .join(ModelCall, ModelCall.id == UsageSettlement.id)
         .join(CatalogModel, CatalogModel.id == ModelCall.model_id)
         .where(UsageSettlement.id == call_id, UsageSettlement.tenant_id == actor.tenant.id)
@@ -222,7 +230,7 @@ async def reconciliation_context(call_id: UUID, request: Request, db: DB) -> Rec
     return ReconciliationContext(
         settlement=settlement_view(row, user, model, call),
         price=price,
-        ratio=decimal_text(row.ratio),
+        ratio=decimal_text(row.ratio) if row.ratio is not None else None,
         currency=row.currency,
         required_fields=reconciliation.required_fields(price),
         eligible=reconciliation.eligible(row),

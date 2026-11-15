@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const sources = {
   member: '正式调用',
   access_key: '个人访问密钥',
+  application: '应用集成',
   desktop: '桌面令牌',
   knowledge_index: '知识库索引',
   knowledge_search: '知识库检索',
@@ -140,6 +141,7 @@ export function filterSchema(summary = false) {
       source: z.enum([
         'member',
         'access_key',
+        'application',
         'desktop',
         'knowledge_index',
         'knowledge_search',

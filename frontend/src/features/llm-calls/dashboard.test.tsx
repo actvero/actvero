@@ -182,6 +182,16 @@ const overview: Schema['OrganizationOverview'] = {
   mcp_failed: 1,
   mcp_unchecked: 1,
   activities: [],
+  experts: { total: 3, enabled: 2 },
+  experts_with_changes: 1,
+  workbenches: { total: 2, enabled: 1 },
+  workbenches_with_drafts: 1,
+  knowledge: { total: 2, documents: 6, processing: 1 },
+  active_members: 4,
+  mcp_tool_calls: 6,
+  expert_attention: null,
+  knowledge_attention: null,
+  mcp_attention: null,
 }
 const base =
   '/llm-usage?from=2026-10-01T00:00:00Z&to=2026-10-01T04:00:00Z&timezone=UTC'

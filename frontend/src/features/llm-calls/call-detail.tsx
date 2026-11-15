@@ -17,7 +17,7 @@ import { CopyableField } from '@/components/copyable-field'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { ReconcileDialog } from '@/features/quota-policies/reconcile-dialog'
-import { operations, results, settlements } from './filters'
+import { operations, results, settlements, sources } from './filters'
 import { timeInZone } from './time'
 
 type Detail = Schema['CallDetail']
@@ -253,19 +253,27 @@ export function CallDetailSheet({
                     结果：{results[call.result_status]}
                   </Badge>
                   <Badge variant='outline'>
-                    结算：{settlements[call.settlement_status]}
+                    结算：
+                    {settlement?.ratio === null &&
+                    call.settlement_status === 'reserved'
+                      ? '待结算'
+                      : settlements[call.settlement_status]}
                   </Badge>
                 </div>
                 <div className='grid gap-1 text-sm'>
                   <p>
-                    成员 {call.member_name ?? '管理员诊断'} · 模型{' '}
-                    {call.model_name ?? '无平台模型'} ·{' '}
+                    {settlement?.ratio === null
+                      ? call.member_name
+                      : `成员 ${call.member_name ?? '管理员诊断'}`}{' '}
+                    · 模型 {call.model_name ?? '无平台模型'} ·{' '}
                     {operations[call.operation as keyof typeof operations] ??
                       call.operation}
                   </p>
                   <p>
-                    来源 {call.source} · 受理{' '}
-                    {timeInZone(call.created_at, timezone)} ·{' '}
+                    来源{' '}
+                    {sources[call.source as keyof typeof sources] ??
+                      call.source}{' '}
+                    · 受理 {timeInZone(call.created_at, timezone)} ·{' '}
                     {call.attempt_count} 次尝试
                   </p>
                   <p>
@@ -279,24 +287,46 @@ export function CallDetailSheet({
                 {settlement ? (
                   <Card className='min-w-0'>
                     <CardHeader className='pb-2'>
-                      <CardTitle size='body'>成员结算</CardTitle>
+                      <CardTitle size='body'>
+                        {settlement.ratio === null
+                          ? '组织用量结算'
+                          : '成员结算'}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className='grid gap-2 text-sm'>
-                      <p>
-                        历史预占 {settlement.reserved_points} 积分 · 已结算{' '}
-                        {settlement.points ?? '待确认'} 积分
-                      </p>
-                      {['reserved', 'review'].includes(settlement.status) && (
-                        <p>受理周期内预留：{settlement.reserved_points} 积分</p>
+                      {settlement.ratio !== null && (
+                        <>
+                          <p>
+                            历史预占 {settlement.reserved_points} 积分 · 已结算{' '}
+                            {settlement.points ?? '待确认'} 积分
+                          </p>
+                          {['reserved', 'review'].includes(
+                            settlement.status
+                          ) && (
+                            <p>
+                              受理周期内预留：{settlement.reserved_points} 积分
+                            </p>
+                          )}
+                        </>
                       )}
                       <p>
-                        预占金额 {settlement.reserved_amount}{' '}
-                        {settlement.currency} · 实际金额{' '}
-                        {settlement.amount ?? '待确认'} {settlement.currency}
+                        {settlement.reserved_amount !== null && (
+                          <>
+                            预占金额 {settlement.reserved_amount}{' '}
+                            {settlement.currency} ·{' '}
+                          </>
+                        )}
+                        实际金额 {settlement.amount ?? '待确认'}{' '}
+                        {settlement.currency}
                       </p>
                       <p>
-                        受理时比例 {settlement.ratio} 积分 /{' '}
-                        {settlement.currency} · 结算版本 v{settlement.version}
+                        {settlement.ratio !== null && (
+                          <>
+                            受理时比例 {settlement.ratio} 积分 /{' '}
+                            {settlement.currency} ·{' '}
+                          </>
+                        )}
+                        结算版本 v{settlement.version}
                       </p>
                       {settlement.budget_price && (
                         <div>

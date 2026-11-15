@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import HTTPException, Request
@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.account.service import own_access
 from app.modules.departments.access import resolve_grants
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.knowledge.models import (
     KnowledgeBase,
     KnowledgeChunk,
@@ -17,13 +18,16 @@ from app.modules.knowledge.models import (
 from app.modules.knowledge.schemas import (
     Chunking,
     DocumentView,
-    KnowledgeCreate,
+    KnowledgeFields,
     KnowledgeView,
+    RetrievalPolicy,
 )
 from app.modules.llm.catalog_schemas import CatalogInput
 from app.modules.llm.models import CatalogModel
 from app.modules.members.models import Membership
 from app.modules.members.service import Access, BusinessActor
+from app.modules.skills.icons import library_image
+from app.modules.skills.schemas import SkillIconSelectionView
 
 
 async def access(request: Request, db: AsyncSession, *, write: bool = False) -> Access:
@@ -33,7 +37,27 @@ async def access(request: Request, db: AsyncSession, *, write: bool = False) -> 
     return actor
 
 
-def visible(base: KnowledgeBase, actor: BusinessActor) -> bool:
+KnowledgeActor = BusinessActor | ApplicationActor
+
+
+def can_manage(base: KnowledgeBase, actor: KnowledgeActor) -> bool:
+    if isinstance(actor, ApplicationActor):
+        return base.application_id == actor.application.id and base.tenant_id == actor.tenant.id
+    return actor.member.role == "administrator"
+
+
+def require_manage(base: KnowledgeBase, actor: KnowledgeActor) -> None:
+    if not can_manage(base, actor):
+        raise HTTPException(403, "应用只能修改自己创建的知识库")
+
+
+def visible(base: KnowledgeBase, actor: KnowledgeActor) -> bool:
+    if isinstance(actor, ApplicationActor):
+        return (
+            not base.archived
+            and base.tenant_id == actor.tenant.id
+            and (base.application_id == actor.application.id or base.audience == "organization")
+        )
     return (
         not base.archived
         and base.tenant_id == actor.tenant.id
@@ -49,15 +73,15 @@ def visible(base: KnowledgeBase, actor: BusinessActor) -> bool:
     )
 
 
-async def get_base(db: AsyncSession, actor: BusinessActor, ident: UUID) -> KnowledgeBase:
-    row = await db.scalar(
-        select(KnowledgeBase)
-        .where(
-            KnowledgeBase.id == ident,
-            KnowledgeBase.tenant_id == actor.tenant.id,
-        )
-        .execution_options(populate_existing=True)
+async def get_base(
+    db: AsyncSession, actor: KnowledgeActor, ident: UUID, *, lock: bool = False
+) -> KnowledgeBase:
+    query = select(KnowledgeBase).where(
+        KnowledgeBase.id == ident, KnowledgeBase.tenant_id == actor.tenant.id
     )
+    if lock:
+        query = query.with_for_update()
+    row = await db.scalar(query.execution_options(populate_existing=True))
     if row is None or not visible(row, actor):
         raise HTTPException(404, "知识库不存在或未获授权")
     return row
@@ -65,11 +89,13 @@ async def get_base(db: AsyncSession, actor: BusinessActor, ident: UUID) -> Knowl
 
 async def get_document(
     db: AsyncSession,
-    actor: BusinessActor,
+    actor: KnowledgeActor,
     base_id: UUID,
     ident: UUID,
+    *,
+    lock_base: bool = False,
 ) -> tuple[KnowledgeBase, KnowledgeDocument]:
-    base = await get_base(db, actor, base_id)
+    base = await get_base(db, actor, base_id, lock=lock_base)
     row = await db.scalar(
         select(KnowledgeDocument).where(
             KnowledgeDocument.id == ident,
@@ -83,7 +109,7 @@ async def get_document(
 
 
 async def validate_scope(
-    db: AsyncSession, actor: Access, body: KnowledgeCreate
+    db: AsyncSession, actor: KnowledgeActor, body: KnowledgeFields
 ) -> list[dict[str, Any]]:
     grants = await resolve_grants(
         db, actor.tenant.id, body.audience, body.member_ids, body.department_grants
@@ -107,16 +133,24 @@ async def embedding_profile(db: AsyncSession, tenant_id: UUID) -> dict[str, Any]
     settings = await db.get(KnowledgeSettings, tenant_id)
     if not settings or not settings.embedding_model_id:
         return {}
-    row = await db.get(CatalogModel, settings.embedding_model_id)
+    return await resolve_embedding(db, tenant_id, settings.embedding_model_id)
+
+
+async def retrieval_model(
+    db: AsyncSession, tenant_id: UUID, model_id: UUID, kind: Literal["embedding", "rerank"]
+) -> tuple[CatalogModel, CatalogInput]:
+    row = await db.get(CatalogModel, model_id)
     if not row or row.tenant_id != tenant_id or row.archived:
-        raise HTTPException(422, "默认向量模型不可用，请调整知识库默认配置")
-    config = CatalogInput.model_validate(row.configuration).for_operation("embedding")
-    if (
-        not config
-        or not config.access.enabled
-        or not config.retrieval.embedding_space
-        or not config.retrieval.dimensions
-    ):
+        raise HTTPException(422, "请选择本组织已开放的对应模型")
+    config = CatalogInput.model_validate(row.configuration).for_operation(kind)
+    if not config or not config.access.enabled:
+        raise HTTPException(422, "请选择本组织已开放的对应模型")
+    return row, config
+
+
+async def resolve_embedding(db: AsyncSession, tenant_id: UUID, model_id: UUID) -> dict[str, Any]:
+    row, config = await retrieval_model(db, tenant_id, model_id, "embedding")
+    if not config.retrieval.embedding_space or not config.retrieval.dimensions:
         raise HTTPException(422, "向量模型须已开放，并配置维度和向量空间")
     return {
         "model_id": str(row.id),
@@ -130,7 +164,36 @@ async def embedding_profile(db: AsyncSession, tenant_id: UUID) -> dict[str, Any]
     }
 
 
-async def base_view(db: AsyncSession, row: KnowledgeBase, actor: BusinessActor) -> KnowledgeView:
+def default_retrieval(settings: KnowledgeSettings | None) -> RetrievalPolicy:
+    model = settings.embedding_model_id if settings else None
+    return RetrievalPolicy(
+        mode="hybrid" if model else "keyword",
+        embedding_model_id=model,
+        rerank_model_id=settings.rerank_model_id if settings and settings.rerank_enabled else None,
+    )
+
+
+async def effective_retrieval(db: AsyncSession, base: KnowledgeBase) -> RetrievalPolicy:
+    if base.retrieval is not None:
+        return RetrievalPolicy.model_validate(base.retrieval)
+    # Existing bases retain their embedding snapshot and organization reranker.
+    settings = await db.get(KnowledgeSettings, base.tenant_id, populate_existing=True)
+    model = base.embedding_profile.get("model_id")
+    return default_retrieval(settings).model_copy(
+        update={
+            "mode": "hybrid" if model else "keyword",
+            "embedding_model_id": UUID(model) if model else None,
+        }
+    )
+
+
+async def base_view(db: AsyncSession, row: KnowledgeBase, actor: KnowledgeActor) -> KnowledgeView:
+    icon = SkillIconSelectionView.model_validate(row.icon_selection or {})
+    if icon.source == "library":
+        try:
+            icon.image = library_image(icon.key)
+        except ValueError:
+            icon = SkillIconSelectionView()
     documents = list(
         await db.scalars(
             select(KnowledgeDocument).where(
@@ -167,46 +230,57 @@ async def base_view(db: AsyncSession, row: KnowledgeBase, actor: BusinessActor) 
             "id": row.id,
             "name": row.name,
             "description": row.description,
+            "icon": icon,
             "audience": row.audience,
             "member_ids": row.member_ids,
             "department_grants": row.department_grants,
             "chunking": row.chunking,
             "embedding_profile": row.embedding_profile,
+            "retrieval": await effective_retrieval(db, row),
             "version": row.version,
             "document_count": len(documents),
             "status": status,
             "updated_at": row.updated_at,
-            "can_manage": actor.member.role == "administrator",
+            "can_manage": can_manage(row, actor),
         }
     )
 
 
-async def document_view(db: AsyncSession, row: KnowledgeDocument) -> DocumentView:
-    generation = (
-        await db.get(KnowledgeGeneration, row.latest_generation_id)
-        if row.latest_generation_id
-        else None
-    )
+async def document_view(
+    db: AsyncSession, row: KnowledgeDocument, generation_id: UUID | None = None
+) -> DocumentView:
+    ident = generation_id or row.latest_generation_id
+    generation = await db.get(KnowledgeGeneration, ident) if ident else None
     total, indexed = (
         await db.execute(
             select(
                 func.count(KnowledgeChunk.id),
                 func.count(KnowledgeChunk.vector),
-            ).where(KnowledgeChunk.generation_id == row.latest_generation_id)
+            ).where(KnowledgeChunk.generation_id == ident)
         )
     ).one()
+    # Older stopped jobs share the failure workflow; preserve their execution evidence.
+    legacy_unknown = generation is not None and generation.status == "uncertain"
     return DocumentView(
         id=row.id,
         filename=row.filename,
         media_type=row.media_type,
         size=row.size,
         created_at=row.created_at,
-        generation_id=row.latest_generation_id,
+        generation_id=ident,
         active_generation_id=row.active_generation_id,
-        status=generation.status if generation else "queued",
-        error=generation.error if generation else "",
+        status="failed" if legacy_unknown else generation.status if generation else "queued",
+        error="未取得外部服务处理结果，请重试处理"
+        if legacy_unknown
+        else generation.error
+        if generation
+        else "",
         chunk_count=total,
         indexed_count=indexed,
+        chunk_structure=Chunking.model_validate(generation.chunking).structure
+        if generation
+        else None,
+        character_count=generation.character_count if generation else None,
     )
 
 
@@ -214,14 +288,15 @@ async def enqueue(
     db: AsyncSession,
     base: KnowledgeBase,
     document: KnowledgeDocument,
-    actor: BusinessActor,
+    actor: KnowledgeActor,
     config: Chunking | None = None,
 ) -> KnowledgeGeneration:
     row = KnowledgeGeneration(
         document_id=document.id,
-        actor_member_id=actor.member.id,
+        actor_member_id=actor.member.id if isinstance(actor, BusinessActor) else None,
+        actor_integration_key_id=actor.key.id if isinstance(actor, ApplicationActor) else None,
         chunking=(config or Chunking.model_validate(base.chunking)).model_dump(),
-        embedding_profile=dict(base.embedding_profile),
+        embedding_profile=index_profile(base),
     )
     previous = (
         await db.get(KnowledgeGeneration, document.latest_generation_id)
@@ -239,7 +314,18 @@ async def enqueue(
     return row
 
 
-def list_filter(actor: BusinessActor) -> Any:
+def index_profile(base: KnowledgeBase) -> dict[str, Any]:
+    if base.retrieval is not None and base.retrieval["mode"] == "keyword":
+        return {}
+    return dict(base.embedding_profile)
+
+
+def list_filter(actor: KnowledgeActor) -> Any:
+    if isinstance(actor, ApplicationActor):
+        return or_(
+            KnowledgeBase.audience == "organization",
+            KnowledgeBase.application_id == actor.application.id,
+        )
     return or_(
         KnowledgeBase.audience == "organization",
         (KnowledgeBase.audience == "selected")

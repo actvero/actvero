@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi import HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp.credentials import owner
 from app.modules.mcp.models import McpActivity, McpService
 from app.modules.members.service import BusinessActor
@@ -29,7 +30,7 @@ def add_activity(
     db: AsyncSession,
     request: Request,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     category: Literal["call", "connection"],
     operation: str,
     started: float,
@@ -47,20 +48,27 @@ def add_activity(
             tenant_id=actor.tenant.id,
             service_id=service.id,
             service_name=service.name,
-            actor_id=actor.user.id,
-            actor_name=actor.user.name,
+            actor_id=None if isinstance(actor, ApplicationActor) else actor.user.id,
+            actor_name=actor.application.name
+            if isinstance(actor, ApplicationActor)
+            else actor.user.name,
+            application_id=actor.application.id if isinstance(actor, ApplicationActor) else None,
             owner_id=owner(service, actor),
             category=category,
             operation=operation,
             capability=capability[:2000],
-            source="access_key"
+            source="application"
+            if isinstance(actor, ApplicationActor)
+            else "access_key"
             if getattr(actor, "key", None)
             else "desktop"
             if getattr(actor, "device", None)
             else "management"
             if getattr(actor, "management_session_id", None)
             else "console",
-            access_key_id=getattr(getattr(actor, "key", None), "id", None),
+            access_key_id=None
+            if isinstance(actor, ApplicationActor)
+            else getattr(getattr(actor, "key", None), "id", None),
             device_session_id=getattr(getattr(actor, "device", None), "id", None),
             client_version=getattr(getattr(actor, "device", None), "app_version", ""),
             result=result,

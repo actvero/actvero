@@ -6,6 +6,7 @@ import { KnowledgePage } from '@/features/knowledge/page'
 const search = z.object({
   base: z.uuid().optional(),
   view: z.enum(['create', 'defaults']).optional(),
+  tab: z.enum(['queue', 'search', 'settings']).optional(),
 })
 export const Route = createFileRoute('/_authenticated/knowledge')({
   validateSearch: search.parse,
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_authenticated/knowledge')({
         <KnowledgePage
           baseId={state.base}
           view={state.view}
+          initialTab={state.tab}
           onOpen={(value) => void navigate({ search: value })}
         />
       </AccessGate>

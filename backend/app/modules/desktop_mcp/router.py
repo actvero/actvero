@@ -38,7 +38,7 @@ resource_bearer = HTTPBearer(
     auto_error=False,
     description=(
         "由 /desktop/resource-tokens 获取。目录用 mcp:catalog；协议用 mcp:<服务ID>。"
-        "只有 /api/mcp/services/<服务ID> 协议入口另接受个人访问密钥；"
+        "只有 /api/mcp/services/<服务ID> 协议入口另接受应用密钥和个人访问密钥；"
         "/desktop/* 接口仍需桌面令牌。"
     ),
 )

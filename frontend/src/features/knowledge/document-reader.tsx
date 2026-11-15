@@ -1,15 +1,7 @@
-import { useState } from 'react'
-import {
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  PanelRightClose,
-  PanelRightOpen,
-  Search,
-  X,
-} from 'lucide-react'
-import type { Schema } from '@/lib/api'
+import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react'
+import { api, type Schema } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,14 +18,20 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group'
 import { LoadingState, RequestError } from '@/components/request-state'
-import { State } from './controls'
+import { ChunkPreviewReader } from './chunk-preview'
+import { ChunkTranscript, ReaderLayout } from './reader-layout'
 import {
   locationLabel,
+  useKnowledge,
   useKnowledgeData,
   type Base,
+  type Chunking,
   type Document,
 } from './shared'
 import { DocumentOriginal, readerDialogClass } from './source'
+
+type Chunk = Schema['ChunkView']
+const pageSize = 50
 
 export function DocumentDialog({
   base,
@@ -44,7 +42,6 @@ export function DocumentDialog({
   doc: Document | null
   onClose: () => void
 }) {
-  const [showChunks, setShowChunks] = useState(true)
   return (
     <Dialog
       open={!!doc}
@@ -54,189 +51,352 @@ export function DocumentDialog({
     >
       <DialogContent
         className={readerDialogClass}
+        motion='fade'
         showCloseButton={false}
         aria-describedby={undefined}
       >
-        <header className='flex h-16 shrink-0 items-center gap-3 border-b px-4'>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='返回文档列表'
-            onClick={onClose}
-          >
-            <ArrowLeft />
-          </Button>
-          <DialogTitle className='min-w-0 truncate'>
-            {doc?.filename ?? '文档'}
-          </DialogTitle>
-          <span className='hidden truncate text-sm text-muted-foreground sm:block'>
-            {base.name}
-          </span>
-          <div className='ms-auto flex items-center gap-2'>
-            {doc && <State value={doc.status} />}
-            <Button
-              size='icon'
-              variant='outline'
-              aria-label={showChunks ? '收起切片' : '展开切片'}
-              onClick={() => setShowChunks((v) => !v)}
-            >
-              {showChunks ? <PanelRightClose /> : <PanelRightOpen />}
-            </Button>
-
-            <Button
-              size='icon'
-              variant='ghost'
-              aria-label='关闭文档'
-              onClick={onClose}
-            >
-              <X />
-            </Button>
-          </div>
-        </header>
+        <DialogTitle className='sr-only'>{doc?.filename ?? '文档'}</DialogTitle>
         {doc && (
-          <Reader key={doc.id} base={base} doc={doc} showChunks={showChunks} />
+          <Reader key={doc.id} baseId={base.id} doc={doc} onClose={onClose} />
         )}
       </DialogContent>
     </Dialog>
   )
 }
 
+type Selection = {
+  chunk: Chunk
+  page: number
+  index: number
+  generation: string
+}
 function Reader({
-  base,
+  baseId,
   doc,
-  showChunks,
+  onClose,
 }: {
-  base: Base
+  baseId: string
   doc: Document
-  showChunks: boolean
+  onClose: () => void
 }) {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [selectedId, setSelectedId] = useState<string>()
+  const [selection, setSelection] = useState<Selection>()
+  const [transcript, setTranscript] = useState(false)
+  const [moving, setMoving] = useState(false)
+  const [error, setError] = useState<unknown>()
+  const [jump, setJump] = useState(0)
+  const [adjusting, setAdjusting] = useState<{
+    config: Chunking
+    generation: string
+  }>()
+  const list = useRef<HTMLDivElement>(null)
+  const restore = useRef<{ id: string; scroll: boolean }>(undefined)
+  const operation = useRef(0)
+  const { key } = useKnowledge()
+  const client = useQueryClient()
+  const documentPath = `/knowledge/${baseId}/documents/${doc.id}`
+  const path = (pageNumber: number, generation?: string) => {
+    const p = new URLSearchParams({ page: String(pageNumber), q: search })
+    if (generation) p.set('generation_id', generation)
+    return `${documentPath}?${p}`
+  }
   const query = useKnowledgeData<Schema['DocumentDetail']>(
-    `/knowledge/${base.id}/documents/${doc.id}?page=${page}&q=${encodeURIComponent(search)}`,
+    path(page),
     true,
     true
   )
-  if (query.isPending) return <LoadingState />
-  if (query.isError) return <RequestError error={query.error} />
   const detail = query.data
-  const selected =
-    detail.chunks.find((c) => c.id === selectedId) ?? detail.chunks[0]
-  return (
-    <div className='relative flex min-h-0 flex-1 flex-col md:flex-row'>
+  const active =
+    selection?.generation === detail?.generation_id ? selection : undefined
+  const first = detail?.chunks[0]
+  const selected = active?.chunk ?? first
+  const lastPage = Math.max(
+    1,
+    Math.ceil((detail?.total_chunks ?? 0) / pageSize)
+  )
+  useEffect(() => {
+    const target = restore.current
+    if (!target || query.isPlaceholderData || transcript) return
+    const button = list.current?.querySelector<HTMLElement>(
+      '[aria-pressed="true"]'
+    )
+    if (button?.dataset.chunkId === target.id) {
+      if (target.scroll) button.scrollIntoView({ block: 'nearest' })
+      button.focus({ preventScroll: true })
+    }
+    restore.current = undefined
+  }, [query.isPlaceholderData, transcript, selected?.id])
+
+  function select(chunk: Chunk, open: boolean) {
+    if (!detail?.generation_id) return
+    setSelection({
+      chunk,
+      page,
+      index: detail.chunks.findIndex((item) => item.id === chunk.id),
+      generation: detail.generation_id,
+    })
+    setJump((value) => value + 1)
+    setTranscript(open)
+    setError(undefined)
+  }
+
+  function goToPage(next: number) {
+    setPage(next)
+    setSelection(undefined)
+    list.current?.scrollTo({ top: 0 })
+  }
+
+  async function move(direction: -1 | 1) {
+    if (!active || moving) return
+    const id = ++operation.current
+    const fetchPage = (target: number) => {
+      if (
+        target === page &&
+        detail?.generation_id === active.generation &&
+        !query.isPlaceholderData
+      )
+        return Promise.resolve(detail)
+      const entry = path(target, active.generation)
+      return client.fetchQuery({
+        queryKey: [...key, entry],
+        queryFn: ({ signal }) =>
+          api<Schema['DocumentDetail']>(
+            entry,
+            'GET',
+            undefined,
+            undefined,
+            signal
+          ),
+        staleTime: 15_000,
+      })
+    }
+    setMoving(true)
+    setError(undefined)
+    try {
+      const current = await fetchPage(active.page)
+      let target = active.page
+      const index = current.chunks.findIndex(
+        (chunk) => chunk.id === active.chunk.id
+      )
+      if (index < 0) throw new Error('当前切片已变化，请返回列表重新打开')
+      let position = index + direction
+      let next: Chunk | undefined = current.chunks[position]
+      if (!next) {
+        target += direction
+        if (target >= 1 && target <= lastPage) {
+          const adjacent = await fetchPage(target)
+          position = direction > 0 ? 0 : adjacent.chunks.length - 1
+          next = adjacent.chunks[position]
+        }
+      }
+      if (next && operation.current === id) {
+        setSelection({
+          chunk: next,
+          page: target,
+          index: position,
+          generation: active.generation,
+        })
+        setJump((value) => value + 1)
+      }
+    } catch (cause) {
+      if (operation.current === id) setError(cause)
+    } finally {
+      if (operation.current === id) setMoving(false)
+    }
+  }
+
+  const isTranscript = transcript && !!active
+  const offset = active ? (active.page - 1) * pageSize + active.index : 0
+  const sidebar = (
+    <>
       <div
-        className={cn(
-          'min-h-0 min-w-0 flex-1',
-          showChunks && 'h-1/2 md:h-auto'
-        )}
+        hidden={isTranscript}
+        className={cn('min-h-0 flex-1 flex-col', !isTranscript && 'flex')}
       >
-        <DocumentOriginal
-          baseId={base.id}
-          documentId={doc.id}
-          generationId={detail.generation_id}
-          chunkId={selected?.id}
-        />
-      </div>
-      {showChunks && (
-        <aside
-          className='flex h-1/2 min-h-0 flex-col border-t md:h-auto md:w-[38%] md:min-w-80 md:border-s md:border-t-0'
-          aria-label='文档切片'
-        >
-          <div className='flex flex-col gap-3 border-b p-4'>
-            <div className='flex items-center gap-2'>
-              <h2 className='font-semibold'>切片</h2>
-              <Badge variant='secondary'>{detail.total_chunks}</Badge>
-            </div>
-            <InputGroup>
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupInput
-                aria-label='查找切片'
-                placeholder='搜索切片内容…'
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(1)
-                  setSelectedId(undefined)
-                }}
-              />
-            </InputGroup>
-          </div>
-          <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4'>
-            {detail.chunks.map((chunk) => (
-              <ChunkCard
-                key={chunk.id}
-                chunk={chunk}
-                selected={selected?.id === chunk.id}
-                onSelect={() => setSelectedId(chunk.id)}
-              />
-            ))}
-            {!detail.chunks.length && (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant='icon'>
-                    <FileText />
-                  </EmptyMedia>
-                  <EmptyTitle>
-                    {search ? '没有匹配的切片' : '切片生成后显示在这里'}
-                  </EmptyTitle>
-                </EmptyHeader>
-              </Empty>
+        <div className='flex shrink-0 flex-col gap-2 border-b px-3 py-2'>
+          <div className='flex items-center gap-2'>
+            <h2 className='text-sm font-semibold'>切片列表</h2>
+            {detail && <Badge variant='secondary'>{detail.total_chunks}</Badge>}
+            {detail?.can_manage && detail.chunking && detail.generation_id && (
+              <Button
+                variant='ghost'
+                size='sm'
+                className='ms-auto'
+                onClick={() =>
+                  setAdjusting({
+                    config: detail.chunking!,
+                    generation: detail.generation_id!,
+                  })
+                }
+              >
+                调整切片
+              </Button>
             )}
           </div>
-          <footer className='flex items-center justify-between border-t px-4 py-3'>
-            <Button
-              variant='ghost'
-              size='icon'
-              aria-label='上一页切片'
-              disabled={page === 1}
-              onClick={() => {
-                setPage((v) => v - 1)
-                setSelectedId(undefined)
+          <InputGroup>
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupInput
+              aria-label='查找切片'
+              placeholder='搜索切片内容…'
+              value={search}
+              maxLength={200}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                goToPage(1)
               }}
-            >
-              <ChevronLeft />
-            </Button>
-            <span className='text-xs text-muted-foreground'>
-              {page} / {Math.max(1, Math.ceil(detail.total_chunks / 50))}
-            </span>
-            <Button
-              variant='ghost'
-              size='icon'
-              aria-label='下一页切片'
-              disabled={page * 50 >= detail.total_chunks}
-              onClick={() => {
-                setPage((v) => v + 1)
-                setSelectedId(undefined)
-              }}
-            >
-              <ChevronRight />
-            </Button>
-          </footer>
-        </aside>
+            />
+          </InputGroup>
+        </div>
+        <div
+          ref={list}
+          className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3'
+          aria-busy={query.isFetching && query.isPlaceholderData}
+        >
+          {query.isPending ? (
+            <LoadingState />
+          ) : query.isError ? (
+            <RequestError error={query.error} />
+          ) : (
+            <>
+              {detail?.chunks.map((chunk) => (
+                <ChunkCard
+                  key={chunk.id}
+                  chunk={chunk}
+                  selected={selected?.id === chunk.id}
+                  disabled={query.isPlaceholderData}
+                  onSelect={select}
+                />
+              ))}
+              {!detail?.chunks.length && (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant='icon'>
+                      <FileText />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                      {search ? '没有匹配的切片' : '切片生成后显示在这里'}
+                    </EmptyTitle>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </>
+          )}
+        </div>
+        <footer className='flex shrink-0 items-center justify-between border-t px-3 py-1'>
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            aria-label='上一页切片'
+            disabled={page === 1 || query.isPlaceholderData}
+            onClick={() => goToPage(page - 1)}
+          >
+            <ChevronLeft />
+          </Button>
+          <span className='text-xs text-muted-foreground'>
+            {page} / {lastPage}
+          </span>
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            aria-label='下一页切片'
+            disabled={page >= lastPage || query.isPlaceholderData}
+            onClick={() => goToPage(page + 1)}
+          >
+            <ChevronRight />
+          </Button>
+        </footer>
+      </div>
+      {isTranscript && active && (
+        <>
+          {error != null && (
+            <div className='px-2 py-1'>
+              <RequestError error={error} />
+            </div>
+          )}
+          <ChunkTranscript
+            sliceKey={active.chunk.id}
+            content={active.chunk.content}
+            location={chunkLocation(active.chunk)}
+            onBack={() => {
+              operation.current++
+              setMoving(false)
+              restore.current = {
+                id: active.chunk.id,
+                scroll: page !== active.page,
+              }
+              setPage(active.page)
+              setTranscript(false)
+            }}
+            previous={{
+              disabled: moving || offset <= 0,
+              action: () => void move(-1),
+            }}
+            next={{
+              disabled: moving || offset + 1 >= (detail?.total_chunks ?? 0),
+              action: () => void move(1),
+            }}
+          />
+        </>
       )}
-    </div>
+    </>
+  )
+  if (adjusting)
+    return (
+      <ChunkPreviewReader
+        baseId={baseId}
+        doc={doc}
+        config={adjusting.config}
+        generation={adjusting.generation}
+        onBack={() => setAdjusting(undefined)}
+        onApplied={onClose}
+      />
+    )
+  return (
+    <ReaderLayout
+      original={(trailing) => (
+        <DocumentOriginal
+          baseId={baseId}
+          documentId={doc.id}
+          generationId={detail?.generation_id ?? doc.generation_id}
+          chunkId={selected?.id}
+          toolbar={{
+            filename: doc.filename,
+            back: { label: '返回文档列表', action: onClose },
+            trailing,
+          }}
+          jump={jump}
+        />
+      )}
+      sidebar={sidebar}
+      label='文档切片'
+    />
   )
 }
 
-function ChunkCard({
+function chunkLocation(chunk: Chunk) {
+  return `#${chunk.sequence} · ${Array.from(chunk.content).length} 字 · ${chunk.sources[0] ? locationLabel(chunk.sources[0]) : '原文'}`
+}
+
+export function ChunkCard({
   chunk,
   selected,
+  disabled,
   onSelect,
+  parentSequence,
 }: {
-  chunk: Schema['ChunkView']
+  chunk: Chunk
   selected: boolean
-  onSelect: () => void
+  disabled: boolean
+  onSelect: (chunk: Chunk, open: boolean) => void
+  parentSequence?: number | null
 }) {
-  const [expanded, setExpanded] = useState(false)
-  const length = Array.from(chunk.content).length
-  const long = length > 300 || chunk.content.split('\n').length > 6
   return (
     <div
       className={cn(
-        'shrink-0 rounded-lg border transition-colors',
+        'relative shrink-0 rounded-lg border',
         selected && 'border-info/60 bg-info/5'
       )}
     >
@@ -244,37 +404,32 @@ function ChunkCard({
         type='button'
         aria-label={`切片 ${chunk.sequence}`}
         aria-pressed={selected}
-        onClick={onSelect}
-        className='flex w-full flex-col gap-3 rounded-lg p-4 text-start hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+        data-chunk-id={chunk.id}
+        disabled={disabled}
+        onClick={() => onSelect(chunk, false)}
+        className='flex w-full flex-col gap-2 rounded-lg p-3 text-start hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
       >
-        <span className='text-xs text-muted-foreground'>
-          #{chunk.sequence} ·{' '}
-          {chunk.sources[0] ? locationLabel(chunk.sources[0]) : '原文'}
-        </span>
         <span
-          className={cn(
-            'text-sm leading-7 break-words whitespace-pre-wrap',
-            long && !expanded && 'line-clamp-6'
-          )}
+          className='max-w-full truncate pe-8 text-xs text-muted-foreground'
+          title={chunkLocation(chunk)}
         >
+          {chunkLocation(chunk)}
+          {parentSequence != null && ` · 父片 ${parentSequence}`}
+        </span>
+        <span className='line-clamp-3 text-sm leading-6 wrap-anywhere whitespace-pre-wrap'>
           {chunk.content}
         </span>
-        <span className='flex w-full items-center justify-between text-xs text-muted-foreground'>
-          <span>{length} 字符</span>
-          {selected && <span className='text-info'>当前切片</span>}
-        </span>
       </button>
-      {long && (
-        <Button
-          variant='ghost'
-          size='sm'
-          className='mx-2 mb-2'
-          aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
-        >
-          {expanded ? '收起全文' : '展开全文'}
-        </Button>
-      )}
+      <Button
+        size='icon-xs'
+        variant='ghost'
+        aria-label={`查看切片 ${chunk.sequence} 正文`}
+        className='absolute inset-e-2 top-1.5'
+        disabled={disabled}
+        onClick={() => onSelect(chunk, true)}
+      >
+        <ChevronRight />
+      </Button>
     </div>
   )
 }

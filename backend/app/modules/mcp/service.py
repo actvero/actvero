@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.service import now, provider
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp.activity import add_activity
 from app.modules.mcp.credentials import connection_guard, headers_for, owner
 from app.modules.mcp.models import (
@@ -55,19 +56,26 @@ def capability_allowed(rule: McpPolicy | None, capability: dict[str, Any]) -> bo
     )
 
 
-def can_test(actor: BusinessActor) -> bool:
+def can_test(actor: BusinessActor | ApplicationActor) -> bool:
     return (
         isinstance(actor, (Access, ManagementBusinessActor))
         and actor.member.role == "administrator"
     )
 
 
-def administrator(actor: BusinessActor) -> None:
+def administrator(actor: BusinessActor | ApplicationActor) -> None:
     if not can_test(actor):
         raise HTTPException(403, "此操作仅限管理员")
 
 
-def visible(service: McpService, actor: BusinessActor) -> bool:
+def visible(service: McpService, actor: BusinessActor | ApplicationActor) -> bool:
+    if isinstance(actor, ApplicationActor):
+        return (
+            service.enabled
+            and service.tenant_id == actor.tenant.id
+            and service.audience == "organization"
+            and service.auth_mode in {"none", "organization"}
+        )
     return service.enabled and (
         service.audience == "organization"
         or str(actor.member.id) in service.member_ids
@@ -76,7 +84,7 @@ def visible(service: McpService, actor: BusinessActor) -> bool:
 
 
 async def get_service(
-    db: AsyncSession, actor: BusinessActor, service_id: UUID, admin: bool = False
+    db: AsyncSession, actor: BusinessActor | ApplicationActor, service_id: UUID, admin: bool = False
 ) -> McpService:
     row = await db.get(McpService, service_id)
     if row is None or row.tenant_id != actor.tenant.id:
@@ -166,7 +174,7 @@ async def view(db: AsyncSession, service: McpService, actor: BusinessActor) -> M
 
 
 async def capability_view(
-    db: AsyncSession, service: McpService, actor: BusinessActor
+    db: AsyncSession, service: McpService, actor: BusinessActor | ApplicationActor
 ) -> McpCapabilities:
     snapshot = await db.get(McpSnapshot, (service.id, owner(service, actor)))
     rules = await policies(db, service)
@@ -200,7 +208,7 @@ async def _refresh(
     request: Request,
     db: AsyncSession,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     guard: DispatchGuard | None = None,
 ) -> McpCapabilities:
     headers, secrets = await headers_for(request, db, service, actor)
@@ -274,7 +282,7 @@ async def _run(
     request: Request,
     db: AsyncSession,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     body: McpRun,
     guard: DispatchGuard | None = None,
 ) -> McpResult:
@@ -399,7 +407,7 @@ async def refresh(
     request: Request,
     db: AsyncSession,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     guard: DispatchGuard | None = None,
 ) -> McpCapabilities:
     started = time.monotonic()
@@ -417,7 +425,7 @@ async def run(
     request: Request,
     db: AsyncSession,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     body: McpRun,
     guard: DispatchGuard | None = None,
 ) -> McpResult:

@@ -2,7 +2,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, LargeBinary, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +25,7 @@ class KnowledgeSettings(Base):
     embedding_model_id: Mapped[UUID | None] = mapped_column(ForeignKey("llm_models.id"))
     rerank_model_id: Mapped[UUID | None] = mapped_column(ForeignKey("llm_models.id"))
     rerank_enabled: Mapped[bool] = mapped_column(default=False)
+    # Legacy authorization metadata is retained for existing installations.
     executor_member_id: Mapped[UUID | None] = mapped_column(ForeignKey("memberships.id"))
     authorized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -36,16 +45,24 @@ class ParserCredential(Base):
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
+    __table_args__ = (
+        UniqueConstraint("application_id", "creation_id", name="uq_knowledge_application_creation"),
+    )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
     name: Mapped[str] = mapped_column(String(100))
+    application_id: Mapped[UUID | None] = mapped_column(ForeignKey("integration_applications.id"))
+    creation_id: Mapped[UUID | None] = mapped_column()
+    creation_fingerprint: Mapped[str | None] = mapped_column(String(64))
     archived: Mapped[bool] = mapped_column(default=False)
     description: Mapped[str] = mapped_column(String(1000), default="")
+    icon_selection: Mapped[dict[str, str] | None] = mapped_column(JSONB(none_as_null=True))
     audience: Mapped[str] = mapped_column(String(20), default="administrators")
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     department_grants: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     chunking: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     embedding_profile: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    retrieval: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     version: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
@@ -70,10 +87,18 @@ class KnowledgeDocument(Base):
 
 class KnowledgeGeneration(Base):
     __tablename__ = "knowledge_generations"
+    __table_args__ = (
+        CheckConstraint(
+            "(actor_member_id IS NULL) <> (actor_integration_key_id IS NULL)",
+            name="ck_knowledge_generation_actor",
+        ),
+    )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     document_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_documents.id"), index=True)
-    actor_member_id: Mapped[UUID] = mapped_column(ForeignKey("memberships.id"))
+    actor_member_id: Mapped[UUID | None] = mapped_column(ForeignKey("memberships.id"))
+    actor_integration_key_id: Mapped[UUID | None] = mapped_column(ForeignKey("integration_keys.id"))
     chunking: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    character_count: Mapped[int | None]
     embedding_profile: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     status: Mapped[str] = mapped_column(String(30), default="queued", index=True)
     error: Mapped[str] = mapped_column(String(500), default="")
@@ -93,11 +118,19 @@ class KnowledgeGeneration(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class KnowledgeParentChunk(Base):
+    __tablename__ = "knowledge_parent_chunks"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    generation_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_generations.id"), index=True)
+    content: Mapped[str] = mapped_column(Text)
+
+
 class KnowledgeChunk(Base):
     __tablename__ = "knowledge_chunks"
     __table_args__ = (UniqueConstraint("generation_id", "sequence"),)
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     generation_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_generations.id"), index=True)
+    parent_id: Mapped[UUID | None] = mapped_column(ForeignKey("knowledge_parent_chunks.id"))
     sequence: Mapped[int]
     content: Mapped[str] = mapped_column(Text)
     sources: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)

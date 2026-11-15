@@ -1,15 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Dashboard } from '@/vendor/newapi/features/dashboard'
 import type { DashboardSectionId } from '@/vendor/newapi/features/dashboard/section-registry'
 import { statusQueryOptions } from '@/vendor/newapi/lib/status-query'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
+import { readCallSearch } from '@/features/llm-calls/search'
 import { useGatewayStatus } from './api'
 import { NativeLanguage } from './native-language'
 import { bindNativeAdministrator } from './native-session'
+
+const knowledgeUsage = (
+  <Button variant='outline' asChild>
+    <Link
+      to='/llm-calls'
+      search={readCallSearch({ source: 'knowledge_index' })}
+    >
+      知识库用量
+    </Link>
+  </Button>
+)
 
 export function GatewayStatistics() {
   const { csrf, organization } = useOrganization()
@@ -53,7 +67,7 @@ export function GatewayStatistics() {
   }, [client, csrf, status.data?.connected, status.data?.console_url, revision])
   if (status.isPending)
     return (
-      <PageShell title='数据看板'>
+      <PageShell title='数据看板' action={knowledgeUsage}>
         <LoadingState />
       </PageShell>
     )
@@ -63,7 +77,7 @@ export function GatewayStatistics() {
     (status.data?.configured && !status.data.connected)
   )
     return (
-      <PageShell title='数据看板'>
+      <PageShell title='数据看板' action={knowledgeUsage}>
         <RequestError
           error={
             status.error ??
@@ -80,7 +94,7 @@ export function GatewayStatistics() {
     )
   if (!status.data?.connected)
     return (
-      <PageShell title='数据看板'>
+      <PageShell title='数据看板' action={knowledgeUsage}>
         <Alert>
           <AlertDescription>
             连接 New API
@@ -91,12 +105,12 @@ export function GatewayStatistics() {
     )
   if (!ready)
     return (
-      <PageShell title='数据看板'>
+      <PageShell title='数据看板' action={knowledgeUsage}>
         <LoadingState />
       </PageShell>
     )
   return (
-    <PageShell title='数据看板' compact>
+    <PageShell title='数据看板' action={knowledgeUsage}>
       <NativeLanguage>
         <QueryClientProvider key={organization.tenant_id} client={client}>
           <Dashboard section={section} onSectionChange={setSection} />

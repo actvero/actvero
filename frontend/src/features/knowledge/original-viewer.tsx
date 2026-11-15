@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
   Download,
   FileWarning,
-  Maximize,
   Minus,
   Plus,
-  ScanLine,
 } from 'lucide-react'
 import {
   getDocument,
@@ -16,6 +14,7 @@ import {
 } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import type { Schema } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -32,112 +31,204 @@ import {
   type ReaderCredentials,
   type ReaderEvent,
 } from './reader-http'
+import { ReaderToolbar, type Toolbar } from './reader-layout'
 import { locationLabel } from './shared'
+import { StructuredOriginal, readerScrollClass } from './structured-original'
+import { docxType, xlsxType } from './structured-original-data'
 
 GlobalWorkerOptions.workerSrc = workerUrl
 type Preview = Schema['DocumentPreview']
+
 export function OriginalViewer({
   preview,
   credentials,
   onEvent,
+  onReadError,
+  toolbar = { filename: preview.filename },
+  jump = 0,
 }: {
   preview: Preview
   credentials?: ReaderCredentials
   onEvent?: (event: ReaderEvent) => void
+  onReadError?: (cause: unknown) => void
+  toolbar?: Toolbar
+  jump?: number
 }) {
-  const [loaded, setLoaded] = useState<{
-    key: string
-    bytes: ArrayBuffer
-    url: string
-  } | null>(null)
-  const [error, setError] = useState<{ key: string; cause: unknown } | null>(
-    null
+  const token = credentials?.token
+  const parentOrigin = credentials?.parentOrigin
+  // Location changes never download the immutable original again.
+  const source = `${preview.document_id}:${preview.source_url}`
+  return (
+    <OriginalFile
+      key={source}
+      preview={preview}
+      token={token}
+      parentOrigin={parentOrigin}
+      onEvent={onEvent}
+      onReadError={onReadError}
+      toolbar={toolbar}
+      jump={jump}
+    />
   )
-  const key = `${preview.source_url}:${credentials?.token ?? ''}`
+}
+
+function OriginalFile({
+  preview,
+  token,
+  parentOrigin,
+  onEvent,
+  onReadError,
+  toolbar,
+  jump,
+}: {
+  preview: Preview
+  token?: string
+  parentOrigin?: string
+  onEvent?: (event: ReaderEvent) => void
+  onReadError?: (cause: unknown) => void
+  toolbar: Toolbar
+  jump: number
+}) {
+  const [loaded, setLoaded] = useState<{ bytes: ArrayBuffer; url: string }>()
+  const [error, setError] = useState<unknown>()
+  const [zoom, setZoom] = useState(1)
+  const { document_id: docId, source_url: url, media_type: mediaType } = preview
+  const locate = `${preview.generation_id}:${preview.citation_id}:${jump}`
   const loadedEvent = useRef(onEvent)
+  const readError = useRef(onReadError)
   useEffect(() => {
     loadedEvent.current = onEvent
-  }, [onEvent])
+    readError.current = onReadError
+  }, [onEvent, onReadError])
   useEffect(() => {
     const abort = new AbortController()
     let objectUrl: string | undefined
-    void readerFetch(preview.source_url, credentials, abort.signal)
+    const credentials =
+      token && parentOrigin ? { token, parentOrigin } : undefined
+    void readerFetch(url, credentials, abort.signal)
       .then(async (response) => {
         const bytes = await response.arrayBuffer()
         if (abort.signal.aborted) return
-        objectUrl = URL.createObjectURL(
-          new Blob([bytes], { type: preview.media_type })
-        )
-        setLoaded({ key, bytes, url: objectUrl })
-        loadedEvent.current?.({
-          type: 'loaded',
-          documentId: preview.document_id,
-        })
+        objectUrl = URL.createObjectURL(new Blob([bytes], { type: mediaType }))
+        setLoaded({ bytes, url: objectUrl })
+        loadedEvent.current?.({ type: 'loaded', documentId: docId })
       })
-      .catch((e: unknown) => {
-        if (!abort.signal.aborted) setError({ key, cause: e })
+      .catch((cause: unknown) => {
+        if (!abort.signal.aborted) {
+          setError(cause)
+          readError.current?.(cause)
+        }
       })
     return () => {
       abort.abort()
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-    // Credentials are represented by key; selecting another citation doesn't refetch the original.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
-  const current = loaded?.key === key ? loaded : null
-  if (error?.key === key)
-    return (
-      <div className='p-6'>
-        <RequestError error={error.cause} />
-      </div>
-    )
-  if (!current) return <LoadingState />
-  const download = (
-    <Button size='icon' variant='ghost' asChild>
-      <a href={current.url} download={preview.filename} aria-label='下载原件'>
-        <Download />
-      </a>
-    </Button>
+  }, [docId, url, mediaType, token, parentOrigin])
+
+  const zoomControls = (
+    <div className='flex items-center gap-0.5' aria-label='缩放'>
+      <Button
+        size='icon-xs'
+        variant='ghost'
+        aria-label='缩小原文'
+        disabled={zoom <= 0.5}
+        onClick={() => setZoom((v) => Math.max(0.5, v - 0.25))}
+      >
+        <Minus />
+      </Button>
+      <Button
+        size='xs'
+        variant='ghost'
+        className='px-0.5'
+        aria-label='适应宽度'
+        title='重置缩放'
+        onClick={() => setZoom(1)}
+      >
+        {Math.round(zoom * 100)}%
+      </Button>
+      <Button
+        size='icon-xs'
+        variant='ghost'
+        aria-label='放大原文'
+        disabled={zoom >= 2}
+        onClick={() => setZoom((v) => Math.min(2, v + 0.25))}
+      >
+        <Plus />
+      </Button>
+    </div>
   )
+  const pdf = mediaType === 'application/pdf'
+  const image = mediaType === 'image/png' || mediaType === 'image/jpeg'
+  const text = mediaType === 'text/plain' || mediaType === 'text/markdown'
+  const structured =
+    mediaType === 'text/csv' || mediaType === docxType || mediaType === xlsxType
   return (
-    <section className='flex h-full min-h-0 flex-col' aria-label='原文预览'>
-      {preview.media_type === 'application/pdf' ? (
+    <section
+      className='@container flex h-full min-h-0 flex-col'
+      aria-label='原文预览'
+    >
+      {loaded && pdf && !error ? (
         <PdfOriginal
-          bytes={current.bytes}
+          bytes={loaded.bytes}
           preview={preview}
-          download={download}
+          toolbar={toolbar}
           onEvent={onEvent}
-        />
-      ) : preview.media_type.startsWith('image/') ? (
-        <ImageOriginal
-          url={current.url}
-          preview={preview}
-          download={download}
-        />
-      ) : preview.media_type.startsWith('text/') ? (
-        <TextOriginal
-          bytes={current.bytes}
-          preview={preview}
-          download={download}
+          locate={locate}
+          zoom={zoom}
+          zoomControls={zoomControls}
         />
       ) : (
         <>
-          <div className='flex justify-end border-b p-2'>{download}</div>
-          <Empty className='flex-1'>
-            <EmptyHeader>
-              <EmptyMedia variant='icon'>
-                <FileWarning />
-              </EmptyMedia>
-              <EmptyTitle>使用原应用打开此文档</EmptyTitle>
-              <EmptyDescription>此格式暂不支持在线原版预览。</EmptyDescription>
-            </EmptyHeader>
-            <Button asChild>
-              <a href={current.url} download={preview.filename}>
-                <Download data-icon='inline-start' />
-                下载原件
-              </a>
-            </Button>
-          </Empty>
+          <ReaderToolbar toolbar={toolbar}>
+            {loaded && (image || text || structured) ? zoomControls : null}
+          </ReaderToolbar>
+          {error != null ? (
+            <div className='p-6'>
+              <RequestError error={error} />
+            </div>
+          ) : !loaded ? (
+            <LoadingState />
+          ) : image ? (
+            <ImageOriginal
+              url={loaded.url}
+              preview={preview}
+              zoom={zoom}
+              locate={locate}
+            />
+          ) : structured ? (
+            <StructuredOriginal
+              bytes={loaded.bytes}
+              mediaType={mediaType}
+              filename={preview.filename}
+              downloadUrl={loaded.url}
+              sources={preview.sources ?? []}
+              zoom={zoom}
+              locate={locate}
+            />
+          ) : text ? (
+            <TextOriginal
+              bytes={loaded.bytes}
+              preview={preview}
+              zoom={zoom}
+              locate={locate}
+            />
+          ) : (
+            <Empty className='flex-1'>
+              <EmptyHeader>
+                <EmptyMedia variant='icon'>
+                  <FileWarning />
+                </EmptyMedia>
+                <EmptyTitle>使用原应用打开此文档</EmptyTitle>
+                <EmptyDescription>此格式暂不支持在线预览。</EmptyDescription>
+              </EmptyHeader>
+              <Button asChild>
+                <a href={loaded.url} download={preview.filename}>
+                  <Download data-icon='inline-start' />
+                  下载原件
+                </a>
+              </Button>
+            </Empty>
+          )}
         </>
       )}
     </section>
@@ -147,31 +238,43 @@ export function OriginalViewer({
 function PdfOriginal({
   bytes,
   preview,
-  download,
+  toolbar,
+  locate,
+  zoom,
+  zoomControls,
   onEvent,
 }: {
   bytes: ArrayBuffer
   preview: Preview
-  download: React.ReactNode
+  toolbar: Toolbar
+  locate: string
+  zoom: number
+  zoomControls: React.ReactNode
   onEvent?: (event: ReaderEvent) => void
 }) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)
-  const citationPage = (preview.sources ?? [])[0]?.page ?? 1
-  const [navigation, setNavigation] = useState({
-    citation: preview.citation_id,
-    page: citationPage,
-  })
+  const citationPage =
+    preview.sources?.find(
+      (source) =>
+        Number.isInteger(source.page) &&
+        source.page! > 0 &&
+        (!pdf || source.page! <= pdf.numPages)
+    )?.page ?? 1
+  const [navigation, setNavigation] = useState<{
+    citation: string
+    page: number
+  }>()
   const requestedPage =
-    navigation.citation === preview.citation_id ? navigation.page : citationPage
+    navigation?.citation === locate ? navigation.page : citationPage
   const page = Math.max(
     1,
     Math.min(requestedPage, pdf?.numPages ?? requestedPage)
   )
   const setPage = (value: number) =>
-    setNavigation({ citation: preview.citation_id, page: value })
-  const [zoom, setZoom] = useState(1)
+    setNavigation({ citation: locate, page: value })
   const [width, setWidth] = useState(640)
   const [size, setSize] = useState({ width: 640, height: 900 })
+  const scroll = useRef({ width: 640, height: 900, left: 0, top: 0 })
   const renderKey = `${page}:${zoom}:${width}`
   const [renderedKey, setRenderedKey] = useState('')
   const rendered = renderedKey === renderKey
@@ -179,6 +282,16 @@ function PdfOriginal({
   const container = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const marker = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const before = scroll.current
+    const node = container.current
+    if (!node) return
+    node.scrollTo({
+      left: (before.left * size.width) / before.width,
+      top: (before.top * size.height) / before.height,
+    })
+    scroll.current = { ...size, top: node.scrollTop, left: node.scrollLeft }
+  }, [size])
   const onEventRef = useRef(onEvent)
   useEffect(() => {
     onEventRef.current = onEvent
@@ -211,14 +324,14 @@ function PdfOriginal({
     const element = container.current
     if (!element) return
     const observer = new ResizeObserver(([entry]) =>
-      setWidth(Math.max(200, entry.contentRect.width - 48))
+      setWidth(Math.max(200, entry.contentRect.width))
     )
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
   useEffect(() => {
-    onEventRef.current?.({ type: 'page', page })
-  }, [page])
+    if (pdf) onEventRef.current?.({ type: 'page', page })
+  }, [pdf, page])
   useEffect(() => {
     if (!pdf || !canvas.current) return
     let alive = true
@@ -261,119 +374,81 @@ function PdfOriginal({
       cancel?.()
     }
   }, [pdf, page, zoom, width, renderKey])
+  const lastPosition = useRef('')
   useEffect(() => {
-    if (rendered)
-      marker.current?.scrollIntoView({ block: 'center', inline: 'nearest' })
-  }, [rendered, preview.citation_id])
+    const position = `${locate}:${page}`
+    if (!rendered || lastPosition.current === position) return
+    lastPosition.current = position
+    if (marker.current)
+      marker.current.scrollIntoView({ block: 'center', inline: 'nearest' })
+    else container.current?.scrollTo({ top: 0, left: 0 })
+  }, [rendered, locate, page])
   const sources = (preview.sources ?? []).filter(
     (s) => s.page === page && sourceBox(s)
   )
-  const sourcePages = [
-    ...new Set(
-      (preview.sources ?? []).map((s) => s.page).filter((v): v is number => !!v)
-    ),
-  ]
   return (
     <>
-      <div className='flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
-        <div className='flex items-center gap-1'>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='上一页原文'
-            disabled={!pdf || page <= 1}
-            onClick={() => setPage(page - 1)}
-          >
-            <ChevronLeft />
-          </Button>
-          <form
-            className='flex items-center gap-2'
-            onSubmit={(e) => {
-              e.preventDefault()
-              setPage(
-                Math.min(
-                  pdf?.numPages ?? 1,
-                  Math.max(
-                    1,
-                    Number(new FormData(e.currentTarget).get('page')) || 1
-                  )
+      <ReaderToolbar toolbar={toolbar}>
+        <Button
+          className='hidden @sm:inline-flex'
+          size='icon-xs'
+          variant='ghost'
+          aria-label='上一页原文'
+          disabled={!pdf || page <= 1}
+          onClick={() => setPage(page - 1)}
+        >
+          <ChevronLeft />
+        </Button>
+        <form
+          className='flex items-center gap-0.5 @sm:gap-1'
+          onSubmit={(e) => {
+            e.preventDefault()
+            setPage(
+              Math.min(
+                pdf?.numPages ?? 1,
+                Math.max(
+                  1,
+                  Math.trunc(
+                    Number(new FormData(e.currentTarget).get('page'))
+                  ) || 1
                 )
               )
-            }}
-          >
-            <Input
-              aria-label='原文页码'
-              className='h-8 w-14 text-center'
-              key={page}
-              name='page'
-              inputMode='numeric'
-              defaultValue={page}
-            />
-            <span className='text-sm text-muted-foreground'>
-              / {pdf?.numPages ?? '—'}
-            </span>
-          </form>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='下一页原文'
-            disabled={!pdf || page >= pdf.numPages}
-            onClick={() => setPage(page + 1)}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-        <div className='flex items-center gap-1'>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='缩小原文'
-            disabled={zoom <= 0.5}
-            onClick={() => setZoom((v) => Math.max(0.5, v - 0.25))}
-          >
-            <Minus />
-          </Button>
-          <span className='w-12 text-center text-xs'>
-            {Math.round(zoom * 100)}%
+            )
+          }}
+        >
+          <Input
+            aria-label='原文页码'
+            className='h-7 w-10 px-1 text-center @sm:w-14'
+            key={page}
+            name='page'
+            inputMode='numeric'
+            defaultValue={page}
+          />
+          <span className='text-xs whitespace-nowrap text-muted-foreground'>
+            / {pdf?.numPages ?? '—'}
           </span>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='放大原文'
-            disabled={zoom >= 2}
-            onClick={() => setZoom((v) => Math.min(2, v + 0.25))}
-          >
-            <Plus />
-          </Button>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='适应宽度'
-            onClick={() => setZoom(1)}
-          >
-            <Maximize />
-          </Button>
-          {download}
-        </div>
-      </div>
-      {sourcePages.length > 1 && (
-        <div className='flex flex-wrap items-center gap-2 border-b px-3 py-1'>
-          <span className='text-xs text-muted-foreground'>引用位置</span>
-          {sourcePages.map((p) => (
-            <Button
-              key={p}
-              size='sm'
-              variant={page === p ? 'secondary' : 'ghost'}
-              onClick={() => setPage(p)}
-            >
-              第 {p} 页
-            </Button>
-          ))}
-        </div>
-      )}
+        </form>
+        <Button
+          className='hidden @sm:inline-flex'
+          size='icon-xs'
+          variant='ghost'
+          aria-label='下一页原文'
+          disabled={!pdf || page >= pdf.numPages}
+          onClick={() => setPage(page + 1)}
+        >
+          <ChevronRight />
+        </Button>
+        {zoomControls}
+      </ReaderToolbar>
       <div
         ref={container}
-        className='min-h-0 flex-1 overflow-auto bg-muted/50 p-6'
+        className={cn(readerScrollClass, 'bg-muted/50')}
+        aria-label='原文阅读区'
+        tabIndex={0}
+        onScroll={(event) => {
+          scroll.current.top = event.currentTarget.scrollTop
+          scroll.current.left = event.currentTarget.scrollLeft
+        }}
       >
         {error != null && <RequestError error={error} />}
         <div className='relative mx-auto bg-white shadow-sm' style={size}>
@@ -382,7 +457,7 @@ function PdfOriginal({
             style={size}
             aria-label={`${preview.filename} 第 ${page} 页`}
           />
-          {!rendered && (
+          {error == null && !rendered && (
             <div className='absolute inset-0 bg-background/80'>
               <LoadingState />
             </div>
@@ -406,108 +481,110 @@ function PdfOriginal({
 function ImageOriginal({
   url,
   preview,
-  download,
+  zoom,
+  locate,
 }: {
   url: string
   preview: Preview
-  download: React.ReactNode
+  zoom: number
+  locate: string
 }) {
   const marker = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
+  const [failed, setFailed] = useState(false)
   useEffect(() => {
-    if (ready) marker.current?.scrollIntoView({ block: 'center' })
-  }, [ready, preview.citation_id])
+    if (ready)
+      marker.current?.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }, [ready, locate])
   return (
-    <>
-      <div className='flex items-center justify-between border-b px-3 py-2'>
-        <span className='text-sm'>原件</span>
-        {download}
-      </div>
-      <div className='min-h-0 flex-1 overflow-auto bg-muted/50 p-6'>
-        <div className='relative mx-auto max-w-5xl'>
+    <div
+      className={cn(readerScrollClass, 'bg-muted/50')}
+      tabIndex={0}
+      aria-label='原图阅读区'
+    >
+      {failed ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>无法打开这张图片</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <div
+          className='relative mx-auto'
+          style={{ width: zoom * 100 + '%', maxWidth: zoom * 1024 }}
+        >
           <img
             src={url}
             alt={preview.filename}
             className='block h-auto w-full'
             onLoad={() => setReady(true)}
+            onError={() => setFailed(true)}
           />
           {ready &&
             (preview.sources ?? [])
-              .filter((s) => sourceBox(s))
-              .map((s, i) => (
+              .filter((s) => (!s.page || s.page === 1) && sourceBox(s))
+              .map((source, index) => (
                 <div
-                  key={`${s.block_id}-${i}`}
-                  ref={i === 0 ? marker : undefined}
+                  key={`${source.block_id}-${index}`}
+                  ref={index === 0 ? marker : undefined}
                   className='pointer-events-none absolute rounded-sm border border-info/60 bg-info/15'
-                  style={sourceBox(s)!}
+                  style={sourceBox(source)!}
                   aria-label='原文高亮'
                 />
               ))}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   )
 }
 
 function TextOriginal({
   bytes,
   preview,
-  download,
+  zoom,
+  locate,
 }: {
   bytes: ArrayBuffer
   preview: Preview
-  download: React.ReactNode
+  zoom: number
+  locate: string
 }) {
-  const marker = useRef<HTMLElement>(null)
-  const segments = textSegments(
-    new TextDecoder().decode(bytes),
-    preview.text_ranges ?? []
+  const root = useRef<HTMLDivElement>(null)
+  const text = useMemo(() => new TextDecoder().decode(bytes), [bytes])
+  const ranges = preview.text_ranges
+  const segments = useMemo(
+    () => textSegments(text, ranges ?? []),
+    [text, ranges]
   )
   useEffect(() => {
-    marker.current?.scrollIntoView({ block: 'center' })
-  }, [preview.citation_id])
+    root.current
+      ?.querySelector('mark')
+      ?.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }, [locate])
   return (
-    <>
-      <div className='flex items-center justify-between border-b px-3 py-2'>
-        <span className='truncate text-sm text-muted-foreground'>
-          {(preview.sources ?? [])[0]
-            ? locationLabel((preview.sources ?? [])[0])
-            : '原件'}
-        </span>
-        <div className='flex items-center gap-1'>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label='定位引用'
-            disabled={!(preview.text_ranges ?? []).length}
-            onClick={() => marker.current?.scrollIntoView({ block: 'center' })}
-          >
-            <ScanLine />
-          </Button>
-          {download}
-        </div>
-      </div>
-      <div className='min-h-0 flex-1 overflow-auto bg-muted/50 p-4 sm:p-6'>
-        <pre className='mx-auto max-w-4xl rounded-sm border bg-background p-6 font-mono text-sm leading-7 break-words whitespace-pre-wrap sm:p-10'>
-          {segments.map((segment, i) =>
-            segment.highlighted ? (
-              <mark
-                ref={
-                  i === segments.findIndex((s) => s.highlighted)
-                    ? marker
-                    : undefined
-                }
-                key={segment.start}
-                className='rounded-sm bg-info/15 text-inherit outline outline-info/40'
-              >
-                {segment.text}
-              </mark>
-            ) : (
-              <span key={segment.start}>{segment.text}</span>
-            )
-          )}
-        </pre>
-      </div>
-    </>
+    <div
+      className={readerScrollClass}
+      ref={root}
+      tabIndex={0}
+      aria-label='原文阅读区'
+    >
+      <pre
+        className='mx-auto max-w-5xl p-4 font-mono leading-relaxed wrap-anywhere whitespace-pre-wrap sm:p-6'
+        style={{ fontSize: zoom * 0.875 + 'rem' }}
+      >
+        {segments.map((segment) =>
+          segment.highlighted ? (
+            <mark
+              key={segment.start}
+              className='rounded-sm bg-info/15 text-inherit outline outline-info/40'
+            >
+              {segment.text}
+            </mark>
+          ) : (
+            <span key={segment.start}>{segment.text}</span>
+          )
+        )}
+      </pre>
+    </div>
   )
 }

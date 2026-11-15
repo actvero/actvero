@@ -15,21 +15,29 @@ afterEach(() => {
 })
 it('只接受绑定父窗口的握手；阅读不带 Cookie，凭证不进入 URL 或缓存', async () => {
   const token = 'avr_synthetic_reader_credential'
+  let expired = false
   const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
     expect(init?.credentials).toBe('omit')
     expect((init?.headers as Record<string, string>).Authorization).toBe(
       `Bearer ${token}`
     )
     expect(url).not.toContain(token)
+    if (expired)
+      return Response.json(
+        { error: { message: '原文预览已失效' } },
+        { status: 401 }
+      )
     return url.endsWith('/manifest')
       ? Response.json({
           document_id: 'one',
           generation_id: 'gen',
+          citation_id: 'citation',
           filename: '手册.txt',
           media_type: 'text/plain',
           sources: [],
           text_ranges: [],
           source_url: '/api/v1/knowledge-reader/source',
+          chunk: { sequence: 1, content: '只读已授权切片' },
         })
       : new Response('真实原件内容')
   })
@@ -56,6 +64,8 @@ it('只接受绑定父窗口的握手；阅读不带 Cookie，凭证不进入 UR
   expect(fetcher).not.toHaveBeenCalled()
   message('https://host.example', window.parent)
   await expect.element(page.getByText('真实原件内容')).toBeVisible()
+  await page.getByRole('button', { name: '展开切片正文' }).click()
+  await expect.element(page.getByText('只读已授权切片')).toBeVisible()
   expect(
     JSON.stringify(
       client
@@ -64,6 +74,12 @@ it('只接受绑定父窗口的握手；阅读不带 Cookie，凭证不进入 UR
         .map((query) => ({ key: query.queryKey, data: query.state.data }))
     )
   ).not.toContain(token)
+  expired = true
+  await client.invalidateQueries({ queryKey: ['knowledge-reader'] })
+  await expect.element(page.getByText('原文预览已失效')).toBeVisible()
+  await expect.element(page.getByText('只读已授权切片')).not.toBeInTheDocument()
+  await expect.element(page.getByText('真实原件内容')).not.toBeInTheDocument()
+  await expect.poll(() => client.getQueryCache().getAll()).toHaveLength(0)
   message('https://host.example', window.parent, 'clear')
   await expect.element(page.getByText('等待打开原文')).toBeVisible()
   await expect.element(page.getByText('真实原件内容')).not.toBeInTheDocument()

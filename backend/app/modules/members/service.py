@@ -10,6 +10,7 @@ from app.modules.audit.models import AuditEvent
 from app.modules.auth.models import WebSession
 from app.modules.auth.service import authenticate, provider
 from app.modules.departments.access import DepartmentAccess, load_access
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.members.models import Membership
 from app.modules.members.schemas import MemberView
 from app.modules.tenants.models import Installation, PlatformOperator, Tenant
@@ -129,23 +130,33 @@ def member_avatar_url(member: Membership, user: User) -> str | None:
 
 def record(
     db: AsyncSession,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     action: str,
     target_id: UUID,
     target_name: str,
     details: dict[str, str] | None = None,
     result: str = "success",
 ) -> None:
+    app = actor.application if isinstance(actor, ApplicationActor) else None
     db.add(
         AuditEvent(
             tenant_id=actor.tenant.id,
-            actor_id=actor.user.id,
-            actor_name=actor.user.name,
+            actor_id=None if isinstance(actor, ApplicationActor) else actor.user.id,
+            actor_name=actor.application.name
+            if isinstance(actor, ApplicationActor)
+            else actor.user.name,
+            application_id=app.id if app else None,
             action=action,
             target_id=target_id,
             target_name=target_name,
             details=(details or {})
-            | ({"actor_scope": "platform"} if actor.member.source == "platform" else {}),
+            | (
+                {"actor_scope": "application"}
+                if isinstance(actor, ApplicationActor)
+                else {"actor_scope": "platform"}
+                if actor.member.source == "platform"
+                else {}
+            ),
             result=result,
         )
     )

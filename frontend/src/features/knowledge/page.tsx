@@ -1,15 +1,13 @@
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   ArrowLeft,
   BookOpen,
+  FileText,
+  ListTodo,
   Plus,
   Search,
   Settings2,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Check,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, messageOf, type Schema } from '@/lib/api'
@@ -26,6 +24,12 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleSection,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
   Empty,
   EmptyHeader,
   EmptyTitle,
@@ -38,35 +42,61 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group'
+import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { PageBack, PageHeader } from '@/components/layout/page-header'
 import { PageShell } from '@/components/layout/page-shell'
+import { ListPagination } from '@/components/list-pagination'
+import { ListSearch, ListToolbar } from '@/components/list-toolbar'
 import { LoadingState, RequestError } from '@/components/request-state'
+import { ResourceCard } from '@/components/resource-card'
 import { Choice, State } from './controls'
+import { CreateKnowledge } from './create'
 import { KnowledgeDefaults } from './defaults'
-import { Documents, UploadButton } from './documents'
+import { documentNeedsProcessing, useDocuments } from './document-data'
+import { Documents } from './documents'
 import { BaseFields, ChunkFields } from './forms'
+import { KnowledgeAvatar, SavedKnowledgeIcon } from './icon'
+import { RetrievalFields } from './retrieval-fields'
 import {
-  busy,
+  chunkingError,
+  defaultsPath,
   initial,
   locationLabel,
+  retrievalError,
+  retrievalLabels,
   useKnowledge,
   useKnowledgeData,
   type Base,
   type BaseInput,
   type Citation,
-  type Document,
+  type Defaults,
+  type RetrievalPolicy,
 } from './shared'
 import { SourceDialog } from './source'
 
-type Navigation = { base?: string; view?: 'create' | 'defaults' }
+type Navigation = {
+  base?: string
+  view?: 'create' | 'defaults'
+  tab?: 'queue' | 'search' | 'settings'
+}
+
+const knowledgeRailQuery = '(min-width: 70rem)'
+function subscribeKnowledgeLayout(onChange: () => void) {
+  const media = window.matchMedia(knowledgeRailQuery)
+  media.addEventListener('change', onChange)
+  return () => media.removeEventListener('change', onChange)
+}
 export function KnowledgePage({
   baseId,
   view,
+  initialTab,
   onOpen,
 }: {
   baseId?: string
   view?: Navigation['view']
+  initialTab?: Navigation['tab']
   onOpen: (v: Navigation) => void
 }) {
   const { admin } = useKnowledge()
@@ -74,16 +104,7 @@ export function KnowledgePage({
     return (
       <PageShell
         title={view === 'defaults' ? '知识库默认配置' : '创建知识库'}
-        titleBefore={
-          <Button
-            variant='ghost'
-            size='icon'
-            aria-label='返回知识库'
-            onClick={() => onOpen({})}
-          >
-            <ArrowLeft />
-          </Button>
-        }
+        titleBefore={<PageBack label='返回知识库' onClick={() => onOpen({})} />}
       >
         {!admin ? (
           <Alert>
@@ -92,12 +113,19 @@ export function KnowledgePage({
         ) : view === 'defaults' ? (
           <KnowledgeDefaults />
         ) : (
-          <CreateKnowledge onOpen={onOpen} />
+          <CreateKnowledge onCreated={(base) => onOpen({ base })} />
         )}
       </PageShell>
     )
   if (baseId)
-    return <KnowledgeDetail key={baseId} id={baseId} onOpen={onOpen} />
+    return (
+      <KnowledgeDetail
+        key={baseId}
+        id={baseId}
+        onOpen={onOpen}
+        initialTab={initialTab}
+      />
+    )
   return <KnowledgeList onOpen={onOpen} />
 }
 function KnowledgeList({ onOpen }: { onOpen: (v: Navigation) => void }) {
@@ -132,24 +160,21 @@ function KnowledgeList({ onOpen }: { onOpen: (v: Navigation) => void }) {
       }
     >
       <form
-        className='w-full max-w-md shrink-0'
+        className='shrink-0'
         onSubmit={(e) => {
           e.preventDefault()
           setQ(search)
           setPage(1)
         }}
       >
-        <InputGroup>
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          <InputGroupInput
+        <ListToolbar>
+          <ListSearch
             aria-label='搜索知识库'
             placeholder='搜索知识库…'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </InputGroup>
+        </ListToolbar>
       </form>
       <div className='min-h-0 flex-1 overflow-auto pb-2'>
         {query.isPending ? (
@@ -176,199 +201,64 @@ function KnowledgeList({ onOpen }: { onOpen: (v: Navigation) => void }) {
             )}
           </Empty>
         ) : (
-          <div className='grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3'>
+          <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-3'>
             {query.data.items.map((base) => (
-              <Card
+              <ResourceCard
                 key={base.id}
-                asChild
-                interactive
-                density='compact'
-                className='min-h-52'
-              >
-                <button
-                  type='button'
-                  className='text-start'
-                  onClick={() => onOpen({ base: base.id })}
-                >
-                  <CardHeader className='gap-3 px-5 pt-3'>
-                    <div className='flex items-center justify-between'>
-                      <BookOpen className='size-5 text-muted-foreground' />
-                      <ArrowRight className='size-4 text-muted-foreground' />
-                    </div>
-                    <CardTitle>{base.name}</CardTitle>
-                    <CardDescription className='line-clamp-1'>
-                      {base.description || '\u00a0'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className='px-5 py-3'>
-                    <State value={base.status} />
-                  </CardContent>
-                  <CardFooter className='mt-auto flex-wrap gap-x-3 gap-y-1 px-5 pb-2 text-xs text-muted-foreground'>
-                    <span>{base.document_count}份文档</span>
-                    <span>{audienceLabel(base)}</span>
-                    <span className='ms-auto'>
-                      {new Date(base.updated_at).toLocaleDateString('zh-CN')}
-                    </span>
-                  </CardFooter>
-                </button>
-              </Card>
+                name={base.name}
+                description={base.description}
+                icon={
+                  base.icon?.image ? (
+                    <KnowledgeAvatar image={base.icon.image} size='sm' />
+                  ) : (
+                    <BookOpen aria-hidden />
+                  )
+                }
+                status={
+                  base.status !== 'empty' && <State value={base.status} />
+                }
+                onOpen={() => onOpen({ base: base.id })}
+                metadata={`${base.document_count} 份文档`}
+              />
             ))}
           </div>
         )}
       </div>
-      <footer className='mt-auto flex shrink-0 items-center justify-between border-t pt-4'>
-        <span className='text-sm text-muted-foreground'>
-          共 {query.data?.total ?? 0} 个知识库
-        </span>
-        <div className='flex items-center gap-3'>
-          <Button
-            variant='outline'
-            size='icon'
-            aria-label='上一页知识库'
-            disabled={page === 1}
-            onClick={() => setPage((v) => v - 1)}
-          >
-            <ChevronLeft />
-          </Button>
-          <span className='text-sm'>
-            {page} / {Math.max(1, Math.ceil((query.data?.total ?? 0) / 20))}
-          </span>
-          <Button
-            variant='outline'
-            size='icon'
-            aria-label='下一页知识库'
-            disabled={page * 20 >= (query.data?.total ?? 0)}
-            onClick={() => setPage((v) => v + 1)}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-      </footer>
+      <ListPagination
+        label='知识库分页'
+        unit='个知识库'
+        total={query.data?.total}
+        page={page}
+        pageCount={Math.ceil((query.data?.total ?? 0) / 20)}
+        onPage={setPage}
+        disabled={!query.isSuccess || query.isFetching}
+      />
     </PageShell>
   )
 }
 function audienceLabel(base: Base) {
   return {
     administrators: '仅管理员',
-    organization: '全体成员',
+    organization: '组织全员',
     selected: '指定范围',
   }[base.audience ?? 'administrators']
-}
-function CreateKnowledge({ onOpen }: { onOpen: (v: Navigation) => void }) {
-  const { csrf, refresh } = useKnowledge()
-  const [step, setStep] = useState(1)
-  const [body, setBody] = useState<BaseInput>(initial)
-  const [created, setCreated] = useState<Base | null>(null)
-  const create = useMutation({
-    mutationFn: () => api<Base>('/knowledge', 'POST', body, csrf),
-    onSuccess: (base) => {
-      setCreated(base)
-      setStep(3)
-      void refresh()
-    },
-    onError: (e) => toast.error(messageOf(e)),
-  })
-  return (
-    <div className='flex flex-col gap-6'>
-      <ol
-        className='grid max-w-4xl grid-cols-3 gap-2 rounded-lg border bg-muted/30 p-4'
-        aria-label='创建进度'
-      >
-        {['基本信息', '切片设置', '上传文档'].map((label, i) => (
-          <li
-            key={label}
-            aria-current={step === i + 1 ? 'step' : undefined}
-            className='flex items-center gap-3'
-          >
-            <span
-              className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-full text-sm',
-                step >= i + 1
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              )}
-            >
-              {step > i + 1 ? <Check className='size-4' /> : i + 1}
-            </span>
-            <span
-              className={cn(
-                'text-sm',
-                step === i + 1 ? 'font-semibold' : 'text-muted-foreground'
-              )}
-            >
-              {label}
-            </span>
-            {i < 2 && (
-              <span className='ms-1 hidden h-px flex-1 bg-border sm:block' />
-            )}
-          </li>
-        ))}
-      </ol>
-      {step < 3 ? (
-        <Card className='max-w-4xl'>
-          <CardHeader>
-            <CardTitle>{step === 1 ? '基本信息' : '切片设置'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {step === 1 ? (
-              <BaseFields value={body} onChange={setBody} />
-            ) : (
-              <ChunkFields
-                value={body.chunking ?? initial.chunking!}
-                onChange={(v) => setBody({ ...body, chunking: v })}
-              />
-            )}
-          </CardContent>
-          <CardFooter className='justify-end gap-2'>
-            {step === 2 && (
-              <Button
-                variant='outline'
-                disabled={create.isPending}
-                onClick={() => setStep(1)}
-              >
-                上一步
-              </Button>
-            )}
-            <Button
-              disabled={!body.name.trim() || create.isPending}
-              onClick={() => (step === 1 ? setStep(2) : create.mutate())}
-            >
-              {step === 1 ? '下一步' : '创建并上传文档'}
-            </Button>
-          </CardFooter>
-        </Card>
-      ) : (
-        created && (
-          <>
-            <div className='flex items-center justify-between gap-3'>
-              <span className='font-medium'>{created.name}</span>
-              <UploadButton baseId={created.id} />
-            </div>
-            <Documents base={created} />
-            <div className='flex justify-end'>
-              <Button onClick={() => onOpen({ base: created.id })}>
-                完成，进入知识库
-              </Button>
-            </div>
-          </>
-        )
-      )}
-    </div>
-  )
 }
 function KnowledgeDetail({
   id,
   onOpen,
+  initialTab,
 }: {
   id: string
   onOpen: (v: Navigation) => void
+  initialTab?: Navigation['tab']
 }) {
-  const query = useKnowledgeData<Base>(`/knowledge/${id}`, true)
-  const documents = useKnowledgeData<Document[]>(
-    `/knowledge/${id}/documents`,
-    true
+  const query = useKnowledgeData<Base>(`/knowledge/${id}`)
+  const documents = useDocuments(id, query.isSuccess)
+  const showRail = useSyncExternalStore(
+    subscribeKnowledgeLayout,
+    () => window.matchMedia(knowledgeRailQuery).matches,
+    () => false
   )
-  const [tab, setTab] = useState('documents')
   if (query.isPending)
     return (
       <PageShell>
@@ -377,75 +267,154 @@ function KnowledgeDetail({
     )
   if (query.isError)
     return (
-      <PageShell title='知识库'>
-        <RequestError error={query.error} />
-        <Button variant='outline' onClick={() => onOpen({})}>
-          返回知识库
-        </Button>
+      <PageShell
+        title='知识库'
+        titleBefore={
+          <PageBack label='返回全部知识库' onClick={() => onOpen({})} />
+        }
+      >
+        <RequestError error={query.error} retry={() => void query.refetch()} />
       </PageShell>
     )
   const base = query.data
-  const queueCount = (documents.data ?? []).filter(
-    (doc) => busy(doc.status) || ['failed', 'uncertain'].includes(doc.status)
-  ).length
+  const tab =
+    initialTab === 'settings' && !base.can_manage
+      ? 'documents'
+      : (initialTab ?? 'documents')
+  const queueCount = documents.data?.filter(documentNeedsProcessing).length ?? 0
+  const audience = <Badge variant='outline'>{audienceLabel(base)}</Badge>
+  const avatar = (
+    <SavedKnowledgeIcon
+      base={base}
+      editable={base.can_manage && tab !== 'settings'}
+      size='sm'
+      showCamera={false}
+    />
+  )
+  const back = () => onOpen({})
+  const tabClassName = showRail
+    ? 'min-h-9 rounded-lg px-3 py-2 md:gap-2 md:px-3'
+    : 'px-2'
   return (
-    <PageShell
-      fixedContent
-      title={base.name}
-      titleBefore={
-        <Button
-          variant='ghost'
-          size='icon'
-          aria-label='返回全部知识库'
-          onClick={() => onOpen({})}
-        >
-          <ArrowLeft />
-        </Button>
-      }
-      titleAfter={
-        <span className='text-sm text-muted-foreground'>
-          {audienceLabel(base)}
-        </span>
-      }
-      action={
-        base.can_manage && (
-          <UploadButton baseId={base.id} onComplete={() => setTab('queue')} />
-        )
-      }
-    >
-      <Tabs className='min-h-0 flex-1' value={tab} onValueChange={setTab}>
-        <TabsList variant='line' className='shrink-0 overflow-x-auto'>
-          <TabsTrigger value='documents'>
-            文档
-            <Badge variant='secondary'>
-              {documents.data?.length ?? base.document_count}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value='queue'>
-            处理队列
-            {queueCount > 0 && <Badge variant='secondary'>{queueCount}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value='search'>检索测试</TabsTrigger>
-          {base.can_manage && <TabsTrigger value='settings'>设置</TabsTrigger>}
-        </TabsList>
-        <TabsContent value='documents' className='flex min-h-0 flex-col pt-4'>
-          <Documents base={base} />
-        </TabsContent>
-        <TabsContent value='queue' className='flex min-h-0 flex-col pt-4'>
-          <Documents base={base} queue />
-        </TabsContent>
-        <TabsContent value='search' className='min-h-0 overflow-auto pt-4'>
-          <SearchKnowledge base={base} />
-        </TabsContent>
-        {base.can_manage && (
-          <TabsContent value='settings' className='min-h-0 overflow-auto pt-4'>
-            <BaseSettings
-              key={base.version}
-              base={base}
-              onArchived={() => onOpen({})}
-            />
-          </TabsContent>
+    <PageShell fixedContent>
+      <Tabs
+        className={cn(
+          'min-h-0 min-w-0 flex-1 gap-3',
+          showRail && 'flex-row gap-5'
         )}
+        orientation={showRail ? 'vertical' : 'horizontal'}
+        value={tab}
+        onValueChange={(value) =>
+          onOpen({
+            base: id,
+            tab:
+              value === 'queue' || value === 'search' || value === 'settings'
+                ? value
+                : undefined,
+          })
+        }
+      >
+        <div
+          className={cn(
+            'flex min-w-0 shrink-0',
+            showRail
+              ? 'w-44 flex-col gap-3 overflow-y-auto border-e pe-3'
+              : 'flex-col gap-4'
+          )}
+        >
+          {showRail ? (
+            <>
+              <Button
+                size='sm'
+                variant='ghost'
+                className='self-start'
+                onClick={back}
+              >
+                <ArrowLeft data-icon='inline-start' />
+                全部知识库
+              </Button>
+              <div className='flex min-w-0 flex-col gap-1.5'>
+                <PageHeader
+                  title={base.name}
+                  titleBefore={avatar}
+                  truncateTitle
+                />
+                {audience}
+              </div>
+            </>
+          ) : (
+            <div className='min-w-0'>
+              <PageHeader
+                title={base.name}
+                truncateTitle
+                titleBefore={
+                  <>
+                    <PageBack label='返回全部知识库' onClick={back} />
+                    {avatar}
+                  </>
+                }
+                titleAfter={audience}
+              />
+            </div>
+          )}
+          <TabsList
+            variant={showRail ? 'navigation' : 'line'}
+            aria-label='知识库导航'
+            className={cn('gap-1', !showRail && 'h-9')}
+          >
+            <TabsTrigger value='documents' className={tabClassName}>
+              <FileText className='hidden @lg/content:block' aria-hidden />
+              文档
+              <Badge variant='secondary' className={cn(showRail && 'ms-auto')}>
+                {documents.data?.length ?? base.document_count}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value='queue' className={tabClassName}>
+              <ListTodo className='hidden @lg/content:block' aria-hidden />
+              处理队列
+              {queueCount > 0 && (
+                <Badge
+                  variant='secondary'
+                  title='当前队列任务'
+                  className={cn(showRail && 'ms-auto')}
+                >
+                  {queueCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value='search' className={tabClassName}>
+              <Search className='hidden @lg/content:block' aria-hidden />
+              检索测试
+            </TabsTrigger>
+            {base.can_manage && (
+              <TabsTrigger value='settings' className={tabClassName}>
+                <Settings2 className='hidden @lg/content:block' aria-hidden />
+                设置
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-3'>
+          {showRail && (tab === 'search' || tab === 'settings') && (
+            <h2 className='shrink-0 text-lg font-semibold'>
+              {tab === 'search' ? '检索测试' : '知识库设置'}
+            </h2>
+          )}
+          <TabsContent value='documents' className='flex min-h-0 flex-col'>
+            <Documents base={base} query={documents} />
+          </TabsContent>
+          <TabsContent value='queue' className='flex min-h-0 flex-col'>
+            <Documents base={base} query={documents} queue />
+          </TabsContent>
+          <TabsContent value='search' className='-m-1 min-h-0 overflow-auto p-1'>
+            <SearchKnowledge base={base} />
+          </TabsContent>
+          {base.can_manage && (
+            <TabsContent value='settings' className='min-h-0 overflow-auto'>
+              <BaseSettings key={base.version} base={base} onArchived={back} />
+            </TabsContent>
+          )}
+        </div>
       </Tabs>
     </PageShell>
   )
@@ -514,7 +483,7 @@ function SearchKnowledge({ base }: { base: Base }) {
         ) : search.data ? (
           <>
             <p className='text-sm text-muted-foreground'>
-              {search.data.mode === 'hybrid' ? '混合检索' : '关键词检索'}
+              {retrievalLabels[search.data.mode]}
               {search.data.reranked ? ' · 已重排序' : ''} ·{' '}
               {search.data.items.length} 条结果
             </p>
@@ -526,14 +495,22 @@ function SearchKnowledge({ base }: { base: Base }) {
                     {hit.filename}
                   </CardTitle>
                   <CardDescription>
-                    {locationLabel(hit.sources[0])} · {hit.sources.length}{' '}
-                    处来源
+                    {hit.sources.length > 0
+                      ? `${locationLabel(hit.sources[0])} · ${hit.sources.length} 处来源`
+                      : '无可用原文位置'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className='flex flex-col gap-4'>
                   <p className='text-sm leading-7 whitespace-pre-wrap'>
                     {hit.content}
                   </p>
+                  {hit.parent_context && (
+                    <CollapsibleSection title='父片上下文'>
+                      <p className='text-sm leading-7 whitespace-pre-wrap'>
+                        {hit.parent_context.content}
+                      </p>
+                    </CollapsibleSection>
+                  )}
                 </CardContent>
                 <CardFooter className='justify-end'>
                   <Button
@@ -589,12 +566,24 @@ function BaseSettings({
     chunking: base.chunking,
   })
   const [confirm, setConfirm] = useState(false)
+  const defaults = useKnowledgeData<Defaults>(defaultsPath)
+  const [policy, setPolicy] = useState<RetrievalPolicy | null>(null)
+  const fixedEmbeddingId =
+    base.document_count && typeof base.embedding_profile.model_id === 'string'
+      ? base.embedding_profile.model_id
+      : undefined
+  const invalidPolicy =
+    policy && defaults.data ? retrievalError(policy, defaults.data) : undefined
   const save = useMutation({
     mutationFn: () =>
       api(
         `/knowledge/${base.id}`,
         'PUT',
-        { ...body, version: base.version },
+        {
+          ...body,
+          ...(policy ? { retrieval: policy } : {}),
+          version: base.version,
+        },
         csrf
       ),
     onSuccess: () => {
@@ -614,22 +603,65 @@ function BaseSettings({
   return (
     <div className='flex max-w-3xl flex-col gap-6'>
       <Card>
-        <CardHeader>
-          <CardTitle>知识库设置</CardTitle>
-        </CardHeader>
         <CardContent className='flex flex-col gap-6'>
-          <BaseFields value={body} onChange={setBody} />
+          <BaseFields value={body} onChange={setBody} icon={base.icon} />
+          <Separator />
           <ChunkFields
             value={body.chunking ?? initial.chunking!}
             onChange={(v) => setBody({ ...body, chunking: v })}
           />
-          <p className='text-sm text-muted-foreground'>
-            切片设置影响后续上传。已有文档可在文档列表中重新处理。
-          </p>
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant='outline'>
+                检索配置 ·{' '}
+                {retrievalLabels[(policy ?? base.retrieval).mode ?? 'keyword']}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className='pt-4'>
+              {defaults.isPending ? (
+                <LoadingState />
+              ) : defaults.isError ? (
+                <RequestError
+                  error={defaults.error}
+                  retry={() => void defaults.refetch()}
+                />
+              ) : (
+                <RetrievalFields
+                  data={defaults.data}
+                  value={policy ?? base.retrieval}
+                  onChange={setPolicy}
+                  fixedEmbeddingId={fixedEmbeddingId}
+                />
+              )}
+              {fixedEmbeddingId && (
+                <p className='mt-3 text-sm text-muted-foreground'>
+                  已有文档使用固定向量模型。更换模型请新建知识库。
+                </p>
+              )}
+              {base.retrieval.mode === 'keyword' &&
+                policy?.mode &&
+                policy.mode !== 'keyword' &&
+                base.document_count > 0 && (
+                  <p className='mt-3 text-sm text-muted-foreground'>
+                    保存后，可在文档列表中重新处理已有文档以建立向量索引。
+                  </p>
+                )}
+              {invalidPolicy && (
+                <p role='alert' className='mt-3 text-sm text-destructive'>
+                  {invalidPolicy}
+                </p>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
         </CardContent>
         <CardFooter className='justify-end'>
           <Button
-            disabled={save.isPending || !body.name.trim()}
+            disabled={
+              save.isPending ||
+              !body.name.trim() ||
+              Boolean(invalidPolicy) ||
+              Boolean(chunkingError(body.chunking ?? initial.chunking!))
+            }
             onClick={() => save.mutate()}
           >
             保存设置

@@ -30,7 +30,7 @@ class SubmissionUnknown(Exception):
 
 
 async def credential(db: AsyncSession, tenant_id: Any) -> ParserCredential:
-    await db.scalar(select(Tenant.id).where(Tenant.id == tenant_id).with_for_update())
+    await db.scalar(select(Tenant.id).where(Tenant.id == tenant_id).with_for_update(key_share=True))
     row = await db.scalar(
         select(ParserCredential)
         .where(
@@ -55,7 +55,6 @@ async def credential(db: AsyncSession, tenant_id: Any) -> ParserCredential:
         )
         .values(cooldown_until=now() + timedelta(seconds=1))
     )
-    await db.commit()
     return row
 
 
@@ -161,6 +160,7 @@ async def parse(
         raise SubmissionUnknown()
     if not generation.batch_id:
         key = await credential(db, tenant_id)
+        # Keep the credential locked until the task claims it so deletion cannot race submission.
         generation.credential_id = key.id
         generation.submission_pending = True
         await db.commit()

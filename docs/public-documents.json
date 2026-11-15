@@ -36,6 +36,7 @@
     "cli/skills/actvero-management/references/recovery.md": "错误恢复与停止条件",
     "cli/skills/actvero-management/references/skills.md": "Skills：包、资料、版本与分类",
     "docs/ACCESS-KEYS.md": "个人访问密钥",
+    "docs/APPLICATION-INTEGRATIONS.md": "应用集成",
     "docs/ARCHITECTURE.md": "系统架构",
     "docs/BRANDING.md": "项目标识与来源",
     "docs/CLI.md": "管理 CLI 接入",

@@ -107,6 +107,7 @@ class McpActivity(Base):
     service_id: Mapped[UUID] = mapped_column(index=True)
     service_name: Mapped[str] = mapped_column(String(100))
     actor_id: Mapped[UUID | None] = mapped_column(nullable=True)
+    application_id: Mapped[UUID | None] = mapped_column(ForeignKey("integration_applications.id"))
     actor_name: Mapped[str] = mapped_column(String(200))
     owner_id: Mapped[UUID] = mapped_column()
     category: Mapped[str] = mapped_column(String(20), index=True)

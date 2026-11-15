@@ -46,4 +46,8 @@ Keycloak 负责认证协议、密码与 MFA。平台负责组织成员关系、�
 
 ## 知识库
 
-`backend/app/modules/knowledge` 管理组织知识库、加密解析凭据、不可变原件、处理版本和稳定引用。数据库任务租约驱动解析、切片与索引；模型调用复用 `llm.runtime` 的权限、计量与结算。Web 页面位于 `frontend/src/features/knowledge`；`preview` 生成原件定位，`integration` 提供显式知识库 Key 的检索与引用 API，`reader` 签发绑定原文与宿主来源的短期阅读凭证。独立 `/embed/knowledge` 页面通过消息协议交由宿主管理容器，不依赖第三方 Cookie。当前使用 PostgreSQL 原件存储与有界精确向量检索，支持范围、执行授权和容量见[知识库](KNOWLEDGE.md)。
+`backend/app/modules/knowledge` 管理组织知识库、加密解析凭据、不可变原件、处理版本和稳定引用。数据库任务租约驱动解析、切片与索引。`llm.runtime` 校验任务发起人的知识库权限和组织配置的模型，并按组织记录模型用量与成本。Web 页面位于 `frontend/src/features/knowledge`；`preview` 生成原件定位，`integration` 提供显式知识库 Key 的检索与引用 API，`reader` 签发绑定原文与宿主来源的短期阅读凭证。独立 `/embed/knowledge` 页面通过消息协议交由宿主管理容器，不依赖第三方 Cookie。当前使用 PostgreSQL 原件存储与有界精确向量检索，支持范围、执行授权和容量见[知识库](KNOWLEDGE.md)。
+
+## 应用集成
+
+`integrations` 管理组织应用、能力开关与独立密钥。模型、MCP、Skills、专家和知识库接入沿用各领域校验。知识库记录来源应用，后台任务重新检查组织和应用授权。正式调用与计量沿用现有模型执行链，记录应用和密钥标识，按应用识别重复请求。使用方式见[应用集成](APPLICATION-INTEGRATIONS.md)。

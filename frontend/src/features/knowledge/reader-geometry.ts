@@ -31,13 +31,20 @@ export function sourceBox(source: Schema['SourceLocation']) {
 
 export function textSegments(
   text: string,
-  ranges: Schema['OriginalTextRange'][]
+  ranges: Schema['OriginalTextRange'][],
+  breaks: number[] = []
 ) {
   // API offsets count Unicode code points, which differs from JavaScript UTF-16 for emoji.
   const chars = Array.from(text.replace(/^\uFEFF/, ''))
   const merged: { start: number; end: number }[] = []
   for (const range of [...ranges].sort((a, b) => a.start - b.start)) {
-    if (range.start < 0 || range.end > chars.length || range.end <= range.start)
+    if (
+      !Number.isInteger(range.start) ||
+      !Number.isInteger(range.end) ||
+      range.start < 0 ||
+      range.end > chars.length ||
+      range.end <= range.start
+    )
       continue
     const previous = merged.at(-1)
     if (previous && previous.end >= range.start)
@@ -45,26 +52,34 @@ export function textSegments(
     else merged.push({ ...range })
   }
   const segments: { text: string; highlighted: boolean; start: number }[] = []
+  const points = [...new Set(breaks)]
+    .filter((p) => p > 0 && p < chars.length)
+    .sort((a, b) => a - b)
+  let boundary = 0
+  const add = (start: number, end: number, highlighted: boolean) => {
+    if (end <= start) return
+    while (points[boundary] <= start) boundary++
+    while (points[boundary] < end) {
+      const point = points[boundary++]
+      segments.push({
+        text: chars.slice(start, point).join(''),
+        highlighted,
+        start,
+      })
+      start = point
+    }
+    segments.push({
+      text: chars.slice(start, end).join(''),
+      highlighted,
+      start,
+    })
+  }
   let offset = 0
   for (const range of merged) {
-    if (range.start > offset)
-      segments.push({
-        text: chars.slice(offset, range.start).join(''),
-        highlighted: false,
-        start: offset,
-      })
-    segments.push({
-      text: chars.slice(range.start, range.end).join(''),
-      highlighted: true,
-      start: range.start,
-    })
+    add(offset, range.start, false)
+    add(range.start, range.end, true)
     offset = range.end
   }
-  if (offset < chars.length)
-    segments.push({
-      text: chars.slice(offset).join(''),
-      highlighted: false,
-      start: offset,
-    })
+  add(offset, chars.length, false)
   return segments
 }

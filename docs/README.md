@@ -5,6 +5,7 @@
 ## 使用与维护
 
 - [个人访问密钥](ACCESS-KEYS.md)
+- [应用集成](APPLICATION-INTEGRATIONS.md)
 - [系统架构](ARCHITECTURE.md)
 - [项目标识与来源](BRANDING.md)
 - [管理 CLI 接入](CLI.md)

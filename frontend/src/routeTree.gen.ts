@@ -45,6 +45,7 @@ import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mc
 import { Route as AuthenticatedLlmUsageRouteImport } from './routes/_authenticated/llm-usage'
 import { Route as AuthenticatedLlmCallsRouteImport } from './routes/_authenticated/llm-calls'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
+import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -260,6 +261,12 @@ const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntegrationsRoute =
+  AuthenticatedIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDepartmentsRoute =
   AuthenticatedDepartmentsRouteImport.update({
     id: '/departments',
@@ -437,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/departments': typeof AuthenticatedDepartmentsRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
@@ -502,6 +510,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/departments': typeof AuthenticatedDepartmentsRoute
+  '/integrations': typeof AuthenticatedIntegrationsRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/llm-usage': typeof AuthenticatedLlmUsageRoute
@@ -568,6 +577,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/departments': typeof AuthenticatedDepartmentsRoute
+  '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/llm-calls': typeof AuthenticatedLlmCallsRoute
   '/_authenticated/llm-usage': typeof AuthenticatedLlmUsageRoute
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/audit'
     | '/departments'
+    | '/integrations'
     | '/knowledge'
     | '/llm-calls'
     | '/llm-usage'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/audit'
     | '/departments'
+    | '/integrations'
     | '/knowledge'
     | '/llm-calls'
     | '/llm-usage'
@@ -766,6 +778,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/audit'
     | '/_authenticated/departments'
+    | '/_authenticated/integrations'
     | '/_authenticated/knowledge'
     | '/_authenticated/llm-calls'
     | '/_authenticated/llm-usage'
@@ -1088,6 +1101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/integrations': {
+      id: '/_authenticated/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/departments': {
       id: '/_authenticated/departments'
       path: '/departments'
@@ -1324,6 +1344,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedDepartmentsRoute: typeof AuthenticatedDepartmentsRoute
+  AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLlmCallsRoute: typeof AuthenticatedLlmCallsRoute
   AuthenticatedLlmUsageRoute: typeof AuthenticatedLlmUsageRoute
@@ -1358,6 +1379,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedDepartmentsRoute: AuthenticatedDepartmentsRoute,
+  AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLlmCallsRoute: AuthenticatedLlmCallsRoute,
   AuthenticatedLlmUsageRoute: AuthenticatedLlmUsageRoute,

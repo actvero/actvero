@@ -71,7 +71,12 @@ function EntryPoints({ entry }: { entry: Entry }) {
   if (settlement === 'reserved' || settlement === 'review')
     return (
       <span>
-        占用 <Points value={entry.reserved_points} />
+        占用{' '}
+        {entry.reserved_points === null ? (
+          '待确认'
+        ) : (
+          <Points value={entry.reserved_points} />
+        )}
       </span>
     )
   if (settlement === 'released')

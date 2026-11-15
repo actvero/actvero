@@ -29,6 +29,15 @@ TYPES = {
     ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 REMOTE_TYPES = {".pdf", ".png", ".jpg", ".jpeg"}
+type ChunkSlice = tuple[str, list[dict[str, Any]]]
+
+
+def chunk_limit(profile: dict[str, Any]) -> int:
+    return min(
+        10000,
+        int(profile.get("max_input_characters", 10000)),
+        int(profile.get("context_window") or 10000),
+    )
 
 
 def inspect_file(filename: str, data: bytes) -> tuple[str, str]:
@@ -106,7 +115,7 @@ def local_parse(filename: str, data: bytes) -> list[dict[str, Any]]:
         if extension in {".txt", ".md"}:
             result = text_blocks(data.decode("utf-8-sig"))
         elif extension == ".csv":
-            rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
+            rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"), newline="")))
             result = [
                 source_block(" | ".join(row), i, line=i + 1, cell_range=f"row:{i + 1}")
                 for i, row in enumerate(rows)
@@ -239,7 +248,7 @@ def mineru_parse(data: bytes) -> tuple[dict[str, Any], list[dict[str, Any]]]:
 
 def split_blocks(
     blocks: list[dict[str, Any]], config: Chunking, *, hard_limit: int = 10000
-) -> list[tuple[str, list[dict[str, Any]]]]:
+) -> list[ChunkSlice]:
     """Group by structure or slide by length; retain every original character range."""
     if hard_limit < 1:
         raise ValueError("模型输入长度上限无效")
@@ -247,11 +256,13 @@ def split_blocks(
     cap = hard_limit if smart else min(config.max_chars, hard_limit)
     overlap = min(config.overlap_chars, cap - 1) if not smart else 0
     groups = (
-        structural_groups(blocks, target=config.target_chars, maximum=config.max_chars)
+        structural_groups(
+            blocks, target=config.target_chars, maximum=config.max_chars, hard_limit=hard_limit
+        )
         if smart
         else [blocks]
     )
-    output: list[tuple[str, list[dict[str, Any]]]] = []
+    output: list[ChunkSlice] = []
     for group in groups:
         spans: list[tuple[int, int, dict[str, Any]]] = []
         offset = 0
@@ -280,8 +291,13 @@ def split_blocks(
                 if right <= left:
                     continue
                 location = {k: v for k, v in block.items() if k not in {"text", "type"}}
+                origin = location.get("start", 0)
                 refs.append(
-                    {**location, "start": max(start - left, 0), "end": min(end, right) - left}
+                    {
+                        **location,
+                        "start": origin + max(start - left, 0),
+                        "end": origin + min(end, right) - left,
+                    }
                 )
             if refs:
                 output.append((value[start:end], refs))
@@ -295,6 +311,40 @@ def split_blocks(
                 if next_block < len(spans):
                     start = max(start, spans[next_block][0])
     return output
+
+
+def split_parent_child(
+    blocks: list[dict[str, Any]], config: Chunking, *, hard_limit: int
+) -> list[tuple[str, list[ChunkSlice]]]:
+    """Split parents without overlap, then split their original block ranges into children."""
+    by_id = {block["block_id"]: block for block in blocks}
+    parents = split_blocks(
+        blocks, config.model_copy(update={"overlap_chars": 0}), hard_limit=config.max_chars
+    )
+    child_config = config.model_copy(
+        update={
+            "target_chars": min(config.target_chars, config.child_chars),
+            "max_chars": config.child_chars,
+        }
+    )
+    child_limit = min(config.child_chars, hard_limit)
+    groups = []
+    count = 0
+    for content, sources in parents:
+        child_blocks = [
+            {
+                **by_id[ref["block_id"]],
+                "text": by_id[ref["block_id"]]["text"][ref["start"] : ref["end"]],
+                "start": ref["start"],
+            }
+            for ref in sources
+        ]
+        children = split_blocks(child_blocks, child_config, hard_limit=child_limit)
+        count += len(children)
+        if count > MAX_CHUNKS:
+            raise ValueError("切片数量超过 5000，请拆分文档或调大子片长度")
+        groups.append((content, children))
+    return groups
 
 
 def terms(value: str) -> set[str]:

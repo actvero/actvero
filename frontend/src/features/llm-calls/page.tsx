@@ -12,7 +12,7 @@ import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { CallDetailSheet } from './call-detail'
 import { CallFilters } from './call-filters'
-import { operations, queryFor, results, settlements } from './filters'
+import { operations, queryFor, results, settlements, sources } from './filters'
 import { searchFromFilters, searchToFilters, type CallSearch } from './search'
 import { timeInZone } from './time'
 
@@ -33,7 +33,10 @@ function callBadges(call: Call) {
         结果：{results[call.result_status]}
       </Badge>
       <Badge variant='outline'>
-        结算：{settlements[call.settlement_status]}
+        结算：
+        {call.settlement_status === 'reserved' && call.reserved_points === null
+          ? '待结算'
+          : settlements[call.settlement_status]}
       </Badge>
     </div>
   )
@@ -113,10 +116,12 @@ export function LlmCallsPage({ search }: { search: CallSearch }) {
     },
     {
       id: 'member',
-      header: '成员 / 来源',
+      header: '调用主体 / 来源',
       cell: ({ row }) => (
         <span>
-          {row.original.member_name ?? '管理员诊断'} · {row.original.source}
+          {row.original.member_name ?? '管理员诊断'} ·{' '}
+          {sources[row.original.source as keyof typeof sources] ??
+            row.original.source}
         </span>
       ),
     },
