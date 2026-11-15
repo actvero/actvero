@@ -214,8 +214,28 @@ class IdentityProvider:
             email, name, password, marker, "actvero_member", temporary=True
         )
 
+    async def create_invited_user(self, email: str, name: str, password: str, marker: str) -> str:
+        subject, _ = await self.create_managed_user(
+            email,
+            name,
+            password,
+            marker,
+            "actvero_invitation",
+            temporary=False,
+            email_verified=True,
+        )
+        return subject
+
     async def create_managed_user(
-        self, email: str, name: str, password: str, marker: str, attribute: str, *, temporary: bool
+        self,
+        email: str,
+        name: str,
+        password: str,
+        marker: str,
+        attribute: str,
+        *,
+        temporary: bool,
+        email_verified: bool = False,
     ) -> tuple[str, bool]:
         # Never adopt an identity or reset credentials merely because its email matches.
         users = (await self.admin("GET", "/users", params={"email": email, "exact": "true"})).json()
@@ -230,7 +250,7 @@ class IdentityProvider:
                         "email": email,
                         "firstName": name,
                         "enabled": True,
-                        "emailVerified": False,
+                        "emailVerified": email_verified,
                         "requiredActions": ["UPDATE_PASSWORD"] if temporary else [],
                         "attributes": {attribute: [marker]},
                         "credentials": [
@@ -253,9 +273,19 @@ class IdentityProvider:
             len(users) != 1
             or not users[0].get("enabled")
             or users[0].get("attributes", {}).get(attribute) != [marker]
+            or (email_verified and users[0].get("emailVerified") is not True)
         ):
             raise HTTPException(409, "此邮箱已有账号，请使用邀请加入或在成员列表中管理")
         return str(users[0]["id"]), reused
+
+    async def invited_user(self, email: str) -> tuple[str, bool] | None:
+        users = (await self.admin("GET", "/users", params={"email": email, "exact": "true"})).json()
+        if not users:
+            return None
+        if len(users) != 1 or not users[0].get("enabled"):
+            raise HTTPException(409, "该邮箱对应的登录身份不可用，请联系部署维护人员")
+        user = users[0]
+        return str(user["id"]), bool(user.get("requiredActions") or not user.get("emailVerified"))
 
     async def prepare_user(self, email: str, name: str) -> tuple[str, bool]:
         users = (await self.admin("GET", "/users", params={"email": email, "exact": "true"})).json()

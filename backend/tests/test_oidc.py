@@ -130,6 +130,40 @@ async def test_managed_account_credentials_and_recovery_never_reset_password(tem
 
 
 @pytest.mark.asyncio
+async def test_email_invitation_creates_verified_credentials_once():
+    provider = IdentityProvider(Settings(_env_file=None))
+    account = {
+        "id": "new-subject",
+        "enabled": True,
+        "emailVerified": True,
+        "attributes": {"actvero_invitation": ["marker"]},
+    }
+    provider.admin = AsyncMock(
+        side_effect=[
+            httpx.Response(200, json=[]),
+            httpx.Response(201),
+            httpx.Response(200, json=[account]),
+        ]
+    )
+    assert (
+        await provider.create_invited_user("test@example.com", "姓名", "test-password", "marker")
+        == "new-subject"
+    )
+    body = provider.admin.call_args_list[1].kwargs["json"]
+    assert body["emailVerified"] is True
+    assert body["requiredActions"] == []
+    assert body["credentials"] == [
+        {"type": "password", "value": "test-password", "temporary": False}
+    ]
+    provider.admin = AsyncMock(return_value=httpx.Response(200, json=[account]))
+    with pytest.raises(HTTPException) as error:
+        await provider.create_invited_user("test@example.com", "姓名", "changed-password", "other")
+    assert error.value.status_code == 409
+    provider.admin.assert_awaited_once()
+    assert provider.admin.call_args.args[0] == "GET"
+
+
+@pytest.mark.asyncio
 async def test_direct_account_never_adopts_unrelated_email_identity():
     provider = IdentityProvider(Settings(_env_file=None))
     provider.admin = AsyncMock(

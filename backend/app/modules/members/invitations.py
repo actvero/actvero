@@ -1,22 +1,42 @@
+import base64
+import binascii
 import secrets
 import smtplib
 from datetime import timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import func, or_, select
+from starlette.concurrency import run_in_threadpool
 
+from app.modules.account.service import normalize_avatar
 from app.modules.audit.models import AuditEvent
+from app.modules.auth.identity import resolve_identity
 from app.modules.auth.router import Mutation
-from app.modules.auth.schemas import InvitationClaim, InvitationPreview, Message, SetupResult
-from app.modules.auth.service import DB, address_key, authenticate, digest, limit, now, provider
+from app.modules.auth.schemas import (
+    InvitationClaim,
+    InvitationPreview,
+    InvitationSetup,
+    Message,
+    SetupResult,
+)
+from app.modules.auth.service import (
+    DB,
+    address_key,
+    authenticate,
+    digest,
+    limit,
+    now,
+    provider,
+    session_for,
+)
 from app.modules.members.mail import send_invitation
 from app.modules.members.models import Invitation, MemberCreation, Membership
 from app.modules.members.schemas import DeliveryInput, InvitationPage, InvitationView, InviteInput
 from app.modules.members.service import access, record
 from app.modules.platform.mail_settings import effective_mail
 from app.modules.tenants.models import Installation, Tenant
-from app.modules.users.models import LoginIdentity
+from app.modules.users.models import LoginIdentity, User
 
 router = APIRouter(prefix="/api/v1", tags=["invitations"])
 
@@ -105,7 +125,8 @@ async def invite(
     )
     if creating:
         raise HTTPException(409, "此邮箱正在直接创建，请在添加成员中完成原请求")
-    subject, activation = await provider(request).prepare_user(email, payload.name.strip())
+    existing_user = await provider(request).invited_user(email)
+    subject, activation = existing_user if existing_user is not None else (None, False)
     identity = await db.scalar(
         select(LoginIdentity).where(
             LoginIdentity.issuer == settings.oidc_issuer, LoginIdentity.subject == subject
@@ -199,8 +220,13 @@ async def deliver(
         if payload.replace
         else provider(request).unseal(row.token_ciphertext or "")["token"]
     )
+    expires_at = (
+        now() + timedelta(hours=provider(request).settings.invitation_hours or 1)
+        if payload.replace
+        else row.expires_at
+    )
     try:
-        await send_invitation(settings, row.email, actor.tenant.name, token)
+        await send_invitation(settings, row.email, actor.tenant.name, token, expires_at=expires_at)
     except (OSError, smtplib.SMTPException):
         row.mail_status = "failed"
         record(db, actor, "invitation.sent", row.id, row.email, result="failed")
@@ -209,7 +235,7 @@ async def deliver(
     if payload.replace:
         row.token_hash = digest(token)
         row.token_ciphertext = provider(request).seal({"token": token})
-        row.expires_at = now() + timedelta(hours=provider(request).settings.invitation_hours or 1)
+        row.expires_at = expires_at
         row.status = "pending"
     row.last_sent_at = now()
     row.last_delivery_request_id = payload.request_id
@@ -236,6 +262,7 @@ async def revoke(
     row = await db.scalar(
         select(Invitation)
         .where(Invitation.tenant_id == tenant_id, Invitation.id == invitation_id)
+        .with_for_update()
         .execution_options(populate_existing=True)
     )
     if not row:
@@ -253,6 +280,10 @@ async def revoke(
 @router.post("/invitations/claim", response_model=Message)
 async def claim(payload: InvitationClaim, request: Request, db: DB, session: Mutation) -> Message:
     await limit(db, address_key(request, "invite-claim"), 20, 300)
+    current = await session_for(request, db, lock=True)
+    if current is None or current.id != session.id:
+        raise HTTPException(409, "邀请会话已变化，请重新打开邀请链接")
+    session = current
     row = await db.scalar(
         select(Invitation).where(Invitation.token_hash == digest(payload.token)).with_for_update()
     )
@@ -265,7 +296,7 @@ async def claim(payload: InvitationClaim, request: Request, db: DB, session: Mut
     tenant = await db.get(Tenant, row.tenant_id)
     if not tenant or not tenant.active:
         raise HTTPException(404, "此邀请所属组织不可用")
-    if row.subject is None or not row.email:
+    if not row.email:
         if payload.email is None or not payload.name or not payload.name.strip():
             session.invitation_id = row.id
             session.invitation_hash = row.token_hash
@@ -303,8 +334,6 @@ async def claim(payload: InvitationClaim, request: Request, db: DB, session: Mut
 
 @router.get("/invitations/current", response_model=InvitationPreview)
 async def preview(request: Request, db: DB) -> InvitationPreview:
-    from app.modules.auth.service import session_for
-
     session = await session_for(request, db)
     row = (
         await db.get(Invitation, session.invitation_id)
@@ -322,8 +351,19 @@ async def preview(request: Request, db: DB) -> InvitationPreview:
     tenant = await db.get(Tenant, row.tenant_id)
     if not tenant or not tenant.active:
         return InvitationPreview(state="unavailable")
-    if row.subject is None or not row.email:
+    if not row.email:
         return InvitationPreview(state="claim", tenant_name=tenant.name, expires_at=row.expires_at)
+    if row.subject is None:
+        if row.status != "pending" or row.mail_status != "submitted":
+            return InvitationPreview(state="unavailable")
+        local, _, domain = row.email.partition("@")
+        return InvitationPreview(
+            state="setup",
+            tenant_name=tenant.name,
+            name=row.name,
+            email_hint=local[:1] + "***@" + domain,
+            expires_at=row.expires_at,
+        )
     if session is None or session.identity_id is None:
         return InvitationPreview(
             state="login",
@@ -372,6 +412,78 @@ async def activate(request: Request, db: DB, session: Mutation) -> Message:
     return Message(message="账号激活指引已提交发送，请查看邮件并完成后返回此页登录")
 
 
+def setup_avatar(value: str) -> bytes:
+    header, _, encoded = value.partition(",")
+    if header not in {"data:image/png;base64", "data:image/jpeg;base64", "data:image/webp;base64"}:
+        raise HTTPException(422, "请选择 PNG、JPG 或 WebP 头像")
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except (ValueError, binascii.Error):
+        raise HTTPException(422, "头像无效，请重新上传") from None
+    if len(data) > 256 * 1024:
+        raise HTTPException(422, "头像不能超过 256 KB")
+    return normalize_avatar(data)
+
+
+@router.post("/invitations/setup", response_model=SetupResult)
+async def setup(
+    payload: InvitationSetup, request: Request, db: DB, session: Mutation
+) -> SetupResult:
+    invitation_id = session.invitation_id
+    if invitation_id is None:
+        raise HTTPException(404, "请重新打开邀请链接")
+    await limit(db, "invite-setup:" + str(invitation_id), 8, 300)
+    current = await session_for(request, db, lock=True)
+    if current is None or current.invitation_id != invitation_id:
+        raise HTTPException(409, "邀请会话已变化，请重新打开邀请链接")
+    row = await db.get(Invitation, invitation_id)
+    if row is None:
+        raise HTTPException(404, "此邀请已失效")
+    tenant = await db.scalar(select(Tenant).where(Tenant.id == row.tenant_id).with_for_update())
+    await db.refresh(row, with_for_update=True)
+    if (
+        tenant is None
+        or not tenant.active
+        or current.invitation_hash != row.token_hash
+        or row.status != "pending"
+        or row.mail_status != "submitted"
+        or row.expires_at <= now()
+        or not row.email
+    ):
+        raise HTTPException(409, "此邀请已失效，请联系组织管理员")
+    if row.subject is not None:
+        raise HTTPException(409, "该账号可继续登录，请刷新邀请页")
+    avatar = await run_in_threadpool(setup_avatar, payload.avatar) if payload.avatar else None
+    upstream = provider(request)
+    try:
+        # The claimed, addressed email invitation proves mailbox possession only
+        # for this new identity. The provisioning marker allows a retry without reset.
+        subject = await upstream.create_invited_user(
+            row.email, payload.name, payload.password.get_secret_value(), str(row.id)
+        )
+    except HTTPException as error:
+        if error.status_code != 409:
+            raise
+        existing = await upstream.invited_user(row.email)
+        if existing is None:
+            raise
+        row.subject, row.needs_activation = existing
+        await db.commit()
+        raise HTTPException(409, "此邮箱已有账号，请登录后确认加入") from None
+    row.subject = subject
+    row.name = payload.name
+    row.needs_activation = False
+    _, user = await resolve_identity(
+        db,
+        upstream.settings.oidc_issuer,
+        {"sub": subject, "email": row.email, "email_verified": True, "name": payload.name},
+    )
+    if avatar is not None:
+        user.avatar_data = avatar
+        user.avatar_version = uuid4()
+    return await join_member(db, row, tenant, user)
+
+
 @router.post("/invitations/accept", response_model=SetupResult)
 async def accept(request: Request, db: DB, _: Mutation) -> SetupResult:
     session, identity, user = await authenticate(request, db)
@@ -379,7 +491,7 @@ async def accept(request: Request, db: DB, _: Mutation) -> SetupResult:
     if not row:
         raise HTTPException(404, "请重新打开邀请链接")
     tenant = await db.scalar(select(Tenant).where(Tenant.id == row.tenant_id).with_for_update())
-    await db.refresh(row)
+    await db.refresh(row, with_for_update=True)
     if (
         not tenant
         or not tenant.active
@@ -393,6 +505,10 @@ async def accept(request: Request, db: DB, _: Mutation) -> SetupResult:
         or (user.email or "").casefold() != row.email
     ):
         raise HTTPException(403, "此邀请不适用于当前账号")
+    return await join_member(db, row, tenant, user)
+
+
+async def join_member(db: DB, row: Invitation, tenant: Tenant, user: User) -> SetupResult:
     member = await db.scalar(
         select(Membership).where(
             Membership.tenant_id == row.tenant_id, Membership.user_id == user.id
