@@ -20,7 +20,7 @@ ARG TARGETOS
 ARG TARGETARCH
 ENV GOOS=${TARGETOS} GOARCH=${TARGETARCH}
 COPY --from=web /build/web/dist /build/web/dist
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build GOOS= GOARCH= go test ./common ./pkg/billingexpr ./relay/channel/openai ./controller ./setting/billing_setting ./setting/ratio_setting -run 'TestAdmissionBound|TestActvero|TestDeepSeekBuiltin|TestImageModelBuiltin|TestGPT6AstraBuiltin' -count=1
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build GOOS= GOARCH= go test ./common ./pkg/billingexpr ./relay/channel/openai ./relay/channel/ali ./controller ./setting/billing_setting ./setting/ratio_setting -run 'TestAdmissionBound|TestActvero|TestDeepSeekBuiltin|TestImageModelBuiltin|TestGPT6AstraBuiltin' -count=1
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build go build -trimpath -ldflags="-s -w" -o /new-api .
 
 FROM debian:bookworm-slim@sha256:f06537653ac770703bc45b4b113475bd402f451e85223f0f2837acbf89ab020a

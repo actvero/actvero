@@ -15,6 +15,7 @@ from sqlalchemy import Select, String, case, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.audit.models import AuditEvent
+from app.modules.integrations.models import IntegrationApplication
 from app.modules.llm.call_schemas import (
     AmountBucket,
     CallAttemptView,
@@ -39,7 +40,7 @@ from app.modules.llm.points import decimal_text
 from app.modules.members.models import Membership
 from app.modules.users.models import User
 
-FORMAL = ("access_key", "desktop")
+FORMAL = ("access_key", "desktop", "application", "knowledge_index", "knowledge_search")
 DIAGNOSTIC = ("admin_channel_test", "admin_route_test", "channel_diagnostic")
 RESULTS = ("success", "failed", "interrupted", "cancelled", "unknown")
 SETTLEMENTS = ("reserved", "review", "settled", "released", "not_applicable")
@@ -80,6 +81,7 @@ class CallFilters:
     result_status: str | None = None
     settlement_status: str | None = None
     call_id: UUID | None = None
+    application_id: UUID | None = None
     held: bool = False
     channel_id: UUID | None = None
     unknown_channel: bool = False
@@ -102,7 +104,7 @@ def validate_filters(filters: CallFilters, *, summary: bool = False) -> None:
             raise HTTPException(422, "时间区间必须大于零且不超过90天")
     if filters.channel_id is not None and filters.unknown_channel:
         raise HTTPException(422, "最终渠道筛选不能同时指定未知与渠道编号")
-    if filters.source not in ("member", "desktop", "access_key", "diagnostic", "all"):
+    if filters.source not in ("member", *FORMAL, "diagnostic", "all"):
         raise HTTPException(422, "来源筛选无效")
     if summary and filters.source == "all":
         raise HTTPException(422, "统计须单独选择正式调用或诊断")
@@ -220,11 +222,16 @@ def where_calls(stmt: Select[Any], filters: CallFilters) -> Select[Any]:
         else:
             stmt = stmt.where(UsageSettlement.status.in_(statuses))
     if filters.held:
-        stmt = stmt.where(UsageSettlement.status.in_(("reserved", "review")))
+        stmt = stmt.where(
+            UsageSettlement.member_id.is_not(None),
+            UsageSettlement.status.in_(("reserved", "review")),
+        )
     if filters.channel_id is not None:
         stmt = stmt.where(final_channel_expression() == str(filters.channel_id))
     elif filters.unknown_channel:
         stmt = stmt.where(final_channel_expression().is_(None))
+    if filters.application_id is not None:
+        stmt = stmt.where(ModelCall.application_id == filters.application_id)
     if filters.call_id is not None:
         stmt = stmt.where(ModelCall.id == filters.call_id)
     return stmt
@@ -232,7 +239,9 @@ def where_calls(stmt: Select[Any], filters: CallFilters) -> Select[Any]:
 
 def base_rows() -> Select[Any]:
     return (
-        select(ModelCall, UsageSettlement, CatalogModel, Membership, User)
+        select(
+            ModelCall, UsageSettlement, CatalogModel, Membership, User, IntegrationApplication.name
+        )
         .outerjoin(UsageSettlement, UsageSettlement.id == ModelCall.id)
         .outerjoin(CatalogModel, CatalogModel.id == ModelCall.model_id)
         .outerjoin(
@@ -241,6 +250,7 @@ def base_rows() -> Select[Any]:
             & (Membership.tenant_id == ModelCall.tenant_id),
         )
         .outerjoin(User, User.id == ModelCall.actor_id)
+        .outerjoin(IntegrationApplication, IntegrationApplication.id == ModelCall.application_id)
     )
 
 
@@ -409,17 +419,20 @@ def call_view(
     model: CatalogModel | None,
     actor_membership: Membership | None,
     member_user: User | None,
+    application_name: str | None = None,
 ) -> LogicalCallView:
     with localcontext() as ctx:
         ctx.prec = 80
         points = (
             decimal_text(settlement.amount * settlement.ratio)
-            if settlement is not None and settlement.amount is not None
+            if settlement is not None
+            and settlement.amount is not None
+            and settlement.ratio is not None
             else None
         )
         reserved_points = (
             decimal_text(settlement.reserved_amount * settlement.ratio)
-            if settlement is not None
+            if settlement is not None and settlement.ratio is not None
             else None
         )
     return LogicalCallView(
@@ -432,7 +445,13 @@ def call_view(
         else actor_membership.id
         if actor_membership
         else None,
-        member_name=member_user.name if member_user else None,
+        member_name=application_name
+        if call.application_id
+        else "组织知识库"
+        if settlement and settlement.member_id is None
+        else member_user.name
+        if member_user
+        else None,
         operation=call.kind,
         source=call.source,
         result_status=cast(Any, result_status(call)),
@@ -441,6 +460,10 @@ def call_view(
         duration_ms=call.duration_ms,
         terminal_reason=safe_code(call.termination_code),
         points=points,
+        amount=decimal_text(settlement.amount)
+        if settlement and settlement.amount is not None
+        else None,
+        currency=settlement.currency if settlement else None,
         reserved_points=reserved_points,
     )
 
@@ -515,11 +538,15 @@ def settlement_view(row: UsageSettlement) -> CallSettlementView:
             status=cast(Any, row.status),
             version=row.version,
             currency=row.currency,
-            ratio=decimal_text(row.ratio),
-            reserved_amount=decimal_text(row.reserved_amount),
+            ratio=decimal_text(row.ratio) if row.ratio is not None else None,
+            reserved_amount=decimal_text(row.reserved_amount) if row.ratio is not None else None,
             amount=decimal_text(row.amount) if row.amount is not None else None,
-            reserved_points=decimal_text(row.reserved_amount * row.ratio),
-            points=decimal_text(row.amount * row.ratio) if row.amount is not None else None,
+            reserved_points=decimal_text(row.reserved_amount * row.ratio)
+            if row.ratio is not None
+            else None,
+            points=decimal_text(row.amount * row.ratio)
+            if row.amount is not None and row.ratio is not None
+            else None,
             created_at=row.created_at,
             settled_at=row.settled_at,
             budget_price=price_view(row.price),
@@ -553,7 +580,7 @@ async def call_detail(db: AsyncSession, tenant_id: UUID, call_id: UUID) -> CallD
     ).one_or_none()
     if row is None:
         raise HTTPException(404, "调用记录不存在")
-    call, settlement, model, actor_membership, member_user = row
+    call, settlement, model, actor_membership, member_user, application_name = row
     attempts = [view for raw in call.attempts or [] if (view := attempt_view(raw))]
     audit_rows = await db.scalars(
         select(AuditEvent)
@@ -580,7 +607,7 @@ async def call_detail(db: AsyncSession, tenant_id: UUID, call_id: UUID) -> CallD
         for audit in audit_rows
     ]
     return CallDetail(
-        call=call_view(call, settlement, model, actor_membership, member_user),
+        call=call_view(call, settlement, model, actor_membership, member_user, application_name),
         attempts=attempts,
         settlement=settlement_view(settlement) if settlement else None,
         audits=audits,
@@ -708,8 +735,9 @@ async def usage_summary(db: AsyncSession, filters: CallFilters) -> UsageSummary:
             if settlement and settlement.status == "settled" and settlement.amount is not None:
                 with localcontext() as ctx:
                     ctx.prec = 80
-                    point_value = settlement.amount * settlement.ratio
-                    settled_points += point_value
+                    if settlement.ratio is not None:
+                        point_value = settlement.amount * settlement.ratio
+                        settled_points += point_value
                     amounts[settlement.currency] = (
                         amounts.get(settlement.currency, Decimal(0)) + settlement.amount
                     )
@@ -809,6 +837,7 @@ async def current_held(db: AsyncSession, filters: CallFilters, as_of: datetime) 
     total = Decimal(0)
     try:
         async for amount, ratio in stream:
+            assert ratio is not None
             with localcontext() as ctx:
                 ctx.prec = 80
                 total += amount * ratio

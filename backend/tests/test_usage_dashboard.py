@@ -11,13 +11,17 @@ from test_call_queries_integration import evidence, seed_calls
 from test_channel_health import channel
 from test_identity_access import env as identity_env
 
+from app.modules.audit.models import AuditEvent
 from app.modules.auth.models import WebSession
+from app.modules.experts.models import ExpertRecord, ExpertRelease
+from app.modules.knowledge.models import KnowledgeBase, KnowledgeDocument, KnowledgeGeneration
 from app.modules.llm.call_queries import CallFilters
 from app.modules.llm.dashboard import boundaries
 from app.modules.llm.models import ModelCall
 from app.modules.mcp.credentials import SHARED
 from app.modules.mcp.models import McpActivity, McpHealth, McpService
 from app.modules.tenants.models import Tenant
+from app.modules.workbenches.models import Workbench, WorkbenchVersion
 
 env = identity_env
 START = datetime(2026, 10, 1, tzinfo=UTC)
@@ -403,8 +407,148 @@ async def test_overview_health_owner_and_business_activity_are_distinct(env):
     assert result["mcp"] == {"total": 3, "enabled": 3}
     assert result["mcp_checked"] == 0 and result["mcp_failed"] == 1 and result["mcp_unchecked"] == 2
     assert result["mcp_calls"] == 1
+    assert result["mcp_attention"] == {"count": 1, "resource_id": str(shared.id), "name": "shared"}
     async with env.sessions() as db:
         assert await db.scalar(select(func.count(McpActivity.id))) == before
+
+
+@pytest.mark.asyncio
+async def test_overview_uses_current_resources_and_distinct_business_actors(env):
+    admin = await env.client()
+    member = await env.client(role="member", tenant=admin.tenant)
+    now = datetime.now(UTC) - timedelta(minutes=1)
+    tenant = admin.tenant.id
+    await seed_calls(
+        env,
+        admin,
+        member,
+        [
+            {"label": "desktop", "at": now},
+            {"label": "duplicate", "at": now, "source": "access_key"},
+            {"label": "index", "at": now, "source": "knowledge_index", "actor_id": admin.user.id},
+            {"label": "test", "at": now, "source": "channel_diagnostic", "actor_id": admin.user.id},
+        ],
+    )
+    async with env.sessions() as db:
+        content = {
+            "name": "内部助手",
+            "description": "测试",
+            "instructions": "协助处理",
+            "connectors": [{"key": "tool", "label": "工具", "connector_id": str(uuid4())}],
+        }
+        expert = ExpertRecord(tenant_id=tenant, name="内部助手", description="测试", draft=content)
+        draft = ExpertRecord(tenant_id=tenant, name="草稿", description="测试", draft=content)
+        bench = Workbench(
+            tenant_id=tenant, package_name="fixture", display_name="台", description=""
+        )
+        base = KnowledgeBase(tenant_id=tenant, name="资料库")
+        archived = KnowledgeBase(tenant_id=tenant, name="已归档", archived=True)
+        db.add_all([expert, draft, bench, base, archived])
+        await db.flush()
+        release = ExpertRelease(
+            expert_id=expert.id,
+            version="1.0.0",
+            content=content,
+            manifest={},
+            dependency_refs={"connectors": []},
+            sha256="a" * 64,
+            publisher_name="管理员",
+        )
+        db.add(release)
+        await db.flush()
+        expert.current_release_id = release.id
+        expert.draft = {**content, "instructions": "待发布修改"}
+        for version, status in (("1.0.0", "published"), ("2.0.0", "draft"), ("2.1.0", "draft")):
+            db.add(
+                WorkbenchVersion(
+                    workbench_id=bench.id,
+                    version=version,
+                    status=status,
+                    dsh_requirement="*",
+                    size=1,
+                    sha256="a" * 64,
+                    uploader_name="管理员",
+                )
+            )
+        for name, parent, deleted, status in (
+            ("失败", base, None, "failed"),
+            ("处理中", base, None, "queued"),
+            ("已删除", base, now, "failed"),
+            ("归档文件", archived, None, "failed"),
+        ):
+            doc = KnowledgeDocument(
+                base_id=parent.id,
+                upload_id=uuid4(),
+                filename=name,
+                media_type="text/plain",
+                size=1,
+                sha256="b" * 64,
+                data=b"a",
+                deleted_at=deleted,
+            )
+            db.add(doc)
+            await db.flush()
+            generation = KnowledgeGeneration(
+                document_id=doc.id,
+                actor_member_id=admin.member.id,
+                chunking={},
+                status=status,
+                next_run_at=now + timedelta(days=1),
+            )
+            db.add(generation)
+            await db.flush()
+            doc.latest_generation_id = generation.id
+        for source, actor in (("desktop", member.user.id), ("console", admin.user.id)):
+            db.add(
+                McpActivity(
+                    tenant_id=tenant,
+                    service_id=uuid4(),
+                    service_name="测试",
+                    actor_id=actor,
+                    actor_name="用户",
+                    owner_id=SHARED,
+                    category="call",
+                    operation="tools",
+                    source=source,
+                    result="success",
+                    duration_ms=1,
+                    request_id=uuid4().hex,
+                    created_at=now,
+                )
+            )
+        for action, result in (
+            ("experts.publish", "success"),
+            ("mcp.discover", "success"),
+            ("experts.withdraw", "failed"),
+        ):
+            db.add(
+                AuditEvent(
+                    tenant_id=tenant,
+                    actor_id=admin.user.id,
+                    actor_name="管理员",
+                    action=action,
+                    target_id=expert.id,
+                    target_name=expert.name,
+                    result=result,
+                )
+            )
+        await db.commit()
+    response = await admin.api.get("/api/v1/overview")
+    assert response.status_code == 200, response.text
+    view = response.json()
+    assert view["active_members"] == 1 and view["mcp_tool_calls"] == 1
+    assert view["experts"] == {"total": 2, "enabled": 1} and view["experts_with_changes"] == 1
+    assert view["expert_attention"]["count"] == 1
+    assert view["expert_attention"]["resource_id"] == str(expert.id)
+    assert (
+        view["workbenches"] == {"total": 1, "enabled": 1} and view["workbenches_with_drafts"] == 1
+    )
+    assert view["knowledge"] == {"total": 1, "documents": 2, "processing": 1}
+    assert view["knowledge_attention"]["count"] == 1
+    actions = {event["action"] for event in view["activities"]}
+    assert "experts.publish" in actions
+    assert actions.isdisjoint({"mcp.discover", "experts.withdraw"})
+    assert (await member.api.get("/api/v1/overview")).status_code == 403
 
 
 @pytest.mark.asyncio

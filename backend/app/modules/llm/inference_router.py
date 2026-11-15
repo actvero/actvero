@@ -12,6 +12,7 @@ from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB, now
 from app.modules.desktop.errors import fail
 from app.modules.desktop.schemas import DesktopErrorResponse
+from app.modules.integrations.service import ApplicationActor
 from app.modules.llm import member_catalog, routing, runtime
 from app.modules.llm.audio_schemas import SpeechInput, SpeechOutput
 from app.modules.llm.body_limit import InferenceRoute
@@ -34,7 +35,7 @@ resource = HTTPBearer(
     scheme_name="LlmResource",
     auto_error=False,
     description=(
-        "接受含对应模型权限的个人访问密钥，或通过 desktop/resource-tokens "
+        "接受含对应模型权限的应用密钥、个人访问密钥，或通过 desktop/resource-tokens "
         "申请的 llm:catalog / llm:<模型UUID> 资源令牌。"
     ),
 )
@@ -67,11 +68,11 @@ admin_router = APIRouter(
 )
 
 
-@router.get("/models", response_model=PublicModels, summary="读取已授权模型与积分单价")
+@router.get("/models", response_model=PublicModels, summary="读取已授权模型、参数与计价信息")
 async def models(request: Request, db: DB, page: int = Query(1, ge=1)) -> PublicModels:
     actor = await runtime.authorize(request, db, "llm:catalog")
     result = await member_catalog.public_page(db, actor, page, request)
-    if isinstance(actor, keys.KeyActor):
+    if isinstance(actor, (keys.KeyActor, ApplicationActor)):
         actor.key.last_used_at = now()
         await db.commit()
     return result

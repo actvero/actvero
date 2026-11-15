@@ -29,6 +29,7 @@ from app.modules.experts.schemas import (
     ExpertInput,
     ExpertManifestV1,
 )
+from app.modules.integrations.actor import ApplicationActor
 
 
 class DesktopExpertRelease(BaseModel):
@@ -151,17 +152,20 @@ router = APIRouter(
 )
 
 
-def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
-    scopes = [
-        ExpertRecord.audience == "organization",
-        (ExpertRecord.audience == "selected")
-        & or_(
-            ExpertRecord.member_ids.contains([str(actor.member.id)]),
-            actor.departments.predicate(ExpertRecord.department_grants),
-        ),
-    ]
-    if actor.member.role == "administrator":
-        scopes.append(ExpertRecord.audience == "administrators")
+def visibility(actor: NativeActor | ApplicationActor, q: str = "") -> list[ColumnElement[bool]]:
+    if isinstance(actor, ApplicationActor):
+        scopes = [ExpertRecord.audience == "organization"]
+    else:
+        scopes = [
+            ExpertRecord.audience == "organization",
+            (ExpertRecord.audience == "selected")
+            & or_(
+                ExpertRecord.member_ids.contains([str(actor.member.id)]),
+                actor.departments.predicate(ExpertRecord.department_grants),
+            ),
+        ]
+        if actor.member.role == "administrator":
+            scopes.append(ExpertRecord.audience == "administrators")
     conditions = [
         ExpertRecord.tenant_id == actor.tenant.id,
         or_(*scopes),
@@ -179,7 +183,7 @@ def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
 
 
 async def current(
-    db: AsyncSession, actor: NativeActor, expert_id: UUID
+    db: AsyncSession, actor: NativeActor | ApplicationActor, expert_id: UUID
 ) -> tuple[ExpertRecord, ExpertRelease]:
     result = (
         await db.execute(

@@ -67,6 +67,7 @@ export function TrendChart({
   zone,
   onBucket,
   comparisons = {},
+  compact = false,
 }: {
   title?: string
   timeline: Bucket[]
@@ -75,6 +76,7 @@ export function TrendChart({
   zone: string
   onBucket?: (bucket: Bucket) => void
   comparisons?: Record<string, { name: string; timeline: Bucket[] }>
+  compact?: boolean
 }) {
   const keys = Object.keys(comparisons)
   const config = keys.length
@@ -149,17 +151,19 @@ export function TrendChart({
         )
       : 0
   return (
-    <Card className='min-w-0'>
-      <CardHeader>
+    <Card className={compact ? 'min-w-0 gap-3 py-0 shadow-none' : 'min-w-0'}>
+      <CardHeader className={compact ? 'border-b px-4 pt-3 pb-3' : undefined}>
         <CardTitle>{title}</CardTitle>
-        <CardDescription>
-          {metricLabels[metric]} · 按受理时间 ·{' '}
-          {unknown
-            ? `未知用量 ${unknown} 笔；曲线只展示确认小计`
-            : '同一筛选范围；费用取历史结算比例'}
-        </CardDescription>
+        {(!compact || unknown > 0) && (
+          <CardDescription>
+            {metricLabels[metric]} · 按受理时间 ·{' '}
+            {unknown
+              ? `未知用量 ${unknown} 笔；曲线只展示确认小计`
+              : '同一筛选范围；费用取历史结算比例'}
+          </CardDescription>
+        )}
       </CardHeader>
-      <CardContent className='min-w-0'>
+      <CardContent className={compact ? 'min-w-0 px-3 pb-3' : 'min-w-0'}>
         {chart === 'table' ? (
           <div className='max-h-96 overflow-auto'>
             <Table>
@@ -209,7 +213,10 @@ export function TrendChart({
             </Table>
           </div>
         ) : (
-          <ChartContainer config={config} className='h-72 w-full'>
+          <ChartContainer
+            config={config}
+            className={compact ? 'h-48 w-full' : 'h-72 w-full'}
+          >
             {chart === 'area' ? (
               <AreaChart accessibilityLayer data={rows}>
                 {axes}
@@ -491,7 +498,13 @@ export function FlowChart({
                       disabled={
                         !path.member_id ||
                         !path.model_id ||
-                        !['access_key', 'desktop'].includes(path.source)
+                        ![
+                          'access_key',
+                          'application',
+                          'desktop',
+                          'knowledge_index',
+                          'knowledge_search',
+                        ].includes(path.source)
                       }
                       onClick={() => onDetails(path)}
                     >

@@ -15,11 +15,19 @@ from app.modules.llm.dashboard import usage_dashboard
 from app.modules.llm.dashboard_schemas import (
     OrganizationOverview,
     OverviewActivity,
+    OverviewAttention,
     PersonalOverview,
     ResourceCount,
     UsageDashboard,
 )
 from app.modules.llm.models import CatalogModel, ModelCall, ModelChannel, UsageSettlement
+from app.modules.llm.overview_data import (
+    IMPORTANT_ACTIONS,
+    business_activity,
+    expert_status,
+    knowledge_status,
+    workbench_status,
+)
 from app.modules.llm.points import decimal_text
 from app.modules.llm.router import administrator
 from app.modules.mcp.credentials import SHARED
@@ -86,13 +94,13 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
 
     models = (
         await db.scalars(
-            select(CatalogModel).where(
+            select(CatalogModel.configuration).where(
                 CatalogModel.tenant_id == tenant_id, CatalogModel.archived.is_(False)
             )
         )
     ).all()
     open_models = sum(
-        bool((model.configuration or {}).get("access", {}).get("enabled")) for model in models
+        bool((configuration or {}).get("access", {}).get("enabled")) for configuration in models
     )
     channels = ResourceCount(
         total=await count(
@@ -109,8 +117,9 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
         total=await count(Skill, Skill.tenant_id == tenant_id),
         enabled=int(
             await db.scalar(
-                select(func.count(SkillVersion.id))
-                .join(Skill, Skill.id == SkillVersion.skill_id)
+                select(func.count(func.distinct(Skill.id)))
+                .select_from(Skill)
+                .join(SkillVersion, Skill.id == SkillVersion.skill_id)
                 .where(Skill.tenant_id == tenant_id, SkillVersion.status == "published")
             )
             or 0
@@ -127,7 +136,8 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
         )
     ).all()
     health_by_owner = {(row.service_id, row.owner_id): row for row in health_rows}
-    checked = failed = unchecked = 0
+    checked = unchecked = 0
+    failed: list[McpService] = []
     for service in services:
         if (
             not service.enabled
@@ -144,17 +154,26 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
         ):
             unchecked += 1
         elif health.error:
-            failed += 1
+            failed.append(service)
         else:
             checked += 1
     activity = (
         await db.scalars(
             select(AuditEvent)
-            .where(AuditEvent.tenant_id == tenant_id)
+            .where(
+                AuditEvent.tenant_id == tenant_id,
+                AuditEvent.result == "success",
+                AuditEvent.action.in_(IMPORTANT_ACTIONS),
+            )
             .order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc())
             .limit(5)
         )
     ).all()
+    experts, expert_changes, expert_attention = await expert_status(db, tenant_id)
+    workbenches, workbench_drafts = await workbench_status(db, tenant_id)
+    knowledge, knowledge_attention = await knowledge_status(db, tenant_id)
+    active_members, mcp_tool_calls = await business_activity(db, tenant_id, start, as_of)
+    first_mcp = min(failed, key=lambda item: (item.name, item.id), default=None)
     return OrganizationOverview(
         as_of=as_of,
         models=ResourceCount(total=len(models), enabled=open_models),
@@ -190,7 +209,7 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
             SkillDistribution.created_at < as_of,
         ),
         mcp_checked=checked,
-        mcp_failed=failed,
+        mcp_failed=len(failed),
         mcp_unchecked=unchecked,
         activities=[
             OverviewActivity(
@@ -198,9 +217,26 @@ async def overview(request: Request, db: DB) -> OrganizationOverview:
                 actor=safe_name(row.actor_name) or "未知操作人",
                 action=row.action,
                 target=safe_name(row.target_name) or "—",
+                target_id=row.target_id,
             )
             for row in activity
         ],
+        experts=experts,
+        experts_with_changes=expert_changes,
+        workbenches=workbenches,
+        workbenches_with_drafts=workbench_drafts,
+        knowledge=knowledge,
+        active_members=active_members,
+        mcp_tool_calls=mcp_tool_calls,
+        expert_attention=expert_attention,
+        knowledge_attention=knowledge_attention,
+        mcp_attention=OverviewAttention(
+            count=len(failed),
+            resource_id=first_mcp.id,
+            name=safe_name(first_mcp.name) or "MCP 服务",
+        )
+        if first_mcp
+        else None,
     )
 
 
@@ -235,7 +271,7 @@ async def personal_overview(request: Request, db: DB) -> PersonalOverview:
             )
             .where(
                 ModelCall.tenant_id == actor.tenant.id,
-                ModelCall.actor_id == actor.user.id,
+                UsageSettlement.member_id == actor.member.id,
                 ModelCall.source.in_(FORMAL),
                 ModelCall.created_at >= start,
                 ModelCall.created_at < end,

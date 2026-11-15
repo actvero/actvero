@@ -182,6 +182,28 @@ async def resources(
                         endpoint=base + "/api/llm/v1",
                     )
                 )
+    elif kind == "knowledge":
+        from app.modules.knowledge.models import KnowledgeBase
+        from app.modules.knowledge.service import visible as knowledge_visible
+
+        bases = await db.scalars(
+            select(KnowledgeBase)
+            .where(KnowledgeBase.tenant_id == actor.tenant.id, KnowledgeBase.archived.is_(False))
+            .order_by(KnowledgeBase.name)
+        )
+        for knowledge in bases:
+            if knowledge_visible(knowledge, actor) and permits(
+                actor, "knowledge", knowledge.id, "read"
+            ):
+                result.append(
+                    KeyResource(
+                        kind="knowledge",
+                        id=knowledge.id,
+                        name=knowledge.name,
+                        identifier=str(knowledge.id),
+                        endpoint=base + "/api/knowledge/v1",
+                    )
+                )
     else:
         services = await db.scalars(
             select(McpService)

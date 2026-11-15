@@ -174,6 +174,488 @@
         "title": "AmountBucket",
         "type": "object"
       },
+      "ApplicationCallStatus": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "settlement_status": {
+            "title": "Settlement Status",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "settlement_status"
+        ],
+        "title": "ApplicationCallStatus",
+        "type": "object"
+      },
+      "ApplicationConnection": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "experts_enabled": {
+            "default": false,
+            "title": "Experts Enabled",
+            "type": "boolean"
+          },
+          "integration_base_url": {
+            "title": "Integration Base Url",
+            "type": "string"
+          },
+          "knowledge_enabled": {
+            "default": false,
+            "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "mcp_enabled": {
+            "default": false,
+            "title": "Mcp Enabled",
+            "type": "boolean"
+          },
+          "model_base_url": {
+            "title": "Model Base Url",
+            "type": "string"
+          },
+          "models_enabled": {
+            "default": false,
+            "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "skills_enabled": {
+            "default": false,
+            "title": "Skills Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "application_id",
+          "name",
+          "model_base_url",
+          "integration_base_url"
+        ],
+        "title": "ApplicationConnection",
+        "type": "object"
+      },
+      "ApplicationCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "experts_enabled": {
+            "default": false,
+            "title": "Experts Enabled",
+            "type": "boolean"
+          },
+          "knowledge_enabled": {
+            "default": false,
+            "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "mcp_enabled": {
+            "default": false,
+            "title": "Mcp Enabled",
+            "type": "boolean"
+          },
+          "models_enabled": {
+            "default": false,
+            "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "skills_enabled": {
+            "default": false,
+            "title": "Skills Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ApplicationCreate",
+        "type": "object"
+      },
+      "ApplicationKeyCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "default": 90,
+            "enum": [
+              30,
+              90,
+              365
+            ],
+            "title": "Days",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ApplicationKeyCreate",
+        "type": "object"
+      },
+      "ApplicationKeyCreated": {
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/ApplicationKeyView"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "secret"
+        ],
+        "title": "ApplicationKeyCreated",
+        "type": "object"
+      },
+      "ApplicationKeyView": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "hint": {
+            "title": "Hint",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "expired",
+              "revoked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "hint",
+          "created_at",
+          "expires_at",
+          "last_used_at",
+          "status"
+        ],
+        "title": "ApplicationKeyView",
+        "type": "object"
+      },
+      "ApplicationKnowledgeDefaults": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOption"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalPolicy"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "retrieval",
+          "models"
+        ],
+        "title": "ApplicationKnowledgeDefaults",
+        "type": "object"
+      },
+      "ApplicationMcpPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMcpService"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "const": 20,
+            "default": 20,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ],
+        "title": "ApplicationMcpPage",
+        "type": "object"
+      },
+      "ApplicationMcpService": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "display_name",
+          "description",
+          "version",
+          "endpoint",
+          "configured"
+        ],
+        "title": "ApplicationMcpService",
+        "type": "object"
+      },
+      "ApplicationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ApplicationPage",
+        "type": "object"
+      },
+      "ApplicationUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "experts_enabled": {
+            "default": false,
+            "title": "Experts Enabled",
+            "type": "boolean"
+          },
+          "knowledge_enabled": {
+            "default": false,
+            "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "mcp_enabled": {
+            "default": false,
+            "title": "Mcp Enabled",
+            "type": "boolean"
+          },
+          "models_enabled": {
+            "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "skills_enabled": {
+            "default": false,
+            "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "models_enabled",
+          "name",
+          "enabled",
+          "version"
+        ],
+        "title": "ApplicationUpdate",
+        "type": "object"
+      },
+      "ApplicationView": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "experts_enabled": {
+            "title": "Experts Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "integration_base_url": {
+            "title": "Integration Base Url",
+            "type": "string"
+          },
+          "knowledge_enabled": {
+            "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "mcp_enabled": {
+            "title": "Mcp Enabled",
+            "type": "boolean"
+          },
+          "model_base_url": {
+            "title": "Model Base Url",
+            "type": "string"
+          },
+          "models_enabled": {
+            "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "skills_enabled": {
+            "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "models_enabled",
+          "mcp_enabled",
+          "skills_enabled",
+          "experts_enabled",
+          "knowledge_enabled",
+          "name",
+          "enabled",
+          "version",
+          "id",
+          "created_at",
+          "last_used_at",
+          "model_base_url",
+          "integration_base_url"
+        ],
+        "title": "ApplicationView",
+        "type": "object"
+      },
       "ArchiveInput": {
         "additionalProperties": false,
         "properties": {
@@ -1483,16 +1965,37 @@
             ]
           },
           "ratio": {
-            "title": "Ratio",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio"
           },
           "reserved_amount": {
-            "title": "Reserved Amount",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved Amount"
           },
           "reserved_points": {
-            "title": "Reserved Points",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved Points"
           },
           "settled_at": {
             "anyOf": [
@@ -5128,6 +5631,314 @@
         "title": "CheckRecord",
         "type": "object"
       },
+      "ChunkPreviewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "query": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generation_id",
+          "chunking"
+        ],
+        "title": "ChunkPreviewInput",
+        "type": "object"
+      },
+      "ChunkPreviewItem": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "parent_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Content"
+          },
+          "parent_sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Sequence"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text_ranges": {
+            "items": {
+              "$ref": "#/components/schemas/OriginalTextRange"
+            },
+            "title": "Text Ranges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sequence",
+          "content",
+          "sources"
+        ],
+        "title": "ChunkPreviewItem",
+        "type": "object"
+      },
+      "ChunkPreviewView": {
+        "properties": {
+          "average_chars": {
+            "title": "Average Chars",
+            "type": "integer"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkPreviewItem"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "filtered_total": {
+            "title": "Filtered Total",
+            "type": "integer"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "longest_chars": {
+            "title": "Longest Chars",
+            "type": "integer"
+          },
+          "model_limit": {
+            "title": "Model Limit",
+            "type": "integer"
+          },
+          "parent_count": {
+            "title": "Parent Count",
+            "type": "integer"
+          },
+          "preview_token": {
+            "title": "Preview Token",
+            "type": "string"
+          },
+          "shortest_chars": {
+            "title": "Shortest Chars",
+            "type": "integer"
+          },
+          "total_chunks": {
+            "title": "Total Chunks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generation_id",
+          "chunking",
+          "preview_token",
+          "chunks",
+          "total_chunks",
+          "filtered_total",
+          "parent_count",
+          "average_chars",
+          "shortest_chars",
+          "longest_chars",
+          "model_limit"
+        ],
+        "title": "ChunkPreviewView",
+        "type": "object"
+      },
+      "ChunkView": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "content",
+          "sources"
+        ],
+        "title": "ChunkView",
+        "type": "object"
+      },
+      "Chunking": {
+        "additionalProperties": false,
+        "properties": {
+          "child_chars": {
+            "default": 350,
+            "description": "子片长度上限",
+            "maximum": 2000.0,
+            "minimum": 50.0,
+            "title": "Child Chars",
+            "type": "integer"
+          },
+          "max_chars": {
+            "default": 1800,
+            "description": "智能模式的合并软上限；长度模式的切片长度，均受模型输入硬上限约束",
+            "maximum": 10000.0,
+            "minimum": 100.0,
+            "title": "Max Chars",
+            "type": "integer"
+          },
+          "mode": {
+            "default": "smart",
+            "enum": [
+              "smart",
+              "normal"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "overlap_chars": {
+            "default": 100,
+            "description": "长度切片的重叠字数",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Overlap Chars",
+            "type": "integer"
+          },
+          "structure": {
+            "default": "general",
+            "enum": [
+              "general",
+              "parent_child"
+            ],
+            "title": "Structure",
+            "type": "string"
+          },
+          "target_chars": {
+            "default": 1200,
+            "description": "智能切片目标字数",
+            "maximum": 6000.0,
+            "minimum": 100.0,
+            "title": "Target Chars",
+            "type": "integer"
+          }
+        },
+        "title": "Chunking",
+        "type": "object"
+      },
+      "CitationView": {
+        "properties": {
+          "base_id": {
+            "format": "uuid",
+            "title": "Base Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "base_id",
+          "document_id",
+          "generation_id",
+          "filename",
+          "content",
+          "sources",
+          "source_url"
+        ],
+        "title": "CitationView",
+        "type": "object"
+      },
       "CliConsentDecision": {
         "additionalProperties": false,
         "properties": {
@@ -5879,6 +6690,76 @@
         "title": "ContentPart",
         "type": "object"
       },
+      "CredentialBatchCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "keys": {
+            "description": "批量添加 Key，重复项自动忽略",
+            "items": {
+              "format": "password",
+              "maxLength": 4096,
+              "minLength": 10,
+              "type": "string",
+              "writeOnly": true
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Keys",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 97,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "可选名称，新增多个 Key 时在名称后编号",
+            "title": "Name"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "CredentialBatchCreate",
+        "type": "object"
+      },
+      "CredentialCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "description": "同一官方账号使用相同标记",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "key": {
+            "maxLength": 4096,
+            "minLength": 10,
+            "title": "Key",
+            "type": "string",
+            "writeOnly": true
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "account",
+          "key"
+        ],
+        "title": "CredentialCreate",
+        "type": "object"
+      },
       "CredentialField": {
         "additionalProperties": false,
         "properties": {
@@ -5911,6 +6792,69 @@
           "header"
         ],
         "title": "CredentialField",
+        "type": "object"
+      },
+      "CredentialRename": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CredentialRename",
+        "type": "object"
+      },
+      "CredentialView": {
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "cooldown_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Until"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "account",
+          "enabled",
+          "cooldown_until",
+          "error"
+        ],
+        "title": "CredentialView",
         "type": "object"
       },
       "CurrentHeld": {
@@ -8147,6 +9091,321 @@
           "artifacts"
         ],
         "title": "DistributionView",
+        "type": "object"
+      },
+      "DocumentDetail": {
+        "properties": {
+          "active_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Generation Id"
+          },
+          "can_manage": {
+            "title": "Can Manage",
+            "type": "boolean"
+          },
+          "character_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Count"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "chunk_structure": {
+            "anyOf": [
+              {
+                "enum": [
+                  "general",
+                  "parent_child"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Structure"
+          },
+          "chunking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Chunking"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/ChunkView"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_count": {
+            "title": "Indexed Count",
+            "type": "integer"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_chunks": {
+            "title": "Total Chunks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "media_type",
+          "size",
+          "created_at",
+          "generation_id",
+          "active_generation_id",
+          "status",
+          "error",
+          "chunk_count",
+          "indexed_count",
+          "chunks",
+          "total_chunks",
+          "can_manage",
+          "source_url"
+        ],
+        "title": "DocumentDetail",
+        "type": "object"
+      },
+      "DocumentPreview": {
+        "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text_ranges": {
+            "items": {
+              "$ref": "#/components/schemas/OriginalTextRange"
+            },
+            "title": "Text Ranges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "generation_id",
+          "filename",
+          "media_type",
+          "source_url"
+        ],
+        "title": "DocumentPreview",
+        "type": "object"
+      },
+      "DocumentView": {
+        "properties": {
+          "active_generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Generation Id"
+          },
+          "character_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Count"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "chunk_structure": {
+            "anyOf": [
+              {
+                "enum": [
+                  "general",
+                  "parent_child"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Structure"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_count": {
+            "title": "Indexed Count",
+            "type": "integer"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "filename",
+          "media_type",
+          "size",
+          "created_at",
+          "generation_id",
+          "active_generation_id",
+          "status",
+          "error",
+          "chunk_count",
+          "indexed_count"
+        ],
+        "title": "DocumentView",
         "type": "object"
       },
       "DraftInspectionInput": {
@@ -11406,7 +12665,10 @@
             "enum": [
               "member",
               "desktop",
-              "access_key"
+              "access_key",
+              "application",
+              "knowledge_index",
+              "knowledge_search"
             ],
             "title": "Source",
             "type": "string"
@@ -12677,7 +13939,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -12719,7 +13982,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -12821,7 +14085,8 @@
           "kind": {
             "enum": [
               "llm",
-              "mcp"
+              "mcp",
+              "knowledge"
             ],
             "title": "Kind",
             "type": "string"
@@ -13084,6 +14349,410 @@
         "title": "KeyView",
         "type": "object"
       },
+      "KnowledgeCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "defaults_version": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaults Version"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "icon_selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkillIconSelection"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "新建时可不设头像；更新时省略则保留原头像，auto 移除头像"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "retrieval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetrievalPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "KnowledgeCreate",
+        "type": "object"
+      },
+      "KnowledgeDefaults": {
+        "additionalProperties": false,
+        "properties": {
+          "embedding_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model Id"
+          },
+          "rerank_enabled": {
+            "default": false,
+            "title": "Rerank Enabled",
+            "type": "boolean"
+          },
+          "rerank_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model Id"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "title": "KnowledgeDefaults",
+        "type": "object"
+      },
+      "KnowledgeDefaultsView": {
+        "additionalProperties": false,
+        "properties": {
+          "credentials": {
+            "items": {
+              "$ref": "#/components/schemas/CredentialView"
+            },
+            "title": "Credentials",
+            "type": "array"
+          },
+          "embedding_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model Id"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOption"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "rerank_enabled": {
+            "default": false,
+            "title": "Rerank Enabled",
+            "type": "boolean"
+          },
+          "rerank_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model Id"
+          },
+          "version": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "credentials",
+          "models"
+        ],
+        "title": "KnowledgeDefaultsView",
+        "type": "object"
+      },
+      "KnowledgeIconUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "icon_selection": {
+            "$ref": "#/components/schemas/SkillIconSelection"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "icon_selection"
+        ],
+        "title": "KnowledgeIconUpdate",
+        "type": "object"
+      },
+      "KnowledgePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "KnowledgePage",
+        "type": "object"
+      },
+      "KnowledgeUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "icon_selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkillIconSelection"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "新建时可不设头像；更新时省略则保留原头像，auto 移除头像"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "retrieval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetrievalPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "KnowledgeUpdate",
+        "type": "object"
+      },
+      "KnowledgeView": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "default": "administrators",
+            "enum": [
+              "administrators",
+              "organization",
+              "selected"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "can_manage": {
+            "default": false,
+            "title": "Can Manage",
+            "type": "boolean"
+          },
+          "chunking": {
+            "$ref": "#/components/schemas/Chunking"
+          },
+          "department_grants": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentGrant"
+            },
+            "maxItems": 100,
+            "title": "Department Grants",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "document_count": {
+            "default": 0,
+            "title": "Document Count",
+            "type": "integer"
+          },
+          "embedding_profile": {
+            "additionalProperties": true,
+            "title": "Embedding Profile",
+            "type": "object"
+          },
+          "icon": {
+            "$ref": "#/components/schemas/SkillIconSelectionView",
+            "description": "头像来源及可直接展示的图片"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "retrieval": {
+            "$ref": "#/components/schemas/RetrievalPolicy"
+          },
+          "status": {
+            "default": "empty",
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "version",
+          "embedding_profile",
+          "retrieval",
+          "updated_at"
+        ],
+        "title": "KnowledgeView",
+        "type": "object"
+      },
       "LatestChannelDiagnostic": {
         "properties": {
           "at": {
@@ -13237,6 +14906,17 @@
       },
       "LogicalCallView": {
         "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
           "attempt_count": {
             "title": "Attempt Count",
             "type": "integer"
@@ -13245,6 +14925,17 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
           },
           "duration_ms": {
             "anyOf": [
@@ -16895,6 +18586,42 @@
         "title": "ModelOperation",
         "type": "object"
       },
+      "ModelOption": {
+        "properties": {
+          "dimensions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "dimensions"
+        ],
+        "title": "ModelOption",
+        "type": "object"
+      },
       "ModelParametersInput": {
         "additionalProperties": false,
         "properties": {
@@ -18008,6 +19735,10 @@
       },
       "OrganizationOverview": {
         "properties": {
+          "active_members": {
+            "title": "Active Members",
+            "type": "integer"
+          },
           "activities": {
             "items": {
               "$ref": "#/components/schemas/OverviewActivity"
@@ -18023,8 +19754,48 @@
           "channels": {
             "$ref": "#/components/schemas/ResourceCount"
           },
+          "expert_attention": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewAttention"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "experts": {
+            "$ref": "#/components/schemas/ResourceCount"
+          },
+          "experts_with_changes": {
+            "title": "Experts With Changes",
+            "type": "integer"
+          },
+          "knowledge": {
+            "$ref": "#/components/schemas/OverviewKnowledge"
+          },
+          "knowledge_attention": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewAttention"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "mcp": {
             "$ref": "#/components/schemas/ResourceCount"
+          },
+          "mcp_attention": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewAttention"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "mcp_calls": {
             "title": "Mcp Calls",
@@ -18036,6 +19807,10 @@
           },
           "mcp_failed": {
             "title": "Mcp Failed",
+            "type": "integer"
+          },
+          "mcp_tool_calls": {
+            "title": "Mcp Tool Calls",
             "type": "integer"
           },
           "mcp_unchecked": {
@@ -18058,6 +19833,13 @@
           },
           "skills": {
             "$ref": "#/components/schemas/ResourceCount"
+          },
+          "workbenches": {
+            "$ref": "#/components/schemas/ResourceCount"
+          },
+          "workbenches_with_drafts": {
+            "title": "Workbenches With Drafts",
+            "type": "integer"
           }
         },
         "required": [
@@ -18073,7 +19855,17 @@
           "mcp_checked",
           "mcp_failed",
           "mcp_unchecked",
-          "activities"
+          "activities",
+          "experts",
+          "experts_with_changes",
+          "workbenches",
+          "workbenches_with_drafts",
+          "knowledge",
+          "active_members",
+          "mcp_tool_calls",
+          "expert_attention",
+          "knowledge_attention",
+          "mcp_attention"
         ],
         "title": "OrganizationOverview",
         "type": "object"
@@ -18177,6 +19969,28 @@
         "title": "Organizations",
         "type": "object"
       },
+      "OriginalTextRange": {
+        "properties": {
+          "end": {
+            "description": "原件 Unicode 字符终点，不包含此字符",
+            "minimum": 0.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "start": {
+            "description": "原件 Unicode 字符起点，不是 UTF-16 偏移",
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "OriginalTextRange",
+        "type": "object"
+      },
       "OverviewActivity": {
         "properties": {
           "action": {
@@ -18195,15 +20009,113 @@
           "target": {
             "title": "Target",
             "type": "string"
+          },
+          "target_id": {
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
           }
         },
         "required": [
           "at",
           "actor",
           "action",
-          "target"
+          "target",
+          "target_id"
         ],
         "title": "OverviewActivity",
+        "type": "object"
+      },
+      "OverviewAttention": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "count",
+          "resource_id",
+          "name"
+        ],
+        "title": "OverviewAttention",
+        "type": "object"
+      },
+      "OverviewKnowledge": {
+        "properties": {
+          "documents": {
+            "title": "Documents",
+            "type": "integer"
+          },
+          "processing": {
+            "title": "Processing",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "documents",
+          "processing"
+        ],
+        "title": "OverviewKnowledge",
+        "type": "object"
+      },
+      "ParentContext": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content"
+        ],
+        "title": "ParentContext",
+        "type": "object"
+      },
+      "ParsedSource": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/SourceBlock"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blocks",
+          "total",
+          "offset"
+        ],
+        "title": "ParsedSource",
         "type": "object"
       },
       "PartAck": {
@@ -21167,6 +23079,149 @@
         "title": "RankPreview",
         "type": "object"
       },
+      "ReaderChunk": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sequence",
+          "content"
+        ],
+        "title": "ReaderChunk",
+        "type": "object"
+      },
+      "ReaderManifest": {
+        "properties": {
+          "chunk": {
+            "$ref": "#/components/schemas/ReaderChunk"
+          },
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text_ranges": {
+            "items": {
+              "$ref": "#/components/schemas/OriginalTextRange"
+            },
+            "title": "Text Ranges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "document_id",
+          "generation_id",
+          "filename",
+          "media_type",
+          "source_url",
+          "chunk"
+        ],
+        "title": "ReaderManifest",
+        "type": "object"
+      },
+      "ReaderSessionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "parent_origin": {
+            "description": "嵌入方的完整 HTTPS origin；本地开发允许 HTTP localhost",
+            "maxLength": 300,
+            "title": "Parent Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "parent_origin"
+        ],
+        "title": "ReaderSessionInput",
+        "type": "object"
+      },
+      "ReaderSessionView": {
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "parent_origin": {
+            "title": "Parent Origin",
+            "type": "string"
+          },
+          "protocol": {
+            "const": "actvero.knowledge.v1",
+            "default": "actvero.knowledge.v1",
+            "title": "Protocol",
+            "type": "string"
+          },
+          "token": {
+            "description": "短期、单文档凭证，仅经 postMessage 传入，不放入 URL",
+            "title": "Token",
+            "type": "string"
+          },
+          "viewer_url": {
+            "description": "无秘密的独立阅读器地址，可放入任意宿主容器",
+            "title": "Viewer Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "viewer_url",
+          "token",
+          "expires_at",
+          "parent_origin"
+        ],
+        "title": "ReaderSessionView",
+        "type": "object"
+      },
       "ReadinessResponse": {
         "properties": {
           "database": {
@@ -21277,6 +23332,49 @@
           }
         },
         "title": "ReasoningToggle",
+        "type": "object"
+      },
+      "RebuildInput": {
+        "additionalProperties": false,
+        "properties": {
+          "chunking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Chunking"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "preview_token": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Token"
+          },
+          "use_current_defaults": {
+            "default": false,
+            "title": "Use Current Defaults",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "generation_id"
+        ],
+        "title": "RebuildInput",
         "type": "object"
       },
       "RecommendationSave": {
@@ -21429,8 +23527,15 @@
             "$ref": "#/components/schemas/TokenPrice-Output"
           },
           "ratio": {
-            "title": "Ratio",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio"
           },
           "required_fields": {
             "items": {
@@ -21490,8 +23595,15 @@
             "type": "string"
           },
           "points": {
-            "title": "Points",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
           },
           "usage": {
             "additionalProperties": {
@@ -23593,6 +25705,110 @@
         "title": "ResponseFormat",
         "type": "object"
       },
+      "RetrievalHit": {
+        "properties": {
+          "base_id": {
+            "format": "uuid",
+            "title": "Base Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generation_id": {
+            "format": "uuid",
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParentContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceLocation"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "base_id",
+          "document_id",
+          "generation_id",
+          "filename",
+          "content",
+          "sources",
+          "source_url",
+          "score"
+        ],
+        "title": "RetrievalHit",
+        "type": "object"
+      },
+      "RetrievalInput": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 5,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "rerank": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "RetrievalInput",
+        "type": "object"
+      },
       "RetrievalOptions": {
         "additionalProperties": false,
         "properties": {
@@ -23652,6 +25868,86 @@
           }
         },
         "title": "RetrievalOptions",
+        "type": "object"
+      },
+      "RetrievalPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "embedding_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model Id"
+          },
+          "mode": {
+            "default": "keyword",
+            "enum": [
+              "keyword",
+              "vector",
+              "hybrid"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "rerank_model_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model Id"
+          },
+          "vector_weight": {
+            "default": 50,
+            "description": "混合检索中向量排名权重百分比",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Vector Weight",
+            "type": "integer"
+          }
+        },
+        "title": "RetrievalPolicy",
+        "type": "object"
+      },
+      "RetrievalView": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalHit"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "hybrid",
+              "keyword",
+              "vector"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "reranked": {
+            "title": "Reranked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mode",
+          "reranked",
+          "items"
+        ],
+        "title": "RetrievalView",
         "type": "object"
       },
       "Revision": {
@@ -24058,9 +26354,16 @@
             "type": "string"
           },
           "member_id": {
-            "format": "uuid",
-            "title": "Member Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Id"
           },
           "member_name": {
             "title": "Member Name",
@@ -24097,8 +26400,15 @@
             "type": "string"
           },
           "reserved_points": {
-            "title": "Reserved Points",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserved Points"
           },
           "result_status": {
             "enum": [
@@ -25230,6 +27540,252 @@
           "created_at"
         ],
         "title": "SkillView",
+        "type": "object"
+      },
+      "SourceBlock": {
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "cell_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Range"
+          },
+          "coordinate_space": {
+            "default": "unknown",
+            "enum": [
+              "normalized",
+              "page",
+              "unknown"
+            ],
+            "title": "Coordinate Space",
+            "type": "string"
+          },
+          "end": {
+            "default": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "heading": {
+            "default": "",
+            "title": "Heading",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Height"
+          },
+          "page_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Width"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "default": "text",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "block_id",
+          "text"
+        ],
+        "title": "SourceBlock",
+        "type": "object"
+      },
+      "SourceLocation": {
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "cell_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Range"
+          },
+          "coordinate_space": {
+            "default": "unknown",
+            "enum": [
+              "normalized",
+              "page",
+              "unknown"
+            ],
+            "title": "Coordinate Space",
+            "type": "string"
+          },
+          "end": {
+            "default": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "heading": {
+            "default": "",
+            "title": "Heading",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "page_height": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Height"
+          },
+          "page_width": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Width"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "start": {
+            "default": 0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block_id"
+        ],
+        "title": "SourceLocation",
         "type": "object"
       },
       "SpeechDiagnostic": {
@@ -27815,6 +30371,11 @@
       }
     },
     "securitySchemes": {
+      "ApplicationKey": {
+        "description": "组织应用集成签发的 avi_ 密钥。",
+        "scheme": "bearer",
+        "type": "http"
+      },
       "DesktopAccess": {
         "description": "桌面登录/续期返回的 access_token（desktop:self）。不是 Web Cookie、Keycloak Token 或 MCP 凭据。",
         "scheme": "bearer",
@@ -27825,8 +30386,13 @@
         "scheme": "bearer",
         "type": "http"
       },
+      "KnowledgeReader": {
+        "description": "单文档、短期 avr_ 阅读凭证，不接受模型密钥或 Web Cookie 代替",
+        "scheme": "bearer",
+        "type": "http"
+      },
       "LlmResource": {
-        "description": "接受含对应模型权限的个人访问密钥，或通过 desktop/resource-tokens 申请的 llm:catalog / llm:<模型UUID> 资源令牌。",
+        "description": "接受含对应模型权限的应用密钥、个人访问密钥，或通过 desktop/resource-tokens 申请的 llm:catalog / llm:<模型UUID> 资源令牌。",
         "scheme": "bearer",
         "type": "http"
       },
@@ -27835,7 +30401,7 @@
         "type": "http"
       },
       "McpResource": {
-        "description": "由 /desktop/resource-tokens 获取。目录用 mcp:catalog；协议用 mcp:<服务ID>。只有 /api/mcp/services/<服务ID> 协议入口另接受个人访问密钥；/desktop/* 接口仍需桌面令牌。",
+        "description": "由 /desktop/resource-tokens 获取。目录用 mcp:catalog；协议用 mcp:<服务ID>。只有 /api/mcp/services/<服务ID> 协议入口另接受应用密钥和个人访问密钥；/desktop/* 接口仍需桌面令牌。",
         "scheme": "bearer",
         "type": "http"
       },
@@ -27857,12 +30423,1748 @@
     }
   },
   "info": {
-    "description": "Actvero 已实现接口。Web 管理 API 与桌面 API 使用不同认证方式。文档出现某个模块不代表已接通 DSH。桌面顺序：metadata → login/start → 系统浏览器登录 → login/exchange → me → bootstrap。秘密字段示例仅为占位，不能当作真实凭据。",
+    "description": "Actvero 已实现接口。组织应用、Web 管理 API 与桌面 API 使用不同认证方式。文档出现某个模块不代表已接通 DSH。桌面顺序：metadata → login/start → 系统浏览器登录 → login/exchange → me → bootstrap。秘密字段示例仅为占位，不能当作真实凭据。",
     "title": "Actvero Platform API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/integrations/v1/calls/{call_id}": {
+      "get": {
+        "operationId": "call_status_api_integrations_v1_calls__call_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationCallStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "查询本应用模型调用回执",
+        "tags": [
+          "application-api"
+        ]
+      }
+    },
+    "/api/integrations/v1/experts": {
+      "get": {
+        "operationId": "expert_catalog_api_integrations_v1_experts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopExpertPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "同步组织已发布的专家",
+        "tags": [
+          "application-experts"
+        ]
+      }
+    },
+    "/api/integrations/v1/experts/{expert_id}": {
+      "get": {
+        "operationId": "expert_detail_api_integrations_v1_experts__expert_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expert Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpertEnvelope"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取专家的生效发布、清单及依赖引用",
+        "tags": [
+          "application-experts"
+        ]
+      }
+    },
+    "/api/integrations/v1/experts/{expert_id}/resolve": {
+      "post": {
+        "operationId": "resolve_expert_api_integrations_v1_experts__expert_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpertProof"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpertResolution"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "核对专家发布及依赖的可用性，返回受发布限制的 MCP 地址",
+        "tags": [
+          "application-experts"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases": {
+      "get": {
+        "operationId": "bases_api_integrations_v1_knowledge_bases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "列出应用自建和组织全员可用的知识库",
+        "tags": [
+          "application-knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_integrations_v1_knowledge_bases_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "creation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Creation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "按 creation_id 幂等创建知识库",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/defaults": {
+      "get": {
+        "operationId": "defaults_api_integrations_v1_knowledge_bases_defaults_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationKnowledgeDefaults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取组织默认检索配置和模型选项",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}": {
+      "delete": {
+        "operationId": "archive_api_integrations_v1_knowledge_bases__base_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "归档应用自建知识库",
+        "tags": [
+          "application-knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "detail_api_integrations_v1_knowledge_bases__base_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取知识库配置与处理状态",
+        "tags": [
+          "application-knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "update_api_integrations_v1_knowledge_bases__base_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "按版本更新应用自建知识库",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/citations/{chunk_id}": {
+      "get": {
+        "operationId": "reference_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取引用及原文位置",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/citations/{chunk_id}/reader-session": {
+      "post": {
+        "operationId": "reader_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__reader_session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReaderSessionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderSessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "签发绑定原文和宿主来源的短期阅读凭证",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents": {
+      "get": {
+        "operationId": "documents_api_integrations_v1_knowledge_bases__base_id__documents_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentView"
+                  },
+                  "title": "Response Documents Api Integrations V1 Knowledge Bases  Base Id  Documents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "查询文档和处理进度",
+        "tags": [
+          "application-knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "upload_api_integrations_v1_knowledge_bases__base_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "幂等上传文档原件并排队处理",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "remove_api_integrations_v1_knowledge_bases__base_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "删除文档并撤销其引用",
+        "tags": [
+          "application-knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "document_api_integrations_v1_knowledge_bases__base_id__documents__document_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取文档状态、处理版本与分页切片",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/chunk-preview": {
+      "post": {
+        "operationId": "preview_chunks_api_integrations_v1_knowledge_bases__base_id__documents__document_id__chunk_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkPreviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkPreviewView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "试算应用自建库的切片，保留原文位置",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/rebuild": {
+      "post": {
+        "operationId": "rebuild_api_integrations_v1_knowledge_bases__base_id__documents__document_id__rebuild_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebuildInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "用新切片参数重新处理，完成前保留上一版索引",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/source": {
+      "get": {
+        "operationId": "source_api_integrations_v1_knowledge_bases__base_id__documents__document_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取文档原件",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/knowledge/bases/{base_id}/search": {
+      "post": {
+        "operationId": "retrieve_api_integrations_v1_knowledge_bases__base_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "检索知识库并返回原文引用",
+        "tags": [
+          "application-knowledge"
+        ]
+      }
+    },
+    "/api/integrations/v1/mcp/services": {
+      "get": {
+        "operationId": "connectors_api_integrations_v1_mcp_services_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMcpPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "同步可用的组织 MCP 服务和网关地址",
+        "tags": [
+          "application-mcp"
+        ]
+      }
+    },
+    "/api/integrations/v1/me": {
+      "get": {
+        "operationId": "me_api_integrations_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationConnection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "测试应用密钥并获取能力开关与服务地址",
+        "tags": [
+          "application-api"
+        ]
+      }
+    },
+    "/api/integrations/v1/skills": {
+      "get": {
+        "operationId": "skill_catalog_api_integrations_v1_skills_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopSkillPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "同步已发布的 Skills",
+        "tags": [
+          "application-skills"
+        ]
+      }
+    },
+    "/api/integrations/v1/skills/{skill_id}": {
+      "get": {
+        "operationId": "skill_detail_api_integrations_v1_skills__skill_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Skill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopSkillDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取生效 Skill 的说明、文件清单、版本和摘要",
+        "tags": [
+          "application-skills"
+        ]
+      }
+    },
+    "/api/integrations/v1/skills/{skill_id}/download": {
+      "post": {
+        "operationId": "skill_download_api_integrations_v1_skills__skill_id__download_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Skill Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillDownloadInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Content-SHA256": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Skill-Version-ID": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "按版本及 SHA-256 下载 Skill ZIP",
+        "tags": [
+          "application-skills"
+        ]
+      }
+    },
+    "/api/integrations/v1/skills/{skill_id}/file": {
+      "get": {
+        "operationId": "skill_file_api_integrations_v1_skills__skill_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "skill_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Skill Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillFileContent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取生效 Skill 的文本文件",
+        "tags": [
+          "application-skills"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases": {
+      "get": {
+        "operationId": "bases_api_knowledge_v1_bases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "列出密钥显式授权且当前成员可访问的知识库",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}": {
+      "get": {
+        "operationId": "reference_api_knowledge_v1_bases__base_id__citations__chunk_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "读取引用摘要，供宿主渲染角标或悬浮卡片",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}/reader-session": {
+      "post": {
+        "operationId": "reader_session_api_knowledge_v1_bases__base_id__citations__chunk_id__reader_session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReaderSessionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderSessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "由宿主服务签发短期原文阅读凭证；长期 API Key 不得发送到浏览器",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
+    "/api/knowledge/v1/bases/{base_id}/search": {
+      "post": {
+        "operationId": "retrieve_api_knowledge_v1_bases__base_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "PersonalAccessKey": []
+          }
+        ],
+        "summary": "检索知识库；需要 invoke 授权并沿用组织模型计费",
+        "tags": [
+          "knowledge-integration"
+        ]
+      }
+    },
     "/api/llm/v1/audio/speech": {
       "post": {
         "operationId": "speech_api_llm_v1_audio_speech_post",
@@ -28603,7 +32905,7 @@
             "LlmResource": []
           }
         ],
-        "summary": "读取已授权模型与积分单价",
+        "summary": "读取已授权模型、参数与计价信息",
         "tags": [
           "llm-gateway"
         ]
@@ -28747,7 +33049,7 @@
     },
     "/api/mcp/services/{service_id}": {
       "post": {
-        "description": "接受含当前服务权限的个人访问密钥或单服务资源令牌；每次校验凭据、成员与能力授权。个人密钥不替代 MCP OAuth 授权流程。无状态 Streamable HTTP，返回 JSON；GET/DELETE 为 405。支持 initialize、ping、tools/list、tools/call、prompts/list、prompts/get、resources/list、resources/templates/list、resources/read。Accept 同时包含 application/json、text/event-stream；初始化后携带 MCP-Protocol-Version。不提供订阅、任务、补全、采样、推送或自动重试。详见 DSH-MCP-ACCESS.md 和 ACCESS-KEYS.md。",
+        "description": "接受应用密钥、含当前服务权限的个人访问密钥或单服务资源令牌；每次校验凭据、成员与能力授权。个人密钥不替代 MCP OAuth 授权流程。无状态 Streamable HTTP，返回 JSON；GET/DELETE 为 405。支持 initialize、ping、tools/list、tools/call、prompts/list、prompts/get、resources/list、resources/templates/list、resources/read。Accept 同时包含 application/json、text/event-stream；初始化后携带 MCP-Protocol-Version。不提供订阅、任务、补全、采样、推送或自动重试。详见 DSH-MCP-ACCESS.md 和 ACCESS-KEYS.md。",
         "operationId": "protocol_api_mcp_services__service_id__post",
         "parameters": [
           {
@@ -29324,7 +33626,8 @@
             "schema": {
               "enum": [
                 "llm",
-                "mcp"
+                "mcp",
+                "knowledge"
               ],
               "title": "Kind",
               "type": "string"
@@ -37538,6 +41841,381 @@
         ]
       }
     },
+    "/api/v1/integrations/applications": {
+      "get": {
+        "operationId": "applications_api_v1_integrations_applications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Applications",
+        "tags": [
+          "application-integrations"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_v1_integrations_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "application-integrations"
+        ]
+      }
+    },
+    "/api/v1/integrations/applications/{app_id}": {
+      "get": {
+        "operationId": "detail_api_v1_integrations_applications__app_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detail",
+        "tags": [
+          "application-integrations"
+        ]
+      },
+      "put": {
+        "operationId": "update_api_v1_integrations_applications__app_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "application-integrations"
+        ]
+      }
+    },
+    "/api/v1/integrations/applications/{app_id}/calls": {
+      "get": {
+        "operationId": "calls_api_v1_integrations_applications__app_id__calls_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Calls",
+        "tags": [
+          "application-integrations"
+        ]
+      }
+    },
+    "/api/v1/integrations/applications/{app_id}/keys": {
+      "get": {
+        "operationId": "keys_api_v1_integrations_applications__app_id__keys_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationKeyView"
+                  },
+                  "title": "Response Keys Api V1 Integrations Applications  App Id  Keys Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Keys",
+        "tags": [
+          "application-integrations"
+        ]
+      },
+      "post": {
+        "operationId": "create_key_api_v1_integrations_applications__app_id__keys_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationKeyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationKeyCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Key",
+        "tags": [
+          "application-integrations"
+        ]
+      }
+    },
+    "/api/v1/integrations/applications/{app_id}/keys/{key_id}": {
+      "delete": {
+        "operationId": "revoke_key_api_v1_integrations_applications__app_id__keys__key_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Key",
+        "tags": [
+          "application-integrations"
+        ]
+      }
+    },
     "/api/v1/invitations/accept": {
       "post": {
         "operationId": "accept_api_v1_invitations_accept_post",
@@ -37639,6 +42317,1385 @@
         "summary": "Preview",
         "tags": [
           "invitations"
+        ]
+      }
+    },
+    "/api/v1/knowledge": {
+      "get": {
+        "operationId": "bases_api_v1_knowledge_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "列出本人有权访问的知识库",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "create_api_v1_knowledge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "创建知识库并保存生效的检索配置",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge-reader/manifest": {
+      "get": {
+        "operationId": "manifest_api_v1_knowledge_reader_manifest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "KnowledgeReader": []
+          }
+        ],
+        "summary": "读取被授权原文的展示信息与单条切片",
+        "tags": [
+          "knowledge-reader"
+        ]
+      }
+    },
+    "/api/v1/knowledge-reader/source": {
+      "get": {
+        "operationId": "source_api_v1_knowledge_reader_source_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "KnowledgeReader": []
+          }
+        ],
+        "summary": "读取凭证绑定原件；每次重新验证当前权限",
+        "tags": [
+          "knowledge-reader"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials": {
+      "post": {
+        "operationId": "add_credential_api_v1_knowledge_credentials_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "添加加密保存的 MinerU 凭据",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials/batch": {
+      "post": {
+        "operationId": "add_credentials_api_v1_knowledge_credentials_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialBatchCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CredentialView"
+                  },
+                  "title": "Response Add Credentials Api V1 Knowledge Credentials Batch Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "批量添加 MinerU Key，自动去重并加密保存",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/credentials/{credential_id}": {
+      "delete": {
+        "operationId": "delete_credential_api_v1_knowledge_credentials__credential_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Credential Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "此凭据仍有解析任务在处理"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "删除 MinerU 解析凭据",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "patch": {
+        "operationId": "rename_credential_api_v1_knowledge_credentials__credential_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Credential Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "修改解析凭据名称",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "toggle_credential_api_v1_knowledge_credentials__credential_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Credential Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "enabled",
+            "required": true,
+            "schema": {
+              "title": "Enabled",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "启用或停用解析凭据",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/defaults": {
+      "get": {
+        "operationId": "defaults_api_v1_knowledge_defaults_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDefaultsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "读取当前组织的知识库默认配置",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "save_defaults_api_v1_knowledge_defaults_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeDefaults"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDefaultsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "设置组织默认模型并授权知识库调用",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}": {
+      "delete": {
+        "operationId": "archive_api_v1_knowledge__base_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "归档知识库并立即停止原文和检索访问",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "detail_api_v1_knowledge__base_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取知识库设置与处理状态",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "put": {
+        "operationId": "update_api_v1_knowledge__base_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "更新知识库设置；已有文档需单独重新处理",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}": {
+      "get": {
+        "operationId": "reference_api_v1_knowledge__base_id__citations__chunk_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取稳定引用；历史版本仍检查当前文档权限",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}/reader-session": {
+      "post": {
+        "operationId": "reader_session_api_v1_knowledge__base_id__citations__chunk_id__reader_session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chunk_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Chunk Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReaderSessionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderSessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "签发单文档短期嵌入凭证；宿主自行选择弹窗、侧栏或全屏",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents": {
+      "get": {
+        "operationId": "documents_api_v1_knowledge__base_id__documents_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentView"
+                  },
+                  "title": "Response Documents Api V1 Knowledge  Base Id  Documents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "列出文档及最新处理进度",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "operationId": "upload_api_v1_knowledge__base_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "上传文档原件并启动异步解析；upload_id 保证重试幂等",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}": {
+      "delete": {
+        "operationId": "delete_document_api_v1_knowledge__base_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "删除文档并撤销所有版本的引用访问",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "get": {
+        "operationId": "document_api_v1_knowledge__base_id__documents__document_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "分页读取切片与原文位置；可查看历史切片版本",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/chunk-preview": {
+      "post": {
+        "operationId": "chunk_preview_api_v1_knowledge__base_id__documents__document_id__chunk_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChunkPreviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkPreviewView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "使用已解析原文试算切片，不写入索引或调用模型",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/parsed-source": {
+      "get": {
+        "operationId": "parsed_source_api_v1_knowledge__base_id__documents__document_id__parsed_source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Generation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "block_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Block Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParsedSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取原文结构块，支持按块定位并分页",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/preview": {
+      "get": {
+        "operationId": "original_preview_api_v1_knowledge__base_id__documents__document_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "generation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chunk_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chunk Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "读取原件展示信息与引用高亮位置，不返回替代原文的解析文本",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/rebuild": {
+      "post": {
+        "operationId": "rebuild_api_v1_knowledge__base_id__documents__document_id__rebuild_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebuildInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "创建新的切片版本；成功前保留旧索引",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/source": {
+      "get": {
+        "operationId": "source_api_v1_knowledge__base_id__documents__document_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "在当前权限下读取原件，禁止公共缓存",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/icon": {
+      "patch": {
+        "operationId": "update_icon_api_v1_knowledge__base_id__icon_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeIconUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "更换知识库头像或恢复默认",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/{base_id}/search": {
+      "post": {
+        "operationId": "retrieve_api_v1_knowledge__base_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "base_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Base Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "在授权知识库内检索；向量与重排序调用沿用模型计费",
+        "tags": [
+          "knowledge"
         ]
       }
     },
@@ -41980,17 +48037,20 @@
             }
           },
           {
+            "description": "搜索词",
             "in": "query",
             "name": "q",
             "required": false,
             "schema": {
               "default": "",
+              "description": "搜索词",
               "maxLength": 100,
               "title": "Q",
               "type": "string"
             }
           },
           {
+            "description": "类别",
             "in": "query",
             "name": "category",
             "required": false,
@@ -42006,10 +48066,12 @@
                   "type": "null"
                 }
               ],
+              "description": "类别",
               "title": "Category"
             }
           },
           {
+            "description": "published 或 unpublished",
             "in": "query",
             "name": "status",
             "required": false,
@@ -42026,15 +48088,18 @@
                   "type": "null"
                 }
               ],
+              "description": "published 或 unpublished",
               "title": "Status"
             }
           },
           {
+            "description": "页码",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
+              "description": "页码",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -42063,7 +48128,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Listing",
+        "summary": "查询专家",
         "tags": [
           "management-resources"
         ]
@@ -42889,12 +48954,13 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Detail",
+        "summary": "查看专家与发布版本",
         "tags": [
           "management-resources"
         ]
       },
       "put": {
+        "description": "提交 ExpertUpdate，包含当前草稿修订号 revision。",
         "operationId": "experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
         "parameters": [
           {
@@ -42960,7 +49026,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Experts Update",
+        "summary": "修改专家草稿",
         "tags": [
           "management-resources"
         ]
@@ -55473,6 +61539,34 @@
   },
   "tags": [
     {
+      "description": "应用服务端接入。使用 avi_ 应用 Key 测试连接、读取开关与查询调用回执。",
+      "name": "application-api"
+    },
+    {
+      "description": "应用自建库管理、组织共享知识库检索及原文阅读。",
+      "name": "application-knowledge"
+    },
+    {
+      "description": "应用 MCP 服务目录。工具、提示词和资源走返回的协议端点。",
+      "name": "application-mcp"
+    },
+    {
+      "description": "同步发布的 Skill，检查精确版本与摘要后下载 ZIP。",
+      "name": "application-skills"
+    },
+    {
+      "description": "同步发布的专家清单，检查 Skills 和 MCP 的精确依赖。",
+      "name": "application-experts"
+    },
+    {
+      "description": "模型与参数发现、调用。应用使用 avi_ Key，并开启模型能力。",
+      "name": "llm-gateway"
+    },
+    {
+      "description": "组织管理员管理应用、能力开关及密钥。使用 Web 会话和 CSRF。",
+      "name": "application-integrations"
+    },
+    {
       "description": "DSH 主进程专用账号与设备接口。部分接口使用 DesktopAccess Bearer，其余按请求体证明认证。所有桌面接口拒绝 Origin 或 Actvero Web 登录 Cookie。当前已登录的 Swagger 浏览器可能自动带 Cookie。Try it out 失败时请用无 Cookie/Origin 的原生 HTTP 客户端，不能关闭服务端校验。desktop:self 尚不能调用 MCP。",
       "name": "desktop"
     },
@@ -55485,7 +61579,7 @@
       "name": "desktop-mcp"
     },
     {
-      "description": "标准 MCP 协议入口；使用单服务资源令牌或指定服务范围的个人访问密钥。",
+      "description": "标准 MCP 协议入口。接受应用 Key、单服务资源令牌和获准的个人访问密钥。",
       "name": "mcp-gateway"
     },
     {

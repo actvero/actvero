@@ -5,10 +5,12 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import { playwright } from '@vitest/browser-playwright'
+import { pdfAssets } from './scripts/pdf-assets'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    pdfAssets(),
     tanstackRouter({
       target: 'react',
       autoCodeSplitting: true,

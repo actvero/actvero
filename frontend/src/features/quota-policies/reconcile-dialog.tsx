@@ -415,7 +415,9 @@ export function ReconcileDialog({
                 <Badge variant='outline'>
                   {labels[settlement.status as keyof typeof labels]}
                 </Badge>
-                <span>预占 {settlement.reserved_points} 积分</span>
+                {settlement.reserved_points !== null && (
+                  <span>预占 {settlement.reserved_points} 积分</span>
+                )}
               </div>
             )}
           </DialogHeader>
@@ -457,7 +459,12 @@ export function ReconcileDialog({
                           : metric === 'search_units'
                             ? '搜索单位'
                             : '张'}
-                      · 积分比例 {context.ratio} 积分 / {context.currency}
+                      {context.ratio !== null && (
+                        <>
+                          {' '}
+                          · 积分比例 {context.ratio} 积分 / {context.currency}
+                        </>
+                      )}
                     </p>
                     <div className='flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground'>
                       {rates.map(([label, value]) => (
@@ -608,8 +615,10 @@ export function ReconcileDialog({
                         <AlertDescription>
                           <span>
                             {preview.action === 'release'
-                              ? `本次消耗 0 积分，释放预占 ${settlement?.reserved_points ?? '—'} 积分`
-                              : `结算金额：${preview.amount} ${preview.currency}；消耗 ${preview.points} 积分`}
+                              ? preview.points === null
+                                ? '确认本次调用无费用'
+                                : `本次消耗 0 积分，释放预占 ${settlement?.reserved_points ?? '—'} 积分`
+                              : `结算金额 ${preview.amount} ${preview.currency}${preview.points === null ? '' : ` · 消耗 ${preview.points} 积分`}`}
                           </span>
                           {preview.action === 'settle' && (
                             <span>

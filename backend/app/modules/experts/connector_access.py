@@ -10,6 +10,8 @@ from app.modules.auth.service import provider
 from app.modules.desktop.errors import fail
 from app.modules.experts.models import ExpertRecord, ExpertRelease
 from app.modules.experts.service import allowed
+from app.modules.integrations.actor import ApplicationActor
+from app.modules.integrations.service import require
 from app.modules.members.service import BusinessActor
 
 
@@ -24,7 +26,7 @@ def connector_endpoint(
 
 async def reference(
     db: AsyncSession,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     service_id: UUID,
     expert_id: UUID,
     release_id: UUID,
@@ -35,15 +37,23 @@ async def reference(
         not expert
         or expert.tenant_id != actor.tenant.id
         or not expert.current_release_id
-        or not allowed(
-            expert.audience,
-            expert.member_ids,
-            actor.member,
-            actor.departments,
-            expert.department_grants,
+        or (
+            expert.audience != "organization"
+            if isinstance(actor, ApplicationActor)
+            else not allowed(
+                expert.audience,
+                expert.member_ids,
+                actor.member,
+                actor.departments,
+                expert.department_grants,
+            )
         )
     ):
         fail(404, "expert_unavailable", "专家不可用或未获授权")
+    if isinstance(actor, ApplicationActor):
+        require(actor, "experts")
+        if expert.current_release_id != release_id:
+            fail(409, "expert_release_changed", "专家发布已变化，请重新同步")
     release = await db.get(ExpertRelease, release_id)
     if not release or release.expert_id != expert.id:
         fail(404, "expert_release_unavailable", "专家发布不可用")

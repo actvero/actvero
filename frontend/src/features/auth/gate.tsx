@@ -61,7 +61,11 @@ export function AccessGate({
     )
   const organization = data.organization
   if (!organization && data.platform_operator)
-    return <Navigate to='/platform/organizations' replace />
+    return location.pathname === '/platform/organizations' ? (
+      <LoadingState />
+    ) : (
+      <Navigate to='/platform/organizations' replace />
+    )
   if (
     !organization ||
     organization.status !== 'active' ||

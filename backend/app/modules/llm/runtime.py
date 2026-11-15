@@ -24,6 +24,8 @@ from app.modules.desktop.resources import actor_for_membership
 from app.modules.desktop_mcp.models import ResourceToken
 from app.modules.desktop_mcp.schemas import ResourceTokenView
 from app.modules.desktop_mcp.service import NativeActor, business_actor
+from app.modules.integrations import service as integrations
+from app.modules.integrations.service import ApplicationActor
 from app.modules.llm import routing, settlement
 from app.modules.llm.audio_schemas import SpeechInput, TranscriptionInput
 from app.modules.llm.catalog_schemas import CatalogInput, OperationKind, TokenPrice
@@ -53,10 +55,12 @@ from app.modules.tenants.models import Tenant
 BASE = "/api/llm/v1"
 
 
-def visible(config: CatalogInput, actor: BusinessActor) -> bool:
+def visible(config: CatalogInput, actor: BusinessActor | ApplicationActor) -> bool:
     if config.operations is not None:
         return any(visible(operation, actor) for operation in config.execution_configs())
     policy = config.access
+    if isinstance(actor, ApplicationActor):
+        return policy.enabled
     return policy.enabled and (
         policy.audience == "organization"
         or policy.audience == "administrators"
@@ -147,7 +151,9 @@ async def validate_configuration(
             .where(
                 ModelCall.model_id == row.id,
                 ModelCall.kind == "embedding",
-                ModelCall.source.in_(["desktop", "access_key"]),
+                ModelCall.source.in_(
+                    ["desktop", "access_key", "application", "knowledge_index", "knowledge_search"]
+                ),
             )
             .limit(1)
         )
@@ -165,7 +171,13 @@ async def authorize(
     resource: str | None = None,
     *,
     in_flight: bool = False,
-) -> BusinessActor:
+) -> BusinessActor | ApplicationActor:
+    if getattr(request.state, "knowledge_invocation", None) is not None:
+        from app.modules.knowledge.inference import authorize_invocation
+
+        return await authorize_invocation(request, db, resource)
+    if integrations.supplied(request):
+        return await integrations.authorize(request, db, "models")
     if keys.supplied(request):
         resource_id = (
             UUID(resource.removeprefix("llm:")) if resource and resource != "llm:catalog" else None
@@ -206,7 +218,7 @@ async def authorize(
 
 async def resolve_model(request: Request, db: AsyncSession, slug: str) -> UUID:
     actor = await authorize(request, db)
-    if isinstance(actor, keys.KeyActor):
+    if isinstance(actor, (keys.KeyActor, ApplicationActor)):
         row = await db.scalar(
             select(CatalogModel).where(
                 CatalogModel.tenant_id == actor.tenant.id,
@@ -220,7 +232,9 @@ async def resolve_model(request: Request, db: AsyncSession, slug: str) -> UUID:
     return UUID(request.state.llm_resource.removeprefix("llm:"))
 
 
-async def model_for_actor(db: AsyncSession, actor: BusinessActor, model_id: UUID) -> CatalogModel:
+async def model_for_actor(
+    db: AsyncSession, actor: BusinessActor | ApplicationActor, model_id: UUID
+) -> CatalogModel:
     row = await db.get(CatalogModel, model_id, populate_existing=True)
     if row is None or row.tenant_id != actor.tenant.id or row.archived:
         fail(404, "model_unavailable", "模型不存在或不可用")
@@ -228,7 +242,7 @@ async def model_for_actor(db: AsyncSession, actor: BusinessActor, model_id: UUID
 
 
 async def channel_for(
-    db: AsyncSession, actor: BusinessActor, config: CatalogInput, model_id: UUID
+    db: AsyncSession, actor: BusinessActor | ApplicationActor, config: CatalogInput, model_id: UUID
 ) -> ModelChannel:
     channels = await routing.channels_for(db, actor.tenant.id, config)
     return routing.configured_candidates(config, channels)[0][1]
@@ -326,13 +340,14 @@ async def execute(
     test: bool = False,
     specific: tuple[UUID, str] | None = None,
 ) -> AsyncGenerator[EmbeddingOutput | RerankOutput | dict[str, Any]]:
+    knowledge = getattr(request.state, "knowledge_invocation", None)
     actor = await administrator(request, db, write=True) if test else await authorize(request, db)
     if not test:
         await db.scalar(select(Tenant).where(Tenant.id == actor.tenant.id).with_for_update())
         actor = await authorize(request, db, "llm:" + str(model_id))
     row = await model_for_actor(db, actor, model_id)
     config = CatalogInput.model_validate(row.configuration)
-    if not test and not visible(config, actor):
+    if not test and knowledge is None and not visible(config, actor):
         fail(404, "model_unavailable", "模型未启用或未获授权")
     kind: OperationKind = (
         "transcription"
@@ -355,17 +370,34 @@ async def execute(
         from app.modules.model_gateway.capabilities import effective
 
         config = await effective(request, actor.tenant.id, config)
-    if not test and not visible(config, actor):
-        fail(404, "model_unavailable", "此操作未开放或未获授权")
-    fingerprint = None
     if not test:
+        if knowledge is not None and knowledge.operation != kind:
+            fail(403, "resource_scope_mismatch", "知识库调用用途不符")
+        if not (config.access.enabled if knowledge is not None else visible(config, actor)):
+            fail(404, "model_unavailable", "此操作未开放或未获授权")
+    if (
+        knowledge is not None
+        and isinstance(body, EmbeddingInput)
+        and not config.retrieval.dimension_options
+    ):
+        # Fixed-dimension models do not accept a dimensions override.
+        body = body.model_copy(update={"dimensions": None})
+    fingerprint = None
+    if not test and knowledge is None:
         if request.headers.get("idempotency-key") is not None:
             settings = provider(request).settings
             if settings.session_encryption_key is None:
                 fail(503, "idempotency_unavailable", "请求幂等服务尚未配置")
             try:
                 fingerprint = request_fingerprint(
-                    settings, actor.tenant.id, actor.member.id, model_id, kind, body
+                    settings,
+                    actor.tenant.id,
+                    actor.application.id
+                    if isinstance(actor, ApplicationActor)
+                    else actor.member.id,
+                    model_id,
+                    kind,
+                    body,
                 )
             except ValueError:
                 fail(422, "invalid_request_identity", "请求参数不能生成稳定的幂等标识")
@@ -419,13 +451,19 @@ async def execute(
         tenant_id=actor.tenant.id,
         model_id=model_id,
         channel_id=UUID(pool[0].evidence["channel_id"]),
-        actor_id=actor.user.id,
+        actor_id=None if isinstance(actor, ApplicationActor) else actor.user.id,
+        application_id=actor.application.id if isinstance(actor, ApplicationActor) else None,
+        integration_key_id=actor.key.id if isinstance(actor, ApplicationActor) else None,
         device_id=actor.device.id if isinstance(actor, NativeActor) else None,
         access_key_id=actor.key.id if isinstance(actor, keys.KeyActor) else None,
-        source="admin_channel_test"
+        source=("knowledge_" + knowledge.purpose)
+        if knowledge is not None
+        else "admin_channel_test"
         if specific
         else "admin_route_test"
         if test
+        else "application"
+        if isinstance(actor, ApplicationActor)
         else "access_key"
         if isinstance(actor, keys.KeyActor)
         else "desktop",
@@ -435,9 +473,19 @@ async def execute(
         status="pending",
     )
     db.add(log)
-    if isinstance(actor, keys.KeyActor):
+    if knowledge is None and isinstance(actor, (keys.KeyActor, ApplicationActor)):
         actor.key.last_used_at = now()
-    if not test:
+    if isinstance(actor, ApplicationActor):
+        await settlement.record_organization_call(
+            db,
+            log,
+            config,
+            idempotency_key=request.headers.get("idempotency-key"),
+            request_fingerprint=fingerprint,
+        )
+    elif knowledge is not None:
+        await settlement.record_organization_call(db, log, config)
+    elif not test:
         gateway_quote = None
         if config.gateway:
             from app.modules.model_gateway.admission import estimate
@@ -500,7 +548,15 @@ async def check_live(
     row = await model_for_actor(db, actor, model_id)
     config = CatalogInput.model_validate(row.configuration).for_operation(kind)
     channel = await db.get(ModelChannel, channel_id, populate_existing=True)
-    if not test and (config is None or not visible(config, actor)):
+    knowledge = getattr(request.state, "knowledge_invocation", None)
+    if not test and (
+        config is None
+        or (
+            not config.access.enabled or knowledge.operation != kind
+            if knowledge is not None
+            else not visible(config, actor)
+        )
+    ):
         fail(404, "model_unavailable", "模型授权已变化")
     if channel is None or channel.archived or (not test and channel.manual_enabled is False):
         fail(403, "channel_disabled", "调用渠道已停用")

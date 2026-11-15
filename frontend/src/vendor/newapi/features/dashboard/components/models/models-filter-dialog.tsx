@@ -166,8 +166,8 @@ export function ModelsFilter(props: ModelsFilterProps) {
       open={open}
       onOpenChange={handleOpenChange}
       trigger={
-        <Button variant='outline' size='sm'>
-          <Filter className='mr-2 h-4 w-4' />
+        <Button variant='outline'>
+          <Filter data-icon='inline-start' />
           {t('Filter')}
         </Button>
       }

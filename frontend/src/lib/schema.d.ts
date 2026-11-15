@@ -4,6 +4,436 @@
  */
 
 export interface paths {
+    "/api/integrations/v1/calls/{call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询本应用模型调用回执 */
+        get: operations["call_status_api_integrations_v1_calls__call_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/experts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 同步组织已发布的专家 */
+        get: operations["expert_catalog_api_integrations_v1_experts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/experts/{expert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取专家的生效发布、清单及依赖引用 */
+        get: operations["expert_detail_api_integrations_v1_experts__expert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/experts/{expert_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 核对专家发布及依赖的可用性，返回受发布限制的 MCP 地址 */
+        post: operations["resolve_expert_api_integrations_v1_experts__expert_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出应用自建和组织全员可用的知识库 */
+        get: operations["bases_api_integrations_v1_knowledge_bases_get"];
+        put?: never;
+        /** 按 creation_id 幂等创建知识库 */
+        post: operations["create_api_integrations_v1_knowledge_bases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取组织默认检索配置和模型选项 */
+        get: operations["defaults_api_integrations_v1_knowledge_bases_defaults_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取知识库配置与处理状态 */
+        get: operations["detail_api_integrations_v1_knowledge_bases__base_id__get"];
+        /** 按版本更新应用自建知识库 */
+        put: operations["update_api_integrations_v1_knowledge_bases__base_id__put"];
+        post?: never;
+        /** 归档应用自建知识库 */
+        delete: operations["archive_api_integrations_v1_knowledge_bases__base_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/citations/{chunk_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取引用及原文位置 */
+        get: operations["reference_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/citations/{chunk_id}/reader-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 签发绑定原文和宿主来源的短期阅读凭证 */
+        post: operations["reader_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__reader_session_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询文档和处理进度 */
+        get: operations["documents_api_integrations_v1_knowledge_bases__base_id__documents_get"];
+        put?: never;
+        /** 幂等上传文档原件并排队处理 */
+        post: operations["upload_api_integrations_v1_knowledge_bases__base_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取文档状态、处理版本与分页切片 */
+        get: operations["document_api_integrations_v1_knowledge_bases__base_id__documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /** 删除文档并撤销其引用 */
+        delete: operations["remove_api_integrations_v1_knowledge_bases__base_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/chunk-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 试算应用自建库的切片，保留原文位置 */
+        post: operations["preview_chunks_api_integrations_v1_knowledge_bases__base_id__documents__document_id__chunk_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 用新切片参数重新处理，完成前保留上一版索引 */
+        post: operations["rebuild_api_integrations_v1_knowledge_bases__base_id__documents__document_id__rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/documents/{document_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取文档原件 */
+        get: operations["source_api_integrations_v1_knowledge_bases__base_id__documents__document_id__source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/knowledge/bases/{base_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 检索知识库并返回原文引用 */
+        post: operations["retrieve_api_integrations_v1_knowledge_bases__base_id__search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/mcp/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 同步可用的组织 MCP 服务和网关地址 */
+        get: operations["connectors_api_integrations_v1_mcp_services_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 测试应用密钥并获取能力开关与服务地址 */
+        get: operations["me_api_integrations_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 同步已发布的 Skills */
+        get: operations["skill_catalog_api_integrations_v1_skills_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/skills/{skill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取生效 Skill 的说明、文件清单、版本和摘要 */
+        get: operations["skill_detail_api_integrations_v1_skills__skill_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/skills/{skill_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 按版本及 SHA-256 下载 Skill ZIP */
+        post: operations["skill_download_api_integrations_v1_skills__skill_id__download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/skills/{skill_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取生效 Skill 的文本文件 */
+        get: operations["skill_file_api_integrations_v1_skills__skill_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/v1/bases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出密钥显式授权且当前成员可访问的知识库 */
+        get: operations["bases_api_knowledge_v1_bases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取引用摘要，供宿主渲染角标或悬浮卡片 */
+        get: operations["reference_api_knowledge_v1_bases__base_id__citations__chunk_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/v1/bases/{base_id}/citations/{chunk_id}/reader-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 由宿主服务签发短期原文阅读凭证；长期 API Key 不得发送到浏览器 */
+        post: operations["reader_session_api_knowledge_v1_bases__base_id__citations__chunk_id__reader_session_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/v1/bases/{base_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 检索知识库；需要 invoke 授权并沿用组织模型计费 */
+        post: operations["retrieve_api_knowledge_v1_bases__base_id__search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/llm/v1/audio/speech": {
         parameters: {
             query?: never;
@@ -96,7 +526,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 读取已授权模型与积分单价 */
+        /** 读取已授权模型、参数与计价信息 */
         get: operations["models_api_llm_v1_models_get"];
         put?: never;
         post?: never;
@@ -134,7 +564,7 @@ export interface paths {
         put?: never;
         /**
          * 调用标准 MCP 协议（Streamable HTTP）
-         * @description 接受含当前服务权限的个人访问密钥或单服务资源令牌；每次校验凭据、成员与能力授权。个人密钥不替代 MCP OAuth 授权流程。无状态 Streamable HTTP，返回 JSON；GET/DELETE 为 405。支持 initialize、ping、tools/list、tools/call、prompts/list、prompts/get、resources/list、resources/templates/list、resources/read。Accept 同时包含 application/json、text/event-stream；初始化后携带 MCP-Protocol-Version。不提供订阅、任务、补全、采样、推送或自动重试。详见 DSH-MCP-ACCESS.md 和 ACCESS-KEYS.md。
+         * @description 接受应用密钥、含当前服务权限的个人访问密钥或单服务资源令牌；每次校验凭据、成员与能力授权。个人密钥不替代 MCP OAuth 授权流程。无状态 Streamable HTTP，返回 JSON；GET/DELETE 为 405。支持 initialize、ping、tools/list、tools/call、prompts/list、prompts/get、resources/list、resources/templates/list、resources/read。Accept 同时包含 application/json、text/event-stream；初始化后携带 MCP-Protocol-Version。不提供订阅、任务、补全、采样、推送或自动重试。详见 DSH-MCP-ACCESS.md 和 ACCESS-KEYS.md。
          */
         post: operations["protocol_api_mcp_services__service_id__post"];
         delete?: never;
@@ -1942,6 +2372,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Applications */
+        get: operations["applications_api_v1_integrations_applications_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_integrations_applications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/applications/{app_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["detail_api_v1_integrations_applications__app_id__get"];
+        /** Update */
+        put: operations["update_api_v1_integrations_applications__app_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/applications/{app_id}/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calls */
+        get: operations["calls_api_v1_integrations_applications__app_id__calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/applications/{app_id}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Keys */
+        get: operations["keys_api_v1_integrations_applications__app_id__keys_get"];
+        put?: never;
+        /** Create Key */
+        post: operations["create_key_api_v1_integrations_applications__app_id__keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/applications/{app_id}/keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Key */
+        delete: operations["revoke_key_api_v1_integrations_applications__app_id__keys__key_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/accept": {
         parameters: {
             query?: never;
@@ -2004,6 +2522,337 @@ export interface paths {
         get: operations["preview_api_v1_invitations_current_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出本人有权访问的知识库 */
+        get: operations["bases_api_v1_knowledge_get"];
+        put?: never;
+        /** 创建知识库并保存生效的检索配置 */
+        post: operations["create_api_v1_knowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge-reader/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取被授权原文的展示信息与单条切片 */
+        get: operations["manifest_api_v1_knowledge_reader_manifest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge-reader/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取凭证绑定原件；每次重新验证当前权限 */
+        get: operations["source_api_v1_knowledge_reader_source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 添加加密保存的 MinerU 凭据 */
+        post: operations["add_credential_api_v1_knowledge_credentials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/credentials/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 批量添加 MinerU Key，自动去重并加密保存 */
+        post: operations["add_credentials_api_v1_knowledge_credentials_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/credentials/{credential_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 启用或停用解析凭据 */
+        put: operations["toggle_credential_api_v1_knowledge_credentials__credential_id__put"];
+        post?: never;
+        /** 删除 MinerU 解析凭据 */
+        delete: operations["delete_credential_api_v1_knowledge_credentials__credential_id__delete"];
+        options?: never;
+        head?: never;
+        /** 修改解析凭据名称 */
+        patch: operations["rename_credential_api_v1_knowledge_credentials__credential_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/knowledge/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取当前组织的知识库默认配置 */
+        get: operations["defaults_api_v1_knowledge_defaults_get"];
+        /** 设置组织默认模型并授权知识库调用 */
+        put: operations["save_defaults_api_v1_knowledge_defaults_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取知识库设置与处理状态 */
+        get: operations["detail_api_v1_knowledge__base_id__get"];
+        /** 更新知识库设置；已有文档需单独重新处理 */
+        put: operations["update_api_v1_knowledge__base_id__put"];
+        post?: never;
+        /** 归档知识库并立即停止原文和检索访问 */
+        delete: operations["archive_api_v1_knowledge__base_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取稳定引用；历史版本仍检查当前文档权限 */
+        get: operations["reference_api_v1_knowledge__base_id__citations__chunk_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/citations/{chunk_id}/reader-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 签发单文档短期嵌入凭证；宿主自行选择弹窗、侧栏或全屏 */
+        post: operations["reader_session_api_v1_knowledge__base_id__citations__chunk_id__reader_session_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出文档及最新处理进度 */
+        get: operations["documents_api_v1_knowledge__base_id__documents_get"];
+        put?: never;
+        /** 上传文档原件并启动异步解析；upload_id 保证重试幂等 */
+        post: operations["upload_api_v1_knowledge__base_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 分页读取切片与原文位置；可查看历史切片版本 */
+        get: operations["document_api_v1_knowledge__base_id__documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /** 删除文档并撤销所有版本的引用访问 */
+        delete: operations["delete_document_api_v1_knowledge__base_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/chunk-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 使用已解析原文试算切片，不写入索引或调用模型 */
+        post: operations["chunk_preview_api_v1_knowledge__base_id__documents__document_id__chunk_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/parsed-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取原文结构块，支持按块定位并分页 */
+        get: operations["parsed_source_api_v1_knowledge__base_id__documents__document_id__parsed_source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取原件展示信息与引用高亮位置，不返回替代原文的解析文本 */
+        get: operations["original_preview_api_v1_knowledge__base_id__documents__document_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 创建新的切片版本；成功前保留旧索引 */
+        post: operations["rebuild_api_v1_knowledge__base_id__documents__document_id__rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/documents/{document_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 在当前权限下读取原件，禁止公共缓存 */
+        get: operations["source_api_v1_knowledge__base_id__documents__document_id__source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 更换知识库头像或恢复默认 */
+        patch: operations["update_icon_api_v1_knowledge__base_id__icon_patch"];
+        trace?: never;
+    };
+    "/api/v1/knowledge/{base_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 在授权知识库内检索；向量与重排序调用沿用模型计费 */
+        post: operations["retrieve_api_v1_knowledge__base_id__search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3026,7 +3875,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Experts Listing */
+        /** 查询专家 */
         get: operations["experts_listing_api_v1_management_organizations__org_id__experts_get"];
         put?: never;
         /** Experts Create */
@@ -3165,9 +4014,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Experts Detail */
+        /** 查看专家与发布版本 */
         get: operations["experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get"];
-        /** Experts Update */
+        /**
+         * 修改专家草稿
+         * @description 提交 ExpertUpdate，包含当前草稿修订号 revision。
+         */
         put: operations["experts_update_api_v1_management_organizations__org_id__experts__expert_id__put"];
         post?: never;
         /** Experts Delete Expert */
@@ -6798,6 +7650,249 @@ export interface components {
             /** Currency */
             currency: string;
         };
+        /** ApplicationCallStatus */
+        ApplicationCallStatus: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Settlement Status */
+            settlement_status: string;
+            /** Status */
+            status: string;
+        };
+        /** ApplicationConnection */
+        ApplicationConnection: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Experts Enabled
+             * @default false
+             */
+            experts_enabled: boolean;
+            /** Integration Base Url */
+            integration_base_url: string;
+            /**
+             * Knowledge Enabled
+             * @default false
+             */
+            knowledge_enabled: boolean;
+            /**
+             * Mcp Enabled
+             * @default false
+             */
+            mcp_enabled: boolean;
+            /** Model Base Url */
+            model_base_url: string;
+            /**
+             * Models Enabled
+             * @default false
+             */
+            models_enabled: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Skills Enabled
+             * @default false
+             */
+            skills_enabled: boolean;
+        };
+        /** ApplicationCreate */
+        ApplicationCreate: {
+            /**
+             * Experts Enabled
+             * @default false
+             */
+            experts_enabled: boolean;
+            /**
+             * Knowledge Enabled
+             * @default false
+             */
+            knowledge_enabled: boolean;
+            /**
+             * Mcp Enabled
+             * @default false
+             */
+            mcp_enabled: boolean;
+            /**
+             * Models Enabled
+             * @default false
+             */
+            models_enabled: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Skills Enabled
+             * @default false
+             */
+            skills_enabled: boolean;
+        };
+        /** ApplicationKeyCreate */
+        ApplicationKeyCreate: {
+            /**
+             * Days
+             * @default 90
+             * @enum {integer}
+             */
+            days: 30 | 90 | 365;
+            /** Name */
+            name: string;
+        };
+        /** ApplicationKeyCreated */
+        ApplicationKeyCreated: {
+            key: components["schemas"]["ApplicationKeyView"];
+            /** Secret */
+            secret: string;
+        };
+        /** ApplicationKeyView */
+        ApplicationKeyView: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Hint */
+            hint: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "expired" | "revoked";
+        };
+        /** ApplicationKnowledgeDefaults */
+        ApplicationKnowledgeDefaults: {
+            /** Models */
+            models: components["schemas"]["ModelOption"][];
+            retrieval: components["schemas"]["RetrievalPolicy"];
+            /** Version */
+            version: number;
+        };
+        /** ApplicationMcpPage */
+        ApplicationMcpPage: {
+            /** Items */
+            items: components["schemas"]["ApplicationMcpService"][];
+            /** Page */
+            page: number;
+            /**
+             * Page Size
+             * @default 20
+             * @constant
+             */
+            page_size: 20;
+            /** Total */
+            total: number;
+        };
+        /** ApplicationMcpService */
+        ApplicationMcpService: {
+            /** Configured */
+            configured: boolean;
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /** Endpoint */
+            endpoint: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: number;
+        };
+        /** ApplicationPage */
+        ApplicationPage: {
+            /** Items */
+            items: components["schemas"]["ApplicationView"][];
+            /** Total */
+            total: number;
+        };
+        /** ApplicationUpdate */
+        ApplicationUpdate: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Experts Enabled
+             * @default false
+             */
+            experts_enabled: boolean;
+            /**
+             * Knowledge Enabled
+             * @default false
+             */
+            knowledge_enabled: boolean;
+            /**
+             * Mcp Enabled
+             * @default false
+             */
+            mcp_enabled: boolean;
+            /** Models Enabled */
+            models_enabled: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Skills Enabled
+             * @default false
+             */
+            skills_enabled: boolean;
+            /** Version */
+            version: number;
+        };
+        /** ApplicationView */
+        ApplicationView: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Experts Enabled */
+            experts_enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Integration Base Url */
+            integration_base_url: string;
+            /** Knowledge Enabled */
+            knowledge_enabled: boolean;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Mcp Enabled */
+            mcp_enabled: boolean;
+            /** Model Base Url */
+            model_base_url: string;
+            /** Models Enabled */
+            models_enabled: boolean;
+            /** Name */
+            name: string;
+            /** Skills Enabled */
+            skills_enabled: boolean;
+            /** Version */
+            version: number;
+        };
         /** ArchiveInput */
         ArchiveInput: {
             /** Archived */
@@ -7161,11 +8256,11 @@ export interface components {
             points: string | null;
             policy: components["schemas"]["PolicySnapshotView"] | null;
             /** Ratio */
-            ratio: string;
+            ratio: string | null;
             /** Reserved Amount */
-            reserved_amount: string;
+            reserved_amount: string | null;
             /** Reserved Points */
-            reserved_points: string;
+            reserved_points: string | null;
             /** Settled At */
             settled_at: string | null;
             /**
@@ -8373,6 +9468,153 @@ export interface components {
             /** Ok */
             ok: boolean;
         };
+        /** ChunkPreviewInput */
+        ChunkPreviewInput: {
+            chunking: components["schemas"]["Chunking"];
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Query
+             * @default
+             */
+            query: string;
+        };
+        /** ChunkPreviewItem */
+        ChunkPreviewItem: {
+            /** Content */
+            content: string;
+            /** Parent Content */
+            parent_content?: string | null;
+            /** Parent Sequence */
+            parent_sequence?: number | null;
+            /** Sequence */
+            sequence: number;
+            /** Sources */
+            sources: components["schemas"]["SourceLocation"][];
+            /** Text Ranges */
+            text_ranges?: components["schemas"]["OriginalTextRange"][];
+        };
+        /** ChunkPreviewView */
+        ChunkPreviewView: {
+            /** Average Chars */
+            average_chars: number;
+            chunking: components["schemas"]["Chunking"];
+            /** Chunks */
+            chunks: components["schemas"]["ChunkPreviewItem"][];
+            /** Filtered Total */
+            filtered_total: number;
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /** Longest Chars */
+            longest_chars: number;
+            /** Model Limit */
+            model_limit: number;
+            /** Parent Count */
+            parent_count: number;
+            /** Preview Token */
+            preview_token: string;
+            /** Shortest Chars */
+            shortest_chars: number;
+            /** Total Chunks */
+            total_chunks: number;
+        };
+        /** ChunkView */
+        ChunkView: {
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Sequence */
+            sequence: number;
+            /** Sources */
+            sources: components["schemas"]["SourceLocation"][];
+        };
+        /** Chunking */
+        Chunking: {
+            /**
+             * Child Chars
+             * @description 子片长度上限
+             * @default 350
+             */
+            child_chars: number;
+            /**
+             * Max Chars
+             * @description 智能模式的合并软上限；长度模式的切片长度，均受模型输入硬上限约束
+             * @default 1800
+             */
+            max_chars: number;
+            /**
+             * Mode
+             * @default smart
+             * @enum {string}
+             */
+            mode: "smart" | "normal";
+            /**
+             * Overlap Chars
+             * @description 长度切片的重叠字数
+             * @default 100
+             */
+            overlap_chars: number;
+            /**
+             * Structure
+             * @default general
+             * @enum {string}
+             */
+            structure: "general" | "parent_child";
+            /**
+             * Target Chars
+             * @description 智能切片目标字数
+             * @default 1200
+             */
+            target_chars: number;
+        };
+        /** CitationView */
+        CitationView: {
+            /**
+             * Base Id
+             * Format: uuid
+             */
+            base_id: string;
+            /** Content */
+            content: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Source Url */
+            source_url: string;
+            /** Sources */
+            sources: components["schemas"]["SourceLocation"][];
+        };
         /** CliConsentDecision */
         CliConsentDecision: {
             /** Approve */
@@ -8702,6 +9944,31 @@ export interface components {
              */
             type: "text" | "image_url";
         };
+        /** CredentialBatchCreate */
+        CredentialBatchCreate: {
+            /**
+             * Keys
+             * @description 批量添加 Key，重复项自动忽略
+             */
+            keys: string[];
+            /**
+             * Name
+             * @description 可选名称，新增多个 Key 时在名称后编号
+             */
+            name?: string | null;
+        };
+        /** CredentialCreate */
+        CredentialCreate: {
+            /**
+             * Account
+             * @description 同一官方账号使用相同标记
+             */
+            account: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+        };
         /** CredentialField */
         CredentialField: {
             /**
@@ -8715,6 +9982,29 @@ export interface components {
             key: string;
             /** Label */
             label: string;
+        };
+        /** CredentialRename */
+        CredentialRename: {
+            /** Name */
+            name: string;
+        };
+        /** CredentialView */
+        CredentialView: {
+            /** Account */
+            account: string;
+            /** Cooldown Until */
+            cooldown_until: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Error */
+            error: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** CurrentHeld */
         CurrentHeld: {
@@ -9751,6 +11041,107 @@ export interface components {
             updates_enabled: boolean;
             /** Version */
             version: string;
+        };
+        /** DocumentDetail */
+        DocumentDetail: {
+            /** Active Generation Id */
+            active_generation_id: string | null;
+            /** Can Manage */
+            can_manage: boolean;
+            /** Character Count */
+            character_count?: number | null;
+            /** Chunk Count */
+            chunk_count: number;
+            /** Chunk Structure */
+            chunk_structure?: ("general" | "parent_child") | null;
+            chunking?: components["schemas"]["Chunking"] | null;
+            /** Chunks */
+            chunks: components["schemas"]["ChunkView"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string;
+            /** Filename */
+            filename: string;
+            /** Generation Id */
+            generation_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Indexed Count */
+            indexed_count: number;
+            /** Media Type */
+            media_type: string;
+            /** Size */
+            size: number;
+            /** Source Url */
+            source_url: string;
+            /** Status */
+            status: string;
+            /** Total Chunks */
+            total_chunks: number;
+        };
+        /** DocumentPreview */
+        DocumentPreview: {
+            /** Citation Id */
+            citation_id?: string | null;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Filename */
+            filename: string;
+            /** Generation Id */
+            generation_id: string | null;
+            /** Media Type */
+            media_type: string;
+            /** Source Url */
+            source_url: string;
+            /** Sources */
+            sources?: components["schemas"]["SourceLocation"][];
+            /** Text Ranges */
+            text_ranges?: components["schemas"]["OriginalTextRange"][];
+        };
+        /** DocumentView */
+        DocumentView: {
+            /** Active Generation Id */
+            active_generation_id: string | null;
+            /** Character Count */
+            character_count?: number | null;
+            /** Chunk Count */
+            chunk_count: number;
+            /** Chunk Structure */
+            chunk_structure?: ("general" | "parent_child") | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string;
+            /** Filename */
+            filename: string;
+            /** Generation Id */
+            generation_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Indexed Count */
+            indexed_count: number;
+            /** Media Type */
+            media_type: string;
+            /** Size */
+            size: number;
+            /** Status */
+            status: string;
         };
         /** DraftInspectionInput */
         DraftInspectionInput: {
@@ -11121,7 +12512,7 @@ export interface components {
              * Source
              * @enum {string}
              */
-            source: "member" | "desktop" | "access_key";
+            source: "member" | "desktop" | "access_key" | "application" | "knowledge_index" | "knowledge_search";
         };
         /** ImageDiagnostic */
         ImageDiagnostic: {
@@ -11588,7 +12979,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "llm" | "mcp";
+            kind: "llm" | "mcp" | "knowledge";
             /**
              * Resource Id
              * Format: uuid
@@ -11605,7 +12996,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "llm" | "mcp";
+            kind: "llm" | "mcp" | "knowledge";
             /** Name */
             name: string;
             /**
@@ -11647,7 +13038,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "llm" | "mcp";
+            kind: "llm" | "mcp" | "knowledge";
             /** Name */
             name: string;
         };
@@ -11751,6 +13142,164 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** KnowledgeCreate */
+        KnowledgeCreate: {
+            /**
+             * Audience
+             * @default administrators
+             * @enum {string}
+             */
+            audience: "administrators" | "organization" | "selected";
+            chunking?: components["schemas"]["Chunking"];
+            /** Defaults Version */
+            defaults_version?: number | null;
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** @description 新建时可不设头像；更新时省略则保留原头像，auto 移除头像 */
+            icon_selection?: components["schemas"]["SkillIconSelection"] | null;
+            /** Member Ids */
+            member_ids?: string[];
+            /** Name */
+            name: string;
+            retrieval?: components["schemas"]["RetrievalPolicy"] | null;
+        };
+        /** KnowledgeDefaults */
+        KnowledgeDefaults: {
+            /** Embedding Model Id */
+            embedding_model_id?: string | null;
+            /**
+             * Rerank Enabled
+             * @default false
+             */
+            rerank_enabled: boolean;
+            /** Rerank Model Id */
+            rerank_model_id?: string | null;
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+        };
+        /** KnowledgeDefaultsView */
+        KnowledgeDefaultsView: {
+            /** Credentials */
+            credentials: components["schemas"]["CredentialView"][];
+            /** Embedding Model Id */
+            embedding_model_id?: string | null;
+            /** Models */
+            models: components["schemas"]["ModelOption"][];
+            /**
+             * Rerank Enabled
+             * @default false
+             */
+            rerank_enabled: boolean;
+            /** Rerank Model Id */
+            rerank_model_id?: string | null;
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+        };
+        /** KnowledgeIconUpdate */
+        KnowledgeIconUpdate: {
+            icon_selection: components["schemas"]["SkillIconSelection"];
+            /** Version */
+            version: number;
+        };
+        /** KnowledgePage */
+        KnowledgePage: {
+            /** Items */
+            items: components["schemas"]["KnowledgeView"][];
+            /** Total */
+            total: number;
+        };
+        /** KnowledgeUpdate */
+        KnowledgeUpdate: {
+            /**
+             * Audience
+             * @default administrators
+             * @enum {string}
+             */
+            audience: "administrators" | "organization" | "selected";
+            chunking?: components["schemas"]["Chunking"];
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** @description 新建时可不设头像；更新时省略则保留原头像，auto 移除头像 */
+            icon_selection?: components["schemas"]["SkillIconSelection"] | null;
+            /** Member Ids */
+            member_ids?: string[];
+            /** Name */
+            name: string;
+            retrieval?: components["schemas"]["RetrievalPolicy"] | null;
+            /** Version */
+            version: number;
+        };
+        /** KnowledgeView */
+        KnowledgeView: {
+            /**
+             * Audience
+             * @default administrators
+             * @enum {string}
+             */
+            audience: "administrators" | "organization" | "selected";
+            /**
+             * Can Manage
+             * @default false
+             */
+            can_manage: boolean;
+            chunking?: components["schemas"]["Chunking"];
+            /** Department Grants */
+            department_grants?: components["schemas"]["DepartmentGrant"][];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Document Count
+             * @default 0
+             */
+            document_count: number;
+            /** Embedding Profile */
+            embedding_profile: {
+                [key: string]: unknown;
+            };
+            /** @description 头像来源及可直接展示的图片 */
+            icon?: components["schemas"]["SkillIconSelectionView"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Member Ids */
+            member_ids?: string[];
+            /** Name */
+            name: string;
+            retrieval: components["schemas"]["RetrievalPolicy"];
+            /**
+             * Status
+             * @default empty
+             */
+            status: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
         /** LatestChannelDiagnostic */
         LatestChannelDiagnostic: {
             /**
@@ -11796,6 +13345,8 @@ export interface components {
         };
         /** LogicalCallView */
         LogicalCallView: {
+            /** Amount */
+            amount?: string | null;
             /** Attempt Count */
             attempt_count: number;
             /**
@@ -11803,6 +13354,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Currency */
+            currency?: string | null;
             /** Duration Ms */
             duration_ms: number | null;
             /**
@@ -13285,6 +14838,20 @@ export interface components {
              */
             upstream_id: string;
         };
+        /** ModelOption */
+        ModelOption: {
+            /** Dimensions */
+            dimensions: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+        };
         /** ModelParametersInput */
         ModelParametersInput: {
             capabilities?: components["schemas"]["ModelCapabilities"];
@@ -13735,6 +15302,8 @@ export interface components {
         };
         /** OrganizationOverview */
         OrganizationOverview: {
+            /** Active Members */
+            active_members: number;
             /** Activities */
             activities: components["schemas"]["OverviewActivity"][];
             /**
@@ -13743,13 +15312,22 @@ export interface components {
              */
             as_of: string;
             channels: components["schemas"]["ResourceCount"];
+            expert_attention: components["schemas"]["OverviewAttention"] | null;
+            experts: components["schemas"]["ResourceCount"];
+            /** Experts With Changes */
+            experts_with_changes: number;
+            knowledge: components["schemas"]["OverviewKnowledge"];
+            knowledge_attention: components["schemas"]["OverviewAttention"] | null;
             mcp: components["schemas"]["ResourceCount"];
+            mcp_attention: components["schemas"]["OverviewAttention"] | null;
             /** Mcp Calls */
             mcp_calls: number;
             /** Mcp Checked */
             mcp_checked: number;
             /** Mcp Failed */
             mcp_failed: number;
+            /** Mcp Tool Calls */
+            mcp_tool_calls: number;
             /** Mcp Unchecked */
             mcp_unchecked: number;
             members: components["schemas"]["ResourceCount"];
@@ -13759,6 +15337,9 @@ export interface components {
             /** Skill Distributions */
             skill_distributions: number;
             skills: components["schemas"]["ResourceCount"];
+            workbenches: components["schemas"]["ResourceCount"];
+            /** Workbenches With Drafts */
+            workbenches_with_drafts: number;
         };
         /** OrganizationSettings */
         OrganizationSettings: {
@@ -13803,6 +15384,19 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** OriginalTextRange */
+        OriginalTextRange: {
+            /**
+             * End
+             * @description 原件 Unicode 字符终点，不包含此字符
+             */
+            end: number;
+            /**
+             * Start
+             * @description 原件 Unicode 字符起点，不是 UTF-16 偏移
+             */
+            start: number;
+        };
         /** OverviewActivity */
         OverviewActivity: {
             /** Action */
@@ -13816,6 +15410,51 @@ export interface components {
             at: string;
             /** Target */
             target: string;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+        };
+        /** OverviewAttention */
+        OverviewAttention: {
+            /** Count */
+            count: number;
+            /** Name */
+            name: string;
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+        };
+        /** OverviewKnowledge */
+        OverviewKnowledge: {
+            /** Documents */
+            documents: number;
+            /** Processing */
+            processing: number;
+            /** Total */
+            total: number;
+        };
+        /** ParentContext */
+        ParentContext: {
+            /** Content */
+            content: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** ParsedSource */
+        ParsedSource: {
+            /** Blocks */
+            blocks: components["schemas"]["SourceBlock"][];
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
         };
         /** PartAck */
         PartAck: {
@@ -14894,6 +16533,70 @@ export interface components {
             /** Relevance Score */
             relevance_score: number;
         };
+        /** ReaderChunk */
+        ReaderChunk: {
+            /** Content */
+            content: string;
+            /** Sequence */
+            sequence: number;
+        };
+        /** ReaderManifest */
+        ReaderManifest: {
+            chunk: components["schemas"]["ReaderChunk"];
+            /** Citation Id */
+            citation_id?: string | null;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Filename */
+            filename: string;
+            /** Generation Id */
+            generation_id: string | null;
+            /** Media Type */
+            media_type: string;
+            /** Source Url */
+            source_url: string;
+            /** Sources */
+            sources?: components["schemas"]["SourceLocation"][];
+            /** Text Ranges */
+            text_ranges?: components["schemas"]["OriginalTextRange"][];
+        };
+        /** ReaderSessionInput */
+        ReaderSessionInput: {
+            /**
+             * Parent Origin
+             * @description 嵌入方的完整 HTTPS origin；本地开发允许 HTTP localhost
+             */
+            parent_origin: string;
+        };
+        /** ReaderSessionView */
+        ReaderSessionView: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Parent Origin */
+            parent_origin: string;
+            /**
+             * Protocol
+             * @default actvero.knowledge.v1
+             * @constant
+             */
+            protocol: "actvero.knowledge.v1";
+            /**
+             * Token
+             * @description 短期、单文档凭证，仅经 postMessage 传入，不放入 URL
+             */
+            token: string;
+            /**
+             * Viewer Url
+             * @description 无秘密的独立阅读器地址，可放入任意宿主容器
+             */
+            viewer_url: string;
+        };
         /** ReadinessResponse */
         ReadinessResponse: {
             /** Database */
@@ -14930,6 +16633,22 @@ export interface components {
              * @enum {string}
              */
             type: "toggle";
+        };
+        /** RebuildInput */
+        RebuildInput: {
+            chunking?: components["schemas"]["Chunking"] | null;
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /** Preview Token */
+            preview_token?: string | null;
+            /**
+             * Use Current Defaults
+             * @default false
+             */
+            use_current_defaults: boolean;
         };
         /** RecommendationSave */
         RecommendationSave: {
@@ -14990,7 +16709,7 @@ export interface components {
             eligible: boolean;
             price: components["schemas"]["TokenPrice-Output"];
             /** Ratio */
-            ratio: string;
+            ratio: string | null;
             /** Required Fields */
             required_fields: string[];
             settlement: components["schemas"]["SettlementView"];
@@ -15017,7 +16736,7 @@ export interface components {
              */
             metric: "tokens" | "characters" | "search_units" | "images" | "seconds";
             /** Points */
-            points: string;
+            points: string | null;
             /** Usage */
             usage: {
                 [key: string]: number;
@@ -15721,6 +17440,52 @@ export interface components {
              */
             type: "text" | "json_object" | "json_schema";
         };
+        /** RetrievalHit */
+        RetrievalHit: {
+            /**
+             * Base Id
+             * Format: uuid
+             */
+            base_id: string;
+            /** Content */
+            content: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Generation Id
+             * Format: uuid
+             */
+            generation_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            parent_context?: components["schemas"]["ParentContext"] | null;
+            /** Score */
+            score: number;
+            /** Source Url */
+            source_url: string;
+            /** Sources */
+            sources: components["schemas"]["SourceLocation"][];
+        };
+        /** RetrievalInput */
+        RetrievalInput: {
+            /**
+             * Limit
+             * @default 5
+             */
+            limit: number;
+            /** Query */
+            query: string;
+            /** Rerank */
+            rerank?: boolean | null;
+        };
         /** RetrievalOptions */
         RetrievalOptions: {
             /** Dimension Options */
@@ -15744,6 +17509,37 @@ export interface components {
             max_input_characters: number;
             /** Max Search Units */
             max_search_units?: number | null;
+        };
+        /** RetrievalPolicy */
+        RetrievalPolicy: {
+            /** Embedding Model Id */
+            embedding_model_id?: string | null;
+            /**
+             * Mode
+             * @default keyword
+             * @enum {string}
+             */
+            mode: "keyword" | "vector" | "hybrid";
+            /** Rerank Model Id */
+            rerank_model_id?: string | null;
+            /**
+             * Vector Weight
+             * @description 混合检索中向量排名权重百分比
+             * @default 50
+             */
+            vector_weight: number;
+        };
+        /** RetrievalView */
+        RetrievalView: {
+            /** Items */
+            items: components["schemas"]["RetrievalHit"][];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "hybrid" | "keyword" | "vector";
+            /** Reranked */
+            reranked: boolean;
         };
         /** Revision */
         Revision: {
@@ -15936,11 +17732,8 @@ export interface components {
             id: string;
             /** Kind */
             kind: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
+            /** Member Id */
+            member_id: string | null;
             /** Member Name */
             member_name: string;
             /**
@@ -15955,7 +17748,7 @@ export interface components {
             /** Reason */
             reason: string;
             /** Reserved Points */
-            reserved_points: string;
+            reserved_points: string | null;
             /**
              * Result Status
              * @enum {string}
@@ -16422,6 +18215,93 @@ export interface components {
             revision: number;
             /** Versions */
             versions: components["schemas"]["SkillVersionView"][];
+        };
+        /** SourceBlock */
+        SourceBlock: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Block Id */
+            block_id: string;
+            /** Cell Range */
+            cell_range?: string | null;
+            /**
+             * Coordinate Space
+             * @default unknown
+             * @enum {string}
+             */
+            coordinate_space: "normalized" | "page" | "unknown";
+            /**
+             * End
+             * @default 0
+             */
+            end: number;
+            /**
+             * Heading
+             * @default
+             */
+            heading: string;
+            /** Line */
+            line?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Height */
+            page_height?: number | null;
+            /** Page Width */
+            page_width?: number | null;
+            /** Sheet */
+            sheet?: string | null;
+            /**
+             * Start
+             * @default 0
+             */
+            start: number;
+            /** Text */
+            text: string;
+            /**
+             * Type
+             * @default text
+             */
+            type: string;
+        };
+        /** SourceLocation */
+        SourceLocation: {
+            /** Bbox */
+            bbox?: number[] | null;
+            /** Block Id */
+            block_id: string;
+            /** Cell Range */
+            cell_range?: string | null;
+            /**
+             * Coordinate Space
+             * @default unknown
+             * @enum {string}
+             */
+            coordinate_space: "normalized" | "page" | "unknown";
+            /**
+             * End
+             * @default 0
+             */
+            end: number;
+            /**
+             * Heading
+             * @default
+             */
+            heading: string;
+            /** Line */
+            line?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Height */
+            page_height?: number | null;
+            /** Page Width */
+            page_width?: number | null;
+            /** Sheet */
+            sheet?: string | null;
+            /**
+             * Start
+             * @default 0
+             */
+            start: number;
         };
         /** SpeechDiagnostic */
         SpeechDiagnostic: {
@@ -17428,6 +19308,981 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    call_status_api_integrations_v1_calls__call_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationCallStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expert_catalog_api_integrations_v1_experts_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopExpertPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expert_detail_api_integrations_v1_experts__expert_id__get: {
+        parameters: {
+            query?: {
+                release_id?: string | null;
+            };
+            header?: never;
+            path: {
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_expert_api_integrations_v1_experts__expert_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertProof"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertResolution"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bases_api_integrations_v1_knowledge_bases_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_integrations_v1_knowledge_bases_post: {
+        parameters: {
+            query: {
+                creation_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    defaults_api_integrations_v1_knowledge_bases_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationKnowledgeDefaults"];
+                };
+            };
+        };
+    };
+    detail_api_integrations_v1_knowledge_bases__base_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_api_integrations_v1_knowledge_bases__base_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_api_integrations_v1_knowledge_bases__base_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reader_api_integrations_v1_knowledge_bases__base_id__citations__chunk_id__reader_session_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderSessionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderSessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_api_integrations_v1_knowledge_bases__base_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_integrations_v1_knowledge_bases__base_id__documents_post: {
+        parameters: {
+            query: {
+                upload_id: string;
+                filename: string;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_api_integrations_v1_knowledge_bases__base_id__documents__document_id__get: {
+        parameters: {
+            query?: {
+                generation_id?: string | null;
+                page?: number;
+                q?: string;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_api_integrations_v1_knowledge_bases__base_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_chunks_api_integrations_v1_knowledge_bases__base_id__documents__document_id__chunk_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChunkPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkPreviewView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rebuild_api_integrations_v1_knowledge_bases__base_id__documents__document_id__rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RebuildInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_api_integrations_v1_knowledge_bases__base_id__documents__document_id__source_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retrieve_api_integrations_v1_knowledge_bases__base_id__search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetrievalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connectors_api_integrations_v1_mcp_services_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationMcpPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_api_integrations_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationConnection"];
+                };
+            };
+        };
+    };
+    skill_catalog_api_integrations_v1_skills_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopSkillPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_detail_api_integrations_v1_skills__skill_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesktopSkillDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_download_api_integrations_v1_skills__skill_id__download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillDownloadInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Content-SHA256"?: string;
+                    "X-Skill-Version-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skill_file_api_integrations_v1_skills__skill_id__file_get: {
+        parameters: {
+            query: {
+                version_id: string;
+                path: string;
+            };
+            header?: never;
+            path: {
+                skill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillFileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bases_api_knowledge_v1_bases_get: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_api_knowledge_v1_bases__base_id__citations__chunk_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reader_session_api_knowledge_v1_bases__base_id__citations__chunk_id__reader_session_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderSessionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderSessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retrieve_api_knowledge_v1_bases__base_id__search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetrievalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     speech_api_llm_v1_audio_speech_post: {
         parameters: {
             query?: never;
@@ -18548,7 +21403,7 @@ export interface operations {
     resources_api_v1_account_access_keys_resources_get: {
         parameters: {
             query: {
-                kind: "llm" | "mcp";
+                kind: "llm" | "mcp" | "knowledge";
                 page?: number;
                 q?: string;
             };
@@ -24327,6 +27182,265 @@ export interface operations {
             };
         };
     };
+    applications_api_v1_integrations_applications_get: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_integrations_applications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_integrations_applications__app_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_api_v1_integrations_applications__app_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calls_api_v1_integrations_applications__app_id__calls_get: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    keys_api_v1_integrations_applications__app_id__keys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationKeyView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_key_api_v1_integrations_applications__app_id__keys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationKeyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationKeyCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_key_api_v1_integrations_applications__app_id__keys__key_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     accept_api_v1_invitations_accept_post: {
         parameters: {
             query?: never;
@@ -24416,6 +27530,873 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+        };
+    };
+    bases_api_v1_knowledge_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_knowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manifest_api_v1_knowledge_reader_manifest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderManifest"];
+                };
+            };
+        };
+    };
+    source_api_v1_knowledge_reader_source_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_credential_api_v1_knowledge_credentials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_credentials_api_v1_knowledge_credentials_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_credential_api_v1_knowledge_credentials__credential_id__put: {
+        parameters: {
+            query: {
+                enabled: boolean;
+            };
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_credential_api_v1_knowledge_credentials__credential_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 此凭据仍有解析任务在处理 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_credential_api_v1_knowledge_credentials__credential_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    defaults_api_v1_knowledge_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeDefaultsView"];
+                };
+            };
+        };
+    };
+    save_defaults_api_v1_knowledge_defaults_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeDefaults"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeDefaultsView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_knowledge__base_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_api_v1_knowledge__base_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_api_v1_knowledge__base_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_api_v1_knowledge__base_id__citations__chunk_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reader_session_api_v1_knowledge__base_id__citations__chunk_id__reader_session_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderSessionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderSessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_api_v1_knowledge__base_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_v1_knowledge__base_id__documents_post: {
+        parameters: {
+            query: {
+                upload_id: string;
+                filename: string;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_api_v1_knowledge__base_id__documents__document_id__get: {
+        parameters: {
+            query?: {
+                generation_id?: string | null;
+                page?: number;
+                q?: string;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_v1_knowledge__base_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chunk_preview_api_v1_knowledge__base_id__documents__document_id__chunk_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChunkPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkPreviewView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parsed_source_api_v1_knowledge__base_id__documents__document_id__parsed_source_get: {
+        parameters: {
+            query: {
+                generation_id: string;
+                offset?: number;
+                block_id?: string | null;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParsedSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    original_preview_api_v1_knowledge__base_id__documents__document_id__preview_get: {
+        parameters: {
+            query?: {
+                generation_id?: string | null;
+                chunk_id?: string | null;
+            };
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rebuild_api_v1_knowledge__base_id__documents__document_id__rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RebuildInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_api_v1_knowledge__base_id__documents__document_id__source_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_icon_api_v1_knowledge__base_id__icon_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeIconUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retrieve_api_v1_knowledge__base_id__search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                base_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetrievalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrievalView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -26634,9 +30615,13 @@ export interface operations {
     experts_listing_api_v1_management_organizations__org_id__experts_get: {
         parameters: {
             query?: {
+                /** @description 搜索词 */
                 q?: string;
+                /** @description 类别 */
                 category?: string | null;
+                /** @description published 或 unpublished */
                 status?: ("published" | "unpublished") | null;
+                /** @description 页码 */
                 page?: number;
             };
             header?: never;

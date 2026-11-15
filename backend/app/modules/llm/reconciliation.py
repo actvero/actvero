@@ -128,7 +128,9 @@ def preview(
         metric=price.metric,
         usage=usage,
         amount=decimal_text(amount),
-        points=decimal_text(settlement.points(amount, row.ratio)),
+        points=decimal_text(settlement.points(amount, row.ratio))
+        if row.ratio is not None
+        else None,
         currency=row.currency,
     )
 

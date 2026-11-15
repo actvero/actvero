@@ -118,12 +118,18 @@ async function show(initial: string, capture = false, cached = false) {
     path: '/setup',
     component: SetupPage,
   })
+  const platform = createRoute({
+    getParentRoute: () => root,
+    path: '/platform/organizations',
+    component: () => <h1>平台组织管理</h1>,
+  })
   const router = createRouter({
     routeTree: root.addChildren([
       guarded.addChildren([channels, models, users, overview, systemSettings]),
       home,
       login,
       setup,
+      platform,
     ]),
     history: createMemoryHistory({ initialEntries: [initial] }),
   })
@@ -146,6 +152,23 @@ function respond(body: unknown) {
     headers: { 'Content-Type': 'application/json' },
   })
 }
+it('未选组织的平台账号打开组织页面时只跳转一次', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      respond({
+        ...session,
+        organization: null,
+        platform_operator: true,
+      })
+    )
+  )
+  const { router } = await show('/model-channels')
+  await expect
+    .element(page.getByRole('heading', { name: '平台组织管理' }))
+    .toBeVisible()
+  expect(router.state.location.pathname).toBe('/platform/organizations')
+})
 it.each([
   ['community', true, '品牌形象'],
   ['community', false, '概览'],

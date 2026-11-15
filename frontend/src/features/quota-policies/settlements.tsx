@@ -43,7 +43,7 @@ export function Settlements() {
       ),
   })
   const columns: ColumnDef<Entry>[] = [
-    { accessorKey: 'member_name', header: '成员' },
+    { accessorKey: 'member_name', header: '调用主体' },
     { accessorKey: 'model_name', header: '模型' },
     {
       id: 'state',
@@ -59,9 +59,16 @@ export function Settlements() {
     {
       accessorKey: 'points',
       header: '消耗积分',
-      cell: ({ row }) => row.original.points ?? '待确认',
+      cell: ({ row }) =>
+        row.original.member_id === null
+          ? '—'
+          : (row.original.points ?? '待确认'),
     },
-    { accessorKey: 'reserved_points', header: '预占积分' },
+    {
+      accessorKey: 'reserved_points',
+      header: '预占积分',
+      cell: ({ row }) => row.original.reserved_points ?? '—',
+    },
     {
       id: 'date',
       header: '受理时间',

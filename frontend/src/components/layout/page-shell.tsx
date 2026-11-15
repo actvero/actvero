@@ -4,9 +4,11 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Header } from './header'
 import { Main } from './main'
+import { PageHeader } from './page-header'
 
 export function PageShell({
   title,
+  titleBefore,
   titleAfter,
   description,
   action,
@@ -15,6 +17,7 @@ export function PageShell({
   children,
 }: {
   title?: string
+  titleBefore?: ReactNode
   titleAfter?: ReactNode
   description?: string
   action?: ReactNode
@@ -24,34 +27,22 @@ export function PageShell({
 }) {
   return (
     <>
-      <Header fixed>
+      <Header fixed className={compact ? 'h-14' : undefined}>
         <Search className='me-auto' />
         <ThemeSwitch />
       </Header>
       <Main
         fixed={fixedContent}
-        className={cn('flex flex-1 flex-col gap-6', compact && 'gap-4 py-4')}
+        className={cn('flex flex-1 flex-col gap-6', compact && 'gap-3 py-2')}
       >
         {(title || action) && (
-          <div className='flex flex-wrap items-end justify-between gap-4'>
-            <div>
-              <div className='flex flex-wrap items-center gap-3'>
-                <h1
-                  className={cn(
-                    'text-2xl font-bold tracking-tight',
-                    compact && 'text-xl'
-                  )}
-                >
-                  {title}
-                </h1>
-                {titleAfter}
-              </div>
-              {description && (
-                <p className='mt-1 text-muted-foreground'>{description}</p>
-              )}
-            </div>
-            {action}
-          </div>
+          <PageHeader
+            title={title}
+            titleBefore={titleBefore}
+            titleAfter={titleAfter}
+            description={description}
+            action={action}
+          />
         )}
         {children}
       </Main>

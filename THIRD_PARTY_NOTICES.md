@@ -9,6 +9,8 @@ Actvero's project code is licensed under MIT. Third-party code, dependencies and
 | Magic UI Magic Card adaptation | `frontend/src/features/portal/effects.tsx` | `frontend/public/notices/magic-ui.txt` — MIT |
 | Lucide / Feather-derived icon assets | Frontend icon usage and `backend/app/modules/skills/assets/icons.json` | `frontend/public/notices/lucide.txt` — full notice from the locked dependency, including applicable Feather attribution |
 | Tabler Apple and Windows icons, v3.35.0 | `frontend/src/assets/platforms/` | `frontend/public/notices/tabler-icons.txt` — MIT, Paweł Kuna; unmodified SVGs from the pinned [Tabler Icons release](https://github.com/tabler/tabler-icons/tree/v3.35.0/icons/filled) |
+| PDF.js original document reader | `pdfjs-dist` and bundled `pdf-assets/` | [Apache-2.0 notice](frontend/public/notices/pdfjs.txt); CMap and standard font licenses are distributed alongside their original assets |
+| ENGI 智慧文档结构合并算法适配 | `backend/app/modules/knowledge/structural.py` | ENGI，LGPL-3.0-only；[来源与改动](backend/app/modules/knowledge/licenses/engi-rag-NOTICE.txt)、[完整许可](backend/app/modules/knowledge/licenses/LICENSE.txt) |
 
 Names and marks used to identify third-party providers belong to their respective owners. Their presence does not imply endorsement or support for every provider capability.
 

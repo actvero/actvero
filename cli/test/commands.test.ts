@@ -55,6 +55,46 @@ test('resource commands require explicit organization before any network call', 
     assert.equal(h.sent.length, 0);
   }
 });
+test('expert list preserves default pagination and encodes filters', async () => {
+  const defaults = harness();
+  await defaults.run(['experts', 'list', '--org', org]);
+  assert.ok(defaults.sent.at(-1)!.url.endsWith(`/organizations/${org}/experts?page=1`));
+
+  const h = harness();
+  await h.run([
+    'experts', 'list', '--org', org, '--q', '研发 & 支持', '--category', 'operations',
+    '--status', 'published', '--page', '2', '--json',
+  ]);
+  const sent = h.sent.at(-1)!;
+  const url = new URL(sent.url);
+  assert.equal(sent.init?.method, 'GET');
+  assert.equal(url.pathname, `/api/v1/management/organizations/${org}/experts`);
+  assert.deepEqual(Object.fromEntries(url.searchParams), {
+    q: '研发 & 支持', category: 'operations', status: 'published', page: '2',
+  });
+  assert.equal(h.journal.length, 0);
+  assert.deepEqual(JSON.parse(h.output[0]!).result, { id });
+});
+test('expert update uses the original draft revision and write receipt', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'actvero-expert-update-'));
+  try {
+    const file = join(directory, 'expert.json');
+    const draft = { revision: 7, name: 'Operations' };
+    await writeFile(file, JSON.stringify(draft));
+    const h = harness();
+    await h.run(['experts', 'update', id, '--file', file, '--org', org, '--request-id', id, '--json']);
+    const sent = h.sent.at(-1)!;
+    const path = `/organizations/${org}/experts/${id}`;
+    assert.ok(sent.url.endsWith(path));
+    assert.equal(sent.init?.method, 'PUT');
+    assert.equal(sent.init?.body, JSON.stringify(draft));
+    assert.equal((sent.init?.headers as Record<string, string>)['X-Management-Request-ID'], id);
+    assert.deepEqual(h.journal, [['https://example.com', org, id, 'PUT ' + path]]);
+    assert.equal(JSON.parse(h.output[0]!).request_id, id);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 test('CLI uses organization path and preserves request id for publication', async () => {
   const h = harness();
   await h.run([

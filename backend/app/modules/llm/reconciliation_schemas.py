@@ -53,5 +53,5 @@ class ReconciliationPreview(BaseModel):
     metric: Metric
     usage: dict[str, int]
     amount: str
-    points: str
+    points: str | None
     currency: str

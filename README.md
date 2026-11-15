@@ -137,3 +137,5 @@ pnpm --dir frontend test
 Actvero 的项目代码采用 [MIT License](LICENSE)。第三方源码与素材保留各自的许可证和版权声明，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
 感谢 [Shadcn Admin](https://github.com/satnaing/shadcn-admin)、[shadcn/ui](https://ui.shadcn.com/)、[LiteLLM](https://github.com/BerriAI/litellm)、[FastMCP](https://github.com/PrefectHQ/fastmcp) 和 [Keycloak](https://www.keycloak.org/) 等项目。
+
+知识库支持组织内资料上传、MinerU 解析、切片、检索与原文定位，配置方式和当前容量见[知识库](docs/KNOWLEDGE.md)。

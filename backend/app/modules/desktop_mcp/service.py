@@ -35,13 +35,16 @@ from app.modules.desktop_mcp.schemas import (
     ConnectorRevisions,
     PersonalField,
 )
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp import credentials, revisions
 from app.modules.mcp import service as mcp
 from app.modules.mcp.models import McpConnection, McpService, McpSnapshot
 from app.modules.members.service import BusinessActor
 
 
-async def get_service(db: AsyncSession, actor: BusinessActor, service_id: UUID) -> McpService:
+async def get_service(
+    db: AsyncSession, actor: BusinessActor | ApplicationActor, service_id: UUID
+) -> McpService:
     row = await db.get(McpService, service_id, populate_existing=True)
     if not row or row.tenant_id != actor.tenant.id or not mcp.visible(row, actor):
         fail(404, "connector_unavailable", "连接器不可用或未获授权")

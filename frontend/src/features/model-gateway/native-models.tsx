@@ -8,7 +8,6 @@ import {
 import { getRouteApi } from '@tanstack/react-router'
 import { PageFooterProvider } from '@/vendor/newapi/components/layout/components/page-footer'
 import { Button } from '@/vendor/newapi/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/vendor/newapi/components/ui/tabs'
 import { ModelsDialogs } from '@/vendor/newapi/features/models/components/models-dialogs'
 import { ModelsPrimaryButtons } from '@/vendor/newapi/features/models/components/models-primary-buttons'
 import {
@@ -20,6 +19,7 @@ import { VendorsTable } from '@/vendor/newapi/features/models/components/vendors
 import type { Model } from '@/vendor/newapi/features/models/types'
 import { statusQueryOptions } from '@/vendor/newapi/lib/status-query'
 import { Plus } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
@@ -135,14 +135,12 @@ function NativeModelsContent() {
   return (
     <PageFooterProvider container={footer}>
       <PageShell
-        compact
         fixedContent
         title={section === 'vendors' ? '供应商' : '模型'}
         action={
           <div className='flex flex-wrap items-center gap-2'>
             {section === 'vendors' ? (
               <Button
-                size='sm'
                 onClick={() => {
                   setCurrentVendor(null)
                   setOpen('create-vendor')
@@ -168,7 +166,7 @@ function NativeModelsContent() {
             })
           }}
         >
-          <TabsList>
+          <TabsList variant='line' aria-label='模型管理'>
             <TabsTrigger value='metadata'>模型</TabsTrigger>
             <TabsTrigger value='vendors'>供应商</TabsTrigger>
           </TabsList>

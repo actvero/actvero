@@ -35,6 +35,9 @@ export function IconPicker({
   loading,
   error,
   retry,
+  title = '选择技能图标',
+  description = '选择后，保存技能时生效。',
+  showAutomatic = true,
   automaticImage,
   automaticWarning,
   close,
@@ -46,18 +49,24 @@ export function IconPicker({
   loading: boolean
   error?: unknown
   retry: () => void
+  title?: string
+  description?: string
+  showAutomatic?: boolean
   automaticImage?: string
   automaticWarning?: string
   close: () => void
-  onChange: (value: IconSelection) => void
+  onChange: (value: IconSelection) => void | Promise<void>
 }) {
   const restore = useReturnFocus()
   const [draft, setDraft] = useState(value)
   const [search, setSearch] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<unknown>(null)
   const [tab, setTab] = useState<string>(
     value.source === 'auto' ? 'library' : value.source
   )
   const selected = options.find((option) => option.key === draft.key)
+  const previewImage = selectedIcon(draft, options, automaticImage)
   const label =
     draft.source === 'auto'
       ? '跟随技能包'
@@ -70,18 +79,32 @@ export function IconPicker({
       .includes(search.trim().toLowerCase())
   )
   const categories = [...new Set(visible.map((item) => item.category))]
+  async function apply(selection: IconSelection) {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await onChange(selection)
+      close()
+    } catch (error) {
+      setSaveError(error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <Dialog open onOpenChange={(open) => !open && close()}>
+    <Dialog open onOpenChange={(open) => !open && !saving && close()}>
       <DialogContent
         className={cn(
           'flex max-h-[90dvh] flex-col overflow-y-auto sm:max-w-2xl',
           tab === 'library' && 'h-[min(48rem,90dvh)]'
         )}
+        showCloseButton={!saving}
         onCloseAutoFocus={restore}
       >
         <DialogHeader className='shrink-0'>
-          <DialogTitle>选择技能图标</DialogTitle>
-          <DialogDescription>选择后，保存技能时生效。</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Tabs
           value={tab}
@@ -89,9 +112,17 @@ export function IconPicker({
           className={cn('min-h-0 flex-1', tab === 'library' && 'min-h-56')}
         >
           <TabsList className='w-full shrink-0'>
-            <TabsTrigger value='library'>图标库</TabsTrigger>
-            <TabsTrigger value='upload'>上传图片</TabsTrigger>
-            <TabsTrigger value='auto'>跟随技能包</TabsTrigger>
+            <TabsTrigger value='library' disabled={saving}>
+              图标库
+            </TabsTrigger>
+            <TabsTrigger value='upload' disabled={saving}>
+              上传图片
+            </TabsTrigger>
+            {showAutomatic && (
+              <TabsTrigger value='auto' disabled={saving}>
+                跟随技能包
+              </TabsTrigger>
+            )}
           </TabsList>
           <TabsContent
             value='library'
@@ -140,6 +171,7 @@ export function IconPicker({
                                       : 'ghost'
                                   }
                                   aria-label={option.label}
+                                  disabled={saving}
                                   aria-pressed={
                                     draft.source === 'library' &&
                                     draft.key === option.key
@@ -181,6 +213,7 @@ export function IconPicker({
             <div className='flex items-center gap-4'>
               <AvatarEditor
                 label='上传图标'
+                disabled={saving}
                 value={draft.source === 'upload' ? draft.image : null}
                 fallback={<ImagePlus />}
                 onChange={async (file) => {
@@ -206,53 +239,76 @@ export function IconPicker({
               </div>
             </div>
           </TabsContent>
-          <TabsContent value='auto' className='space-y-5 py-6'>
-            <div className='flex items-center gap-4'>
-              <ResourceIcon image={automaticImage} name={name} size='lg' />
-              <div className='space-y-2 text-sm'>
-                <p>
-                  {automaticImage ? '包内图标' : '暂无包内图标，显示名称首字母'}
-                </p>
-                <p className='text-muted-foreground'>
-                  自动跟随生效版本；手动选择图标后，新版本不会覆盖。
-                </p>
+          {showAutomatic && (
+            <TabsContent value='auto' className='space-y-5 py-6'>
+              <div className='flex items-center gap-4'>
+                <ResourceIcon image={automaticImage} name={name} size='lg' />
+                <div className='space-y-2 text-sm'>
+                  <p>
+                    {automaticImage
+                      ? '包内图标'
+                      : '暂无包内图标，显示名称首字母'}
+                  </p>
+                  <p className='text-muted-foreground'>
+                    自动跟随生效版本；手动选择图标后，新版本不会覆盖。
+                  </p>
+                </div>
               </div>
-            </div>
-            {automaticWarning && (
-              <p role='status' className='text-sm text-muted-foreground'>
-                {automaticWarning}
-              </p>
+              {automaticWarning && (
+                <p role='status' className='text-sm text-muted-foreground'>
+                  {automaticWarning}
+                </p>
+              )}
+              <Button
+                type='button'
+                variant='outline'
+                disabled={saving}
+                onClick={() => setDraft({ source: 'auto' })}
+              >
+                恢复自动
+              </Button>
+            </TabsContent>
+          )}
+        </Tabs>
+        {(showAutomatic || draft.source !== 'auto') && (
+          <div className='flex shrink-0 items-center gap-3 border-t pt-4 text-sm'>
+            {(showAutomatic || previewImage) && (
+              <ResourceIcon image={previewImage} name={name} size='sm' />
             )}
+            <span className='min-w-0 truncate'>已选：{label}</span>
+          </div>
+        )}
+        {saveError != null && <RequestError error={saveError} />}
+        <DialogFooter className='shrink-0'>
+          {!showAutomatic && value.source !== 'auto' && (
             <Button
               type='button'
-              variant='outline'
-              onClick={() => setDraft({ source: 'auto' })}
+              variant='ghost'
+              className='sm:me-auto'
+              onClick={() => void apply({ source: 'auto' })}
+              disabled={saving}
             >
-              恢复自动
+              移除头像
             </Button>
-          </TabsContent>
-        </Tabs>
-        <div className='flex shrink-0 items-center gap-3 border-t pt-4 text-sm'>
-          <ResourceIcon
-            image={selectedIcon(draft, options, automaticImage)}
-            name={name}
-            size='sm'
-          />
-          <span className='min-w-0 truncate'>已选：{label}</span>
-        </div>
-        <DialogFooter className='shrink-0'>
-          <Button type='button' variant='outline' onClick={close}>
+          )}
+          <Button
+            type='button'
+            variant='outline'
+            onClick={close}
+            disabled={saving}
+          >
             取消选择
           </Button>
           <Button
             type='button'
-            disabled={draft.source === 'library' && !selected}
-            onClick={() => {
-              onChange(draft)
-              close()
-            }}
+            disabled={
+              saving ||
+              (!showAutomatic && draft.source === 'auto') ||
+              (draft.source === 'library' && !selected)
+            }
+            onClick={() => void apply(draft)}
           >
-            使用此图标
+            {saving ? '正在保存…' : '使用此图标'}
           </Button>
         </DialogFooter>
       </DialogContent>

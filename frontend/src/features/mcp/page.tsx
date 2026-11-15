@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Plus, Upload, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, messageOf, type Schema } from '@/lib/api'
@@ -13,7 +14,7 @@ import { ServiceCard } from './service-card'
 import { ServiceEditor } from './service-editor'
 import { useMcp } from './shared'
 
-export function McpPage() {
+export function McpPage({ serviceId }: { serviceId?: string }) {
   const { key } = useMcp()
   const [q, setQ] = useState('')
   const [add, setAdd] = useState(false)
@@ -82,13 +83,22 @@ export function McpPage() {
           </AlertDescription>
         </Alert>
       )}
-      <Input
-        className='sm:max-w-sm'
-        aria-label='搜索 MCP 服务'
-        placeholder='搜索服务名称或说明…'
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
+      {serviceId && (
+        <Button variant='outline' asChild className='self-start'>
+          <Link to='/mcp' search={{}}>
+            返回全部服务
+          </Link>
+        </Button>
+      )}
+      {!serviceId && (
+        <Input
+          className='sm:max-w-sm'
+          aria-label='搜索 MCP 服务'
+          placeholder='搜索服务名称或说明…'
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+      )}
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
@@ -97,21 +107,29 @@ export function McpPage() {
         <div className='flex flex-col gap-4'>
           {query.data.items
             .filter((s) =>
-              (s.name + (s.display_name || '') + s.description)
-                .toLowerCase()
-                .includes(q.toLowerCase())
+              serviceId
+                ? s.id === serviceId
+                : (s.name + (s.display_name || '') + s.description)
+                    .toLowerCase()
+                    .includes(q.toLowerCase())
             )
             .map((s) => (
               <ServiceCard key={s.id} service={s} />
             ))}
-          {!query.data.items.length && (
+          {!serviceId && !query.data.items.length && (
             <Alert>
               <AlertDescription>
                 还没有 MCP 服务。添加服务地址或导入配置开始连接。
               </AlertDescription>
             </Alert>
           )}
-          {!!query.data.items.length &&
+          {serviceId && !query.data.items.some((s) => s.id === serviceId) && (
+            <p className='py-8 text-center text-muted-foreground'>
+              服务不存在或已移除
+            </p>
+          )}
+          {!serviceId &&
+            !!query.data.items.length &&
             !query.data.items.some((s) =>
               (s.name + (s.display_name || '') + s.description)
                 .toLowerCase()
