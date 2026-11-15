@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import delete, func, or_, select
 
 from app.modules.auth.router import Mutation
@@ -9,6 +9,8 @@ from app.modules.departments.access import DepartmentAccess, load_access, valida
 from app.modules.departments.models import Department, DepartmentMember
 from app.modules.departments.schemas import (
     DepartmentInput,
+    DepartmentMemberPage,
+    DepartmentMemberView,
     DepartmentScopeMember,
     DepartmentScopePage,
     DepartmentScopePreview,
@@ -17,7 +19,7 @@ from app.modules.departments.schemas import (
     MemberDepartments,
 )
 from app.modules.members.models import Membership
-from app.modules.members.service import Access, access, record
+from app.modules.members.service import Access, access, member_view, record
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/api/v1/enterprises/{tenant_id}", tags=["departments"])
@@ -70,6 +72,47 @@ def check_name(
 async def departments(tenant_id: UUID, request: Request, db: DB) -> list[DepartmentView]:
     await administrator(request, db, tenant_id)
     return [DepartmentView.model_validate(row) for row in await department_rows(db, tenant_id)]
+
+
+@router.get("/departments/{department_id}/members", response_model=DepartmentMemberPage)
+async def direct_members(
+    tenant_id: UUID, department_id: UUID, request: Request, db: DB, page: int = Query(1, ge=1)
+) -> DepartmentMemberPage:
+    actor = await administrator(request, db, tenant_id)
+    department = await db.scalar(
+        select(Department.id).where(
+            Department.tenant_id == tenant_id, Department.id == department_id
+        )
+    )
+    if department is None:
+        raise HTTPException(404, "部门不存在")
+    members = (
+        select(Membership, User, DepartmentMember.is_primary)
+        .select_from(DepartmentMember)
+        .join(Membership, Membership.id == DepartmentMember.member_id)
+        .join(User, User.id == Membership.user_id)
+        .where(
+            DepartmentMember.tenant_id == tenant_id,
+            DepartmentMember.department_id == department_id,
+            Membership.tenant_id == tenant_id,
+            Membership.status != "removed",
+            Membership.source != "platform",
+        )
+    )
+    total = await db.scalar(select(func.count()).select_from(members.subquery())) or 0
+    rows = (
+        await db.execute(
+            members.order_by(User.name, Membership.id).offset((page - 1) * 20).limit(20)
+        )
+    ).all()
+    return DepartmentMemberPage(
+        items=[
+            DepartmentMemberView(member=member_view(member, user, actor.user), is_primary=primary)
+            for member, user, primary in rows
+        ],
+        total=total,
+        page=page,
+    )
 
 
 @router.post("/departments/scope-preview", response_model=DepartmentScopePage)

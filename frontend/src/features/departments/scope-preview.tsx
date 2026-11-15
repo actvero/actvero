@@ -1,156 +1,121 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api, type Schema } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { LoadingState, RequestError } from '@/components/request-state'
+import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
 import { departmentTree, useDepartments, type DepartmentGrant } from './data'
+import { ListPager } from './list-pager'
 
 export function DepartmentScopePreview({
   members,
   grants,
-  disabled,
 }: {
   members: string[]
   grants: DepartmentGrant[]
-  disabled?: boolean
 }) {
-  const [open, setOpen] = useState(false)
   const [page, setPage] = useState(1)
   const { organization, user, csrf } = useOrganization()
   const path = `/enterprises/${organization.tenant_id}/departments/scope-preview`
-  const departments = useDepartments(open && grants.length > 0)
+  const needsDepartments = grants.length > 0
+  const departments = useDepartments(needsDepartments)
   const body: Schema['DepartmentScopePreview'] = {
     member_ids: members,
     department_grants: grants,
     page,
   }
-  // The token authenticates this read and is excluded from cache identity.
+  const hasRules = members.length > 0 || grants.length > 0
+  // CSRF authenticates this read and is excluded from cache identity.
   // eslint-disable-next-line @tanstack/query/exhaustive-deps
   const preview = useQuery({
     queryKey: ['organization', organization.tenant_id, user.id, path, body],
     queryFn: ({ signal }) =>
       api<Schema['DepartmentScopePage']>(path, 'POST', body, csrf, signal),
-    enabled: open,
+    enabled: hasRules,
   })
   const names = new Map(
     departmentTree(departments.data ?? []).map(
       ({ department, path: label }) => [department.id, label]
     )
   )
+  const descendants = new Set(
+    grants
+      .filter((grant) => grant.include_descendants)
+      .map((grant) => grant.department_id)
+  )
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        setOpen(value)
-        if (value) setPage(1)
-      }}
+    <aside
+      aria-label='授权预览'
+      className='flex min-w-0 flex-col gap-3 self-start rounded-lg bg-muted/65 p-4'
     >
-      <DialogTrigger asChild>
-        <Button
-          type='button'
-          variant='outline'
-          disabled={disabled || (!members.length && !grants.length)}
-        >
-          查看授权成员
-        </Button>
-      </DialogTrigger>
-      <DialogContent className='max-h-[90dvh] overflow-y-auto sm:max-w-xl'>
-        <DialogHeader>
-          <DialogTitle>授权成员预览</DialogTitle>
-          <DialogDescription>
-            按当前选中的部门和成员计算，显示每个人的授权来源。
-          </DialogDescription>
-        </DialogHeader>
-        {preview.isError ? (
-          <RequestError
-            error={preview.error}
-            retry={() => void preview.refetch()}
-          />
-        ) : preview.isPending ||
-          (grants.length > 0 && departments.isPending) ? (
-          <LoadingState />
-        ) : (
-          <>
-            {departments.isError && (
-              <RequestError
-                error={departments.error}
-                retry={() => void departments.refetch()}
-              />
-            )}
-            {preview.data.items.length ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>成员</TableHead>
-                    <TableHead>授权来源</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {preview.data.items.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>{member.name}</TableCell>
-                      <TableCell className='whitespace-normal'>
-                        {[
-                          ...(member.direct ? ['单独授权'] : []),
-                          ...member.department_ids.map(
-                            (id) => names.get(id) ?? '部门授权'
-                          ),
-                        ].join('、')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className='text-sm text-muted-foreground'>
-                此页没有获授权的成员。
-              </p>
-            )}
-            <div className='flex flex-wrap items-center justify-between gap-2'>
-              <span className='text-sm text-muted-foreground'>
-                共 {preview.data.total} 人
-              </span>
-              <div className='flex gap-2'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  上一页
-                </Button>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  disabled={page * 20 >= preview.data.total}
-                  onClick={() => setPage(page + 1)}
-                >
-                  下一页
-                </Button>
-              </div>
-            </div>
-          </>
+      <div className='flex flex-wrap items-baseline gap-3'>
+        <h3 className='font-semibold'>授权预览</h3>
+        {preview.data && (
+          <span className='text-sm text-muted-foreground' aria-live='polite'>
+            共 {preview.data.total} 人
+          </span>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+      {!hasRules ? (
+        <p className='text-sm text-muted-foreground'>
+          添加部门或成员后可查看授权名单。
+        </p>
+      ) : preview.isError || (needsDepartments && departments.isError) ? (
+        <RequestError
+          error={preview.error ?? departments.error}
+          retry={() =>
+            void (preview.isError ? preview.refetch() : departments.refetch())
+          }
+        />
+      ) : preview.isPending || (needsDepartments && departments.isPending) ? (
+        <LoadingState />
+      ) : !preview.data.total ? (
+        <p className='text-sm text-muted-foreground'>
+          当前规则未匹配到有效成员。
+        </p>
+      ) : (
+        <>
+          <ScrollArea
+            role='region'
+            aria-label='获授权成员'
+            viewportClassName='max-h-64'
+          >
+            <ul className='divide-y'>
+              {preview.data.items.map((member) => {
+                const sources = [
+                  ...(member.direct ? ['单独授权'] : []),
+                  ...member.department_ids.map((id) => {
+                    const label = names.get(id) ?? '部门授权'
+                    return descendants.has(id) ? label + '（含下级）' : label
+                  }),
+                ]
+                return (
+                  <li
+                    key={member.id}
+                    className='flex items-center gap-3 py-2.5'
+                  >
+                    <UserAvatar user={member} />
+                    <div className='min-w-0'>
+                      <div className='text-sm font-medium break-words'>
+                        {member.name}
+                      </div>
+                      <div className='text-xs break-words text-muted-foreground'>
+                        {sources.join('、')}
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </ScrollArea>
+          <ListPager
+            page={page}
+            total={preview.data.total}
+            onChange={setPage}
+          />
+        </>
+      )}
+    </aside>
   )
 }

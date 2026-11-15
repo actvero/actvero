@@ -1,9 +1,8 @@
 import { useId, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { Archive, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, type Schema } from '@/lib/api'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,28 +23,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PageShell } from '@/components/layout/page-shell'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { departmentTree, useDepartments, type Department } from './data'
+import { DepartmentDetail } from './detail'
+import { DepartmentTree } from './tree'
 
 function DepartmentEditor({
   current,
   departments,
   close,
+  saved,
 }: {
   current: Department | null
   departments: Department[]
   close: () => void
+  saved: (id: string) => void
 }) {
   const id = useId()
   const { organization, csrf } = useOrganization()
@@ -75,12 +71,12 @@ function DepartmentEditor({
           )
         : api<Department>(path, 'POST', fields, csrf)
     },
-    onSuccess: async () => {
+    onSuccess: async (department) => {
       await client.invalidateQueries({
         queryKey: ['organization', organization.tenant_id],
       })
       toast.success(current?.archived ? '部门已恢复' : '部门已保存')
-      close()
+      saved(department.id)
     },
   })
   const excluded = new Set(current ? [current.id] : [])
@@ -194,6 +190,8 @@ export function DepartmentsPage() {
   const [editing, setEditing] = useState<Department | null | undefined>(
     undefined
   )
+  const [selectedId, setSelectedId] = useState<string>()
+  const [showArchived, setShowArchived] = useState(false)
   const [archiving, setArchiving] = useState<Department | null>(null)
   const archive = useMutation({
     mutationFn: (department: Department) =>
@@ -217,6 +215,12 @@ export function DepartmentsPage() {
   })
   const departments = query.data ?? []
   const rows = departmentTree(departments)
+  const selected =
+    rows.find(
+      ({ department }) =>
+        department.id === selectedId && (showArchived || !department.archived)
+    ) ?? rows.find(({ department }) => showArchived || !department.archived)
+  const parentId = selected?.department.parent_id
   return (
     <PageShell
       title='部门管理'
@@ -230,67 +234,68 @@ export function DepartmentsPage() {
         <LoadingState />
       ) : query.isError ? (
         <RequestError error={query.error} retry={() => void query.refetch()} />
-      ) : !rows.length ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>暂无部门</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
       ) : (
-        <div className='overflow-hidden rounded-lg border'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>部门</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead className='text-right'>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(({ department, path, depth }) => (
-                <TableRow key={department.id}>
-                  <TableCell
-                    title={path}
-                    style={{
-                      paddingInlineStart: (Math.min(depth, 6) + 1) * 12,
-                    }}
+        <div className='@container min-w-0'>
+          <div className='grid min-w-0 divide-y @min-[36rem]:min-h-[min(70dvh,45rem)] @min-[36rem]:grid-cols-[minmax(13rem,28%)_minmax(0,1fr)] @min-[36rem]:divide-x @min-[36rem]:divide-y-0'>
+            <aside className='flex min-w-0 flex-col gap-3 pb-5 @min-[36rem]:pe-5 @min-[36rem]:pb-0'>
+              <h2 className='font-semibold'>部门结构</h2>
+              <DepartmentTree
+                departments={departments}
+                selection={{
+                  selectedId: selected?.department.id,
+                  select: setSelectedId,
+                }}
+                showArchived={showArchived}
+                emptyText='暂无有效部门'
+              />
+              {departments.some((department) => department.archived) && (
+                <div className='mt-auto flex flex-col gap-2 pt-4'>
+                  <Separator />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='self-start'
+                    aria-pressed={showArchived}
+                    onClick={() => setShowArchived(!showArchived)}
                   >
-                    {department.name}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={department.archived ? 'outline' : 'secondary'}
-                    >
-                      {department.archived ? '已归档' : '正常'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex flex-wrap justify-end gap-1'>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => setEditing(department)}
-                      >
-                        {department.archived ? '恢复' : '编辑'}
-                      </Button>
-                      {!department.archived && (
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => {
-                            archive.reset()
-                            setArchiving(department)
-                          }}
-                        >
-                          归档
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <Archive data-icon='inline-start' />
+                    {showArchived ? '隐藏已归档部门' : '查看已归档部门'}
+                  </Button>
+                </div>
+              )}
+            </aside>
+            <div className='min-w-0 pt-5 @min-[36rem]:ps-6 @min-[36rem]:pt-0'>
+              {selected ? (
+                <DepartmentDetail
+                  key={selected.department.id}
+                  department={selected.department}
+                  parentPath={
+                    rows.find(({ department }) => department.id === parentId)
+                      ?.path
+                  }
+                  childrenCount={
+                    departments.filter(
+                      (department) =>
+                        department.parent_id === selected.department.id &&
+                        !department.archived
+                    ).length
+                  }
+                  edit={() => setEditing(selected.department)}
+                  archive={() => {
+                    archive.reset()
+                    setArchiving(selected.department)
+                  }}
+                />
+              ) : (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyTitle>暂无部门</EmptyTitle>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </div>
+          </div>
         </div>
       )}
       {editing !== undefined && (
@@ -298,6 +303,10 @@ export function DepartmentsPage() {
           current={editing}
           departments={departments}
           close={() => setEditing(undefined)}
+          saved={(id) => {
+            setSelectedId(id)
+            setEditing(undefined)
+          }}
         />
       )}
       {archiving && (

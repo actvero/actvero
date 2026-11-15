@@ -7024,6 +7024,54 @@
         "title": "DepartmentInput",
         "type": "object"
       },
+      "DepartmentMemberPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentMemberView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 20,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page"
+        ],
+        "title": "DepartmentMemberPage",
+        "type": "object"
+      },
+      "DepartmentMemberView": {
+        "properties": {
+          "is_primary": {
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "member": {
+            "$ref": "#/components/schemas/MemberView"
+          }
+        },
+        "required": [
+          "member",
+          "is_primary"
+        ],
+        "title": "DepartmentMemberView",
+        "type": "object"
+      },
       "DepartmentScopeMember": {
         "properties": {
           "department_ids": {
@@ -39635,6 +39683,70 @@
           }
         },
         "summary": "Update",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/v1/enterprises/{tenant_id}/departments/{department_id}/members": {
+      "get": {
+        "operationId": "direct_members_api_v1_enterprises__tenant_id__departments__department_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tenant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tenant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "department_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Department Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentMemberPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Direct Members",
         "tags": [
           "departments"
         ]

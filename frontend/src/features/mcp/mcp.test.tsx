@@ -223,7 +223,11 @@ describe('MCP 配置优化', () => {
   it('连接设置使用分段选择，自动生成凭据标识，保留指定成员和展示配置', async () => {
     const fetcher = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json(
-        _url.includes('/members?') ? { items: [], total: 0, page: 1 } : {}
+        _url.includes('/members?') ||
+          _url.endsWith('/members/selection') ||
+          _url.endsWith('/departments/scope-preview')
+          ? { items: [], total: 0, page: 1 }
+          : {}
       )
     )
     vi.stubGlobal('fetch', fetcher)
@@ -366,7 +370,10 @@ describe('MCP 配置优化', () => {
     const body = JSON.parse(String(fetcher.mock.calls[0][1].body))
     expect(body).toMatchObject({ audience: 'selected', member_ids: [] })
     expect(body.credential_values).toBeUndefined()
-    await userEvent.fill(page.getByLabelText('服务地址'), 'https://other.example/mcp')
+    await userEvent.fill(
+      page.getByLabelText('服务地址'),
+      'https://other.example/mcp'
+    )
     await userEvent.click(page.getByRole('button', { name: '保存配置' }))
     await expect.element(page.getByText('请完整填写组织凭据')).toBeVisible()
     expect(fetcher.mock.calls).toHaveLength(1)

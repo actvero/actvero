@@ -381,7 +381,7 @@ function Scope({
             name='member_ids'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>指定成员</FormLabel>
+                <FormLabel>授权对象</FormLabel>
                 <FormControl>
                   <MemberPicker
                     departmentScope={{

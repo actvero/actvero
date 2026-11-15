@@ -1,9 +1,20 @@
 import { useEffect, useId, useState, type ComponentProps } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Plus, X } from 'lucide-react'
 import { api, type Schema } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { SelectionRow } from '@/components/ui/selection-row'
@@ -12,28 +23,224 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { UserAvatar } from '@/components/user-avatar'
 import { useOrganization } from '@/features/auth/session'
+import { ListPager } from '@/features/departments/list-pager'
 import {
   DepartmentGrantPicker,
   type DepartmentSelection,
 } from '@/features/departments/picker'
 import { DepartmentScopePreview } from '@/features/departments/scope-preview'
 
-export function MemberPicker({
-  value,
-  onChange,
-  disabled = false,
-  includeAdministrators = false,
-  selectionLabel = '共享给成员',
-  departmentScope,
-  ...props
-}: Omit<ComponentProps<'div'>, 'onChange'> & {
+type PickerProps = Omit<ComponentProps<'div'>, 'onChange'> & {
   value: string[]
   onChange: (ids: string[]) => void
   disabled?: boolean
   includeAdministrators?: boolean
   selectionLabel?: string
   departmentScope?: DepartmentSelection
-}) {
+}
+
+export function MemberPicker({
+  departmentScope,
+  value,
+  onChange,
+  disabled,
+  includeAdministrators,
+  selectionLabel = '共享给成员',
+  className,
+  ...props
+}: PickerProps) {
+  const pickerProps = {
+    value,
+    onChange,
+    disabled,
+    includeAdministrators,
+    selectionLabel,
+  }
+  if (!departmentScope)
+    return (
+      <MemberPickerList {...props} {...pickerProps} className={className} />
+    )
+  return (
+    <div
+      {...props}
+      role='group'
+      aria-label={selectionLabel}
+      className={cn('@container min-w-0', className)}
+    >
+      <div className='grid min-w-0 gap-5 @min-[34rem]:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]'>
+        <div className='flex min-w-0 flex-col gap-4'>
+          <DepartmentGrantPicker {...departmentScope} disabled={disabled} />
+          <MemberGrantPicker {...pickerProps} />
+        </div>
+        <DepartmentScopePreview
+          key={JSON.stringify([value, departmentScope.value])}
+          members={value}
+          grants={departmentScope.value}
+        />
+      </div>
+    </div>
+  )
+}
+
+function MemberSelectionDialog({
+  value,
+  onChange,
+  close,
+  ...props
+}: PickerProps & { close: () => void }) {
+  const [draft, setDraft] = useState(value)
+  return (
+    <>
+      <MemberPickerList {...props} value={draft} onChange={setDraft} />
+      <DialogFooter>
+        <Button type='button' variant='outline' onClick={close}>
+          取消
+        </Button>
+        <Button
+          type='button'
+          disabled={props.disabled}
+          onClick={() => {
+            onChange(draft)
+            close()
+          }}
+        >
+          应用选择
+        </Button>
+      </DialogFooter>
+    </>
+  )
+}
+
+function MemberGrantPicker(props: PickerProps) {
+  const { value, onChange, disabled, includeAdministrators } = props
+  const [open, setOpen] = useState(false)
+  const [page, setPage] = useState(1)
+  const { organization, user, csrf } = useOrganization()
+  const path = `/enterprises/${organization.tenant_id}/members/selection`
+  // CSRF authenticates this read; cache identity is tenant + user, never a credential.
+  // eslint-disable-next-line @tanstack/query/exhaustive-deps
+  const query = useQuery({
+    queryKey: [
+      'organization',
+      organization.tenant_id,
+      user.id,
+      path,
+      value,
+      page,
+    ],
+    queryFn: ({ signal }) =>
+      api<Schema['MemberPage']>(
+        path,
+        'POST',
+        { member_ids: value, page },
+        csrf,
+        signal
+      ),
+    enabled: value.length > 0,
+  })
+  const result = query.data
+  function change(ids: string[]) {
+    setPage(1)
+    onChange(ids)
+  }
+  return (
+    <section className='flex min-w-0 flex-col gap-2' aria-label='单独授权成员'>
+      <div className='flex flex-wrap items-center gap-x-2'>
+        <h3 className='text-sm font-semibold'>成员</h3>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button type='button' variant='ghost' size='sm' disabled={disabled}>
+              <Plus data-icon='inline-start' /> 添加成员
+            </Button>
+          </DialogTrigger>
+          <DialogContent className='max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl'>
+            <DialogHeader>
+              <DialogTitle>选择成员</DialogTitle>
+              <DialogDescription>为指定成员单独授权。</DialogDescription>
+            </DialogHeader>
+            <MemberSelectionDialog
+              {...props}
+              onChange={change}
+              close={() => setOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+      {value.length === 0 ? (
+        <p className='text-sm text-muted-foreground'>未单独授权成员</p>
+      ) : query.isError ? (
+        <RequestError error={query.error} retry={() => void query.refetch()} />
+      ) : !result ? (
+        <LoadingState />
+      ) : (
+        <>
+          <ScrollArea
+            role='region'
+            aria-label='已授权成员'
+            viewportClassName='max-h-64'
+          >
+            <ul className='flex flex-col gap-2'>
+              {result.items.map((member) => (
+                <li
+                  key={member.id}
+                  className='flex min-w-0 items-center gap-2 rounded-md border px-3 py-1.5'
+                >
+                  <UserAvatar user={member} />
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-sm font-medium break-words'>
+                      {member.name}
+                    </div>
+                    {member.status !== 'active' && (
+                      <p className='text-xs text-muted-foreground'>
+                        当前不可用
+                      </p>
+                    )}
+                    {!includeAdministrators &&
+                      member.status === 'active' &&
+                      member.role === 'administrator' && (
+                        <p className='text-xs text-muted-foreground'>
+                          管理员已有权限
+                        </p>
+                      )}
+                  </div>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='size-8'
+                    aria-label={`移除 ${member.name}`}
+                    disabled={disabled}
+                    onClick={() =>
+                      change(value.filter((id) => id !== member.id))
+                    }
+                  >
+                    <X />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+          {result.total < value.length && (
+            <p className='text-sm text-muted-foreground'>
+              部分成员已不可用，可在添加成员中清空选择。
+            </p>
+          )}
+          <ListPager page={page} total={result.total} onChange={setPage} />
+        </>
+      )}
+    </section>
+  )
+}
+
+function MemberPickerList({
+  value,
+  onChange,
+  disabled = false,
+  includeAdministrators = false,
+  selectionLabel = '共享给成员',
+  className,
+  ...props
+}: Omit<PickerProps, 'departmentScope'>) {
   const id = useId()
   const { organization, user, csrf } = useOrganization()
   const [search, setSearch] = useState('')
@@ -119,21 +326,9 @@ export function MemberPicker({
       role='group'
       aria-label={selectionLabel}
       density='compact'
-      className='overflow-hidden'
+      className={cn('overflow-hidden', className)}
     >
       <CardContent tone='muted' className='flex min-w-0 flex-col gap-3 p-4'>
-        {departmentScope && (
-          <>
-            <DepartmentGrantPicker {...departmentScope} disabled={disabled} />
-            <div>
-              <DepartmentScopePreview
-                members={value}
-                grants={departmentScope.value}
-                disabled={disabled}
-              />
-            </div>
-          </>
-        )}
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <span className='text-sm' aria-live='polite'>
             已选择 {value.length} 人

@@ -46,7 +46,7 @@ export function MetadataDialog({
     <Dialog open onOpenChange={(v) => !v && !busy && close()}>
       <DialogContent
         onCloseAutoFocus={restoreFocus}
-        className='max-h-[90dvh] overflow-y-auto sm:max-w-xl'
+        className='max-h-[90dvh] overflow-y-auto sm:max-w-3xl'
       >
         <DialogHeader>
           <DialogTitle>技能设置</DialogTitle>

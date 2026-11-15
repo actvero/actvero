@@ -222,7 +222,7 @@ export function MemberDetails({
                 </dl>
                 {editDepartments && (
                   <MemberDepartmentEditor
-                    memberId={member.id}
+                    member={member}
                     close={() => setEditDepartments(false)}
                   />
                 )}

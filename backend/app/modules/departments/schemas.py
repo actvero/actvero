@@ -2,6 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.modules.members.schemas import MemberView
+
 
 class DepartmentGrant(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -50,6 +52,18 @@ class MemberDepartments(BaseModel):
         if not self.department_ids and self.primary_department_id is not None:
             raise ValueError("主部门必须属于所选部门")
         return self
+
+
+class DepartmentMemberView(BaseModel):
+    member: MemberView
+    is_primary: bool
+
+
+class DepartmentMemberPage(BaseModel):
+    items: list[DepartmentMemberView]
+    total: int
+    page: int
+    page_size: int = 20
 
 
 class DepartmentScopePreview(BaseModel):
