@@ -13655,6 +13655,17 @@
             ],
             "title": "Email"
           },
+          "email_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Hint"
+          },
           "expires_at": {
             "anyOf": [
               {
@@ -13666,6 +13677,17 @@
               }
             ],
             "title": "Expires At"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "role": {
             "default": "member",
@@ -13692,6 +13714,43 @@
           "state"
         ],
         "title": "InvitationPreview",
+        "type": "object"
+      },
+      "InvitationSetup": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar": {
+            "anyOf": [
+              {
+                "maxLength": 350000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "name",
+          "password"
+        ],
+        "title": "InvitationSetup",
         "type": "object"
       },
       "InvitationView": {
@@ -42315,6 +42374,47 @@
           }
         },
         "summary": "Preview",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/v1/invitations/setup": {
+      "post": {
+        "operationId": "setup_api_v1_invitations_setup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationSetup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Setup",
         "tags": [
           "invitations"
         ]

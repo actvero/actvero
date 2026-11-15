@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 
 class UserView(BaseModel):
@@ -85,8 +85,25 @@ class InvitationPreview(BaseModel):
     activation_required: bool = False
     tenant_name: str | None = None
     email: str | None = None
+    email_hint: str | None = None
+    name: str | None = None
     role: str = "member"
     expires_at: datetime | None = None
+
+
+class InvitationSetup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=100)
+    password: SecretStr = Field(min_length=12, max_length=128)
+    avatar: str | None = Field(default=None, max_length=350000)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value or not value.isprintable():
+            raise ValueError("请填写有效姓名")
+        return value
 
 
 class OrganizationInvitationPreview(BaseModel):

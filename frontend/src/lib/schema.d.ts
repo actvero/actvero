@@ -2528,6 +2528,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitations/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Setup */
+        post: operations["setup_api_v1_invitations_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/knowledge": {
         parameters: {
             query?: never;
@@ -12861,8 +12878,12 @@ export interface components {
             activation_required: boolean;
             /** Email */
             email?: string | null;
+            /** Email Hint */
+            email_hint?: string | null;
             /** Expires At */
             expires_at?: string | null;
+            /** Name */
+            name?: string | null;
             /**
              * Role
              * @default member
@@ -12872,6 +12893,18 @@ export interface components {
             state: string;
             /** Tenant Name */
             tenant_name?: string | null;
+        };
+        /** InvitationSetup */
+        InvitationSetup: {
+            /** Avatar */
+            avatar?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
         };
         /** InvitationView */
         InvitationView: {
@@ -27530,6 +27563,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+        };
+    };
+    setup_api_v1_invitations_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationSetup"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

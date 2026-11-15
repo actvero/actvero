@@ -1,6 +1,7 @@
 import asyncio
 import smtplib
 import ssl
+from datetime import UTC, datetime
 from email.message import EmailMessage
 from email.utils import formataddr
 from html import escape
@@ -8,7 +9,16 @@ from html import escape
 from app.core.config import Settings
 
 
-def render_mail(settings: Settings, title: str, text: str, link: str, action: str) -> str:
+def render_mail(
+    settings: Settings,
+    title: str,
+    text: str,
+    link: str,
+    action: str,
+    *,
+    expiry: str = "",
+    concise_link: bool = False,
+) -> str:
     """Shared HTML for production mail and preview; all dynamic values are escaped."""
     name = escape(settings.smtp_display_name)
     logo = escape(
@@ -25,6 +35,9 @@ def render_mail(settings: Settings, title: str, text: str, link: str, action: st
             f'style="vertical-align:middle;object-fit:contain"> <strong>{name}</strong>'
         )
     )
+    fallback = "备用邀请链接" if concise_link else escape(link)
+    fallback_lead = "" if concise_link else "按钮无法打开时，请复制下方链接：<br>"
+    expiry_note = escape(expiry) or "链接到期或撤销后将失效。"
     return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;background:#f4f5f7;color:#0f172a;font-family:Arial,sans-serif">
@@ -37,24 +50,37 @@ style="max-width:560px;background:white;border:1px solid #e2e8f0;border-radius:1
 <p style="margin:28px 0"><a href="{escape(link, quote=True)}"
 style="display:inline-block;padding:14px 22px;background:#0f172a;color:white;
 text-decoration:none;border-radius:8px;font-size:14px">{escape(action)}</a></p>
-<p style="font-size:12px;line-height:1.8;color:#64748b">按钮无法打开时，请复制下方链接：<br>
+<p style="font-size:12px;line-height:1.8;color:#64748b">{fallback_lead}
 <a href="{escape(link, quote=True)}"
-style="color:#475569;word-break:break-all">{escape(link)}</a></p>
-<p style="font-size:12px;line-height:1.8;color:#64748b">链接到期或撤销后将失效。
+style="color:#475569;word-break:break-all">{fallback}</a></p>
+<p style="font-size:12px;line-height:1.8;color:#64748b">{expiry_note}
 如果你没有请求此操作，请忽略这封邮件。</p></td></tr></table>
 <p style="font-size:12px;color:#64748b">此邮件由 {name} 自动发送，请勿直接回复。</p>
 </td></tr></table></body></html>'''
 
 
 def compose_mail(
-    settings: Settings, email: str, title: str, text: str, link: str, action: str
+    settings: Settings,
+    email: str,
+    title: str,
+    text: str,
+    link: str,
+    action: str,
+    *,
+    expires_at: datetime | None = None,
+    concise_link: bool = False,
 ) -> EmailMessage:
     message = EmailMessage()
     message["From"] = formataddr((settings.smtp_display_name, settings.smtp_from or ""))
     message["To"] = email
     message["Subject"] = f"{settings.smtp_display_name} · {title}"
-    message.set_content(f"{title}\n\n{text}\n\n{action}：{link}\n\n如非本人请求，请忽略。")
-    message.add_alternative(render_mail(settings, title, text, link, action), subtype="html")
+    expiry = f"有效期至 {expires_at.astimezone(UTC):%Y-%m-%d %H:%M} UTC。" if expires_at else ""
+    footer = "\n".join(filter(None, (expiry, "如非本人请求，请忽略。")))
+    message.set_content(f"{title}\n\n{text}\n\n{action}：{link}\n\n{footer}")
+    message.add_alternative(
+        render_mail(settings, title, text, link, action, expiry=expiry, concise_link=concise_link),
+        subtype="html",
+    )
     return message
 
 
@@ -91,20 +117,32 @@ def compose_organization_invitation(settings: Settings, email: str, link: str) -
 
 
 def compose_member_invitation(
-    settings: Settings, email: str, enterprise: str, link: str
+    settings: Settings,
+    email: str,
+    enterprise: str,
+    link: str,
+    *,
+    expires_at: datetime | None = None,
 ) -> EmailMessage:
+    enterprise = " ".join(enterprise.split())
     return compose_mail(
         settings,
         email,
-        "组织成员邀请",
-        f"你受邀加入「{enterprise}」。请验证自己的账号后选择是否加入。",
+        f"邀请你加入「{enterprise}」",
+        "请使用收到这封邮件的邮箱继续。首次使用时，可按页面指引设置账号。",
         link,
-        "查看邀请",
+        "打开邀请",
+        expires_at=expires_at,
+        concise_link=True,
     )
 
 
-async def send_invitation(settings: Settings, email: str, enterprise: str, token: str) -> None:
+async def send_invitation(
+    settings: Settings, email: str, enterprise: str, token: str, *, expires_at: datetime
+) -> None:
     await send_mail(
         settings,
-        compose_member_invitation(settings, email, enterprise, f"{settings.app_url}/join#{token}"),
+        compose_member_invitation(
+            settings, email, enterprise, f"{settings.app_url}/join#{token}", expires_at=expires_at
+        ),
     )

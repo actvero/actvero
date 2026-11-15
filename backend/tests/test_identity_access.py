@@ -5,6 +5,8 @@ truncates application tables. Real Keycloak browser verification is separate.
 """
 
 import asyncio
+import base64
+import io
 import os
 import secrets
 import time
@@ -17,6 +19,7 @@ import httpx
 import pytest
 import pytest_asyncio
 from cryptography.fernet import Fernet
+from PIL import Image
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -76,6 +79,7 @@ async def env(tmp_path):
             provider.inspect = AsyncMock()
             provider.user_enabled = AsyncMock(return_value=True)
             provider.prepare_user = AsyncMock(return_value=("new-subject", False))
+            provider.invited_user = AsyncMock(return_value=None)
             async with sessions() as db:
                 db.add(Installation(id=1))
                 await db.commit()
@@ -284,6 +288,8 @@ async def test_invite_subject_binding_idempotency_and_no_removed_member_revival(
         "role": "member",
         "tenant_name": None,
         "email": None,
+        "email_hint": None,
+        "name": None,
         "expires_at": None,
     }
     assert (await wrong.api.post("/api/v1/invitations/accept")).status_code == 403
@@ -346,6 +352,78 @@ async def test_mail_failure_is_queryable_and_retry_is_idempotent(env, monkeypatc
         await admin.api.post(admin.path + f"/invitations/{request_id}/revoke")
     ).status_code == 200
     assert (await admin.api.post(path, json={"request_id": str(uuid4())})).status_code == 409
+
+
+async def test_first_invitation_sets_up_member_once_with_avatar(env, monkeypatch):
+    admin, browser = await env.client(), await env.client(joined=False)
+    mail = AsyncMock()
+    monkeypatch.setattr("app.modules.members.invitations.send_invitation", mail)
+    env.provider.create_invited_user = AsyncMock(return_value="invited-subject")
+    invitation_id = uuid4()
+    result = await admin.api.post(
+        admin.path + "/invitations",
+        json={"email": "new@example.com", "name": "受邀姓名", "request_id": str(invitation_id)},
+    )
+    assert result.json()["mail_status"] == "submitted"
+    env.provider.prepare_user.assert_not_called()
+    env.provider.create_invited_user.assert_not_called()
+    async with env.sessions() as db:
+        session = await db.get(WebSession, browser.session.id)
+        session.identity_id, session.tokens = None, None
+        await db.commit()
+    token = mail.call_args.args[3]
+    assert (await browser.api.post("/api/v1/invitations/claim", json={"token": token})).is_success
+    preview = (await browser.api.get("/api/v1/invitations/current")).json()
+    assert (preview["state"], preview["name"], preview["email_hint"]) == (
+        "setup",
+        "受邀姓名",
+        "n***@example.com",
+    )
+    assert preview["email"] is None
+    image = io.BytesIO()
+    Image.new("RGB", (32, 32), color="blue").save(image, format="PNG")
+    avatar = "data:image/png;base64," + base64.b64encode(image.getvalue()).decode()
+    payload = {"name": "我的姓名", "password": "test-password-only", "avatar": avatar}
+    attempts = await asyncio.gather(
+        *[browser.api.post("/api/v1/invitations/setup", json=payload) for _ in range(2)]
+    )
+    assert sorted(result.status_code for result in attempts) == [200, 409]
+    env.provider.create_invited_user.assert_awaited_once_with(
+        "new@example.com", "我的姓名", "test-password-only", str(invitation_id)
+    )
+    async with env.sessions() as db:
+        row = await db.get(Invitation, invitation_id)
+        assert row.status == "accepted" and row.token_ciphertext is None
+        assert row.subject == "invited-subject"
+        user = await db.get(User, row.accepted_by)
+        assert user.name == "我的姓名" and user.avatar_version
+        member = await db.scalar(select(Membership).where(Membership.user_id == user.id))
+        assert member.tenant_id == admin.tenant.id
+        session = await db.get(WebSession, browser.session.id)
+        assert session.identity_id is None  # Keycloak login still owns browser authentication.
+
+
+async def test_already_bound_invitation_cannot_change_account_password(env, monkeypatch):
+    admin, recipient = await env.client(), await env.client(joined=False)
+    env.provider.invited_user.return_value = (recipient.identity.subject, False)
+    env.provider.create_invited_user = AsyncMock()
+    mail = AsyncMock()
+    monkeypatch.setattr("app.modules.members.invitations.send_invitation", mail)
+    result = await admin.api.post(
+        admin.path + "/invitations",
+        json={"email": recipient.user.email, "request_id": str(uuid4())},
+    )
+    assert result.json()["mail_status"] == "submitted"
+    result = await recipient.api.post(
+        "/api/v1/invitations/claim", json={"token": mail.call_args.args[3]}
+    )
+    assert result.is_success
+    refused = await recipient.api.post(
+        "/api/v1/invitations/setup", json={"name": "改名", "password": "test-password-only"}
+    )
+    assert refused.status_code == 409
+    env.provider.create_invited_user.assert_not_called()
+    assert (await recipient.api.post("/api/v1/invitations/accept")).is_success
 
 
 async def test_login_callback_rejects_bad_state_invalid_claims_and_replay(env, caplog):
