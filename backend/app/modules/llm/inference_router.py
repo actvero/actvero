@@ -15,7 +15,7 @@ from app.modules.desktop.schemas import DesktopErrorResponse
 from app.modules.integrations.service import ApplicationActor
 from app.modules.llm import member_catalog, routing, runtime
 from app.modules.llm.audio_schemas import SpeechInput, SpeechOutput
-from app.modules.llm.body_limit import InferenceRoute
+from app.modules.llm.body_limit import INFERENCE_MAX_BODY_MIB, InferenceRoute
 from app.modules.llm.catalog_schemas import CatalogInput
 from app.modules.llm.image_schemas import ImageInput, ImageOutput
 from app.modules.llm.inference_schemas import (
@@ -54,7 +54,7 @@ router = APIRouter(
             403: "资源范围不符或成员访问被拒绝。",
             404: "模型未开放、已归档或未获授权。",
             409: "配置未就绪/已变化；幂等重复或内容冲突返回本人call_id与状态，不重放正文。",
-            413: "请求体超过 2 MB。",
+            413: f"请求体超过 {INFERENCE_MAX_BODY_MIB} MiB。",
             415: "不接受压缩请求体。",
             422: "输入、模型用途或维度不符合契约。",
             429: "成员积分额度不足，或上游限流且已按路由策略处理。",

@@ -15,6 +15,7 @@ from test_llm_channels import create as create_channel
 from test_mcp import listening
 
 from app.modules.desktop.oidc import NativeIdentity
+from app.modules.llm.body_limit import InferenceRoute
 from app.modules.llm.catalog_schemas import CatalogInput, RetrievalOptions, TokenPrice
 from app.modules.llm.inference_schemas import EmbeddingInput
 from app.modules.llm.models import ModelCall
@@ -314,7 +315,7 @@ async def test_unknown_usage_is_not_free_and_decimal_units():
     assert valuation(p, {"input_characters": 3})["amount"] == "0.000000000003"
 
 
-async def test_body_bound_protocol_errors_no_retry(env):
+async def test_body_bound_protocol_errors_no_retry(env, monkeypatch):
     admin = await env.client()
     hits = []
     app = FastAPI()
@@ -334,7 +335,8 @@ async def test_body_bound_protocol_errors_no_retry(env):
                 path, json={"model": model["slug"], "input": "x", "encoding_format": "base64"}
             )
         ).status_code == 422
-        assert (await admin.api.post(path, content=b" " * 2000001)).status_code == 413
+        monkeypatch.setattr(InferenceRoute, "max_bytes", 1024)
+        assert (await admin.api.post(path, content=b" " * 1025)).status_code == 413
         assert len(hits) == 1
         async with env.sessions() as db:
             records = (await db.scalars(select(ModelCall))).all()

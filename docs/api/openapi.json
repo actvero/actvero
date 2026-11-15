@@ -32297,7 +32297,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {
@@ -32495,7 +32495,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {
@@ -32631,7 +32631,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {
@@ -32767,7 +32767,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {
@@ -32906,7 +32906,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {
@@ -33042,7 +33042,7 @@
                 }
               }
             },
-            "description": "请求体超过 2 MB。"
+            "description": "请求体超过 128 MiB。"
           },
           "415": {
             "content": {

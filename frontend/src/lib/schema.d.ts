@@ -20374,7 +20374,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20525,7 +20525,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20639,7 +20639,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20753,7 +20753,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20865,7 +20865,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20979,7 +20979,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 2 MB。 */
+            /** @description 请求体超过 128 MiB。 */
             413: {
                 headers: {
                     [name: string]: unknown;

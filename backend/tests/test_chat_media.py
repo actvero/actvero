@@ -1,10 +1,14 @@
 """Inline images share the advertised request limits, including base64 expansion."""
 
 import base64
+import json
 
+import httpx
 import pytest
+from fastapi import APIRouter, FastAPI
 from pydantic import ValidationError
 
+from app.modules.llm.body_limit import InferenceRoute
 from app.modules.llm.chat_media import IMAGE_INPUT, IMAGE_URL_MAX_LENGTH
 from app.modules.llm.chat_schemas import ChatInput
 
@@ -30,6 +34,32 @@ def test_full_size_inline_images_fit_data_url_and_total_limits():
         request([image(IMAGE_INPUT.max_image_bytes + 1)])
     with pytest.raises(ValidationError, match="合计"):
         request([part] * 8 + [image(1)])
+
+
+@pytest.mark.asyncio
+async def test_inference_route_accepts_chat_with_two_full_size_images():
+    router = APIRouter(route_class=InferenceRoute)
+
+    @router.post("/chat/completions")
+    async def chat(body: ChatInput) -> dict[str, str]:
+        return {"model": body.model}
+
+    app = FastAPI()
+    app.include_router(router)
+    payload = {
+        "model": "vision",
+        "messages": [{"role": "user", "content": [image(IMAGE_INPUT.max_image_bytes)] * 2}],
+    }
+    content = json.dumps(payload).encode()
+    assert len(content) > 2_000_000
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/chat/completions", content=content, headers={"Content-Type": "application/json"}
+        )
+    assert response.status_code == 200
+    assert response.json() == {"model": "vision"}
 
 
 def test_images_are_counted_across_history_including_https_references():

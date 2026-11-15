@@ -6,9 +6,12 @@ from typing import Any
 from fastapi import HTTPException, Request, Response
 from fastapi.routing import APIRoute
 
+INFERENCE_MAX_BODY_MIB = 128
+
 
 class InferenceRoute(APIRoute):
-    max_bytes = 2_000_000
+    max_bytes = INFERENCE_MAX_BODY_MIB * 1024**2
+    limit_label = f"{INFERENCE_MAX_BODY_MIB} MiB"
 
     def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         original = super().get_route_handler()
@@ -19,9 +22,9 @@ class InferenceRoute(APIRoute):
                     raise HTTPException(415, "不接受压缩请求体")
                 content = bytearray()
                 async for chunk in request.stream():
+                    if len(content) + len(chunk) > self.max_bytes:
+                        raise HTTPException(413, f"请求体超过 {self.limit_label}")
                     content.extend(chunk)
-                    if len(content) > self.max_bytes:
-                        raise HTTPException(413, f"请求体超过 {self.max_bytes / 1_000_000:g} MB")
                 # Starlette body/json readers share this cache after stream consumption.
                 request._body = bytes(content)
             return await original(request)
@@ -31,3 +34,4 @@ class InferenceRoute(APIRoute):
 
 class AudioUploadRoute(InferenceRoute):
     max_bytes = 8_100_000
+    limit_label = "8.1 MB"
