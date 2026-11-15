@@ -15,8 +15,30 @@ from app.modules.tenants.models import Installation, Tenant
 KEY_PREFIX = "avi_"
 
 
-Capability = Literal["models", "mcp", "skills", "experts", "knowledge"]
-CAPABILITIES = ("models", "mcp", "skills", "experts", "knowledge")
+Capability = Literal[
+    "models",
+    "mcp",
+    "skills",
+    "experts",
+    "knowledge",
+    "models_write",
+    "mcp_write",
+    "skills_write",
+    "experts_write",
+    "knowledge_write",
+]
+CAPABILITIES = (
+    "models",
+    "mcp",
+    "skills",
+    "experts",
+    "knowledge",
+    "models_write",
+    "mcp_write",
+    "skills_write",
+    "experts_write",
+    "knowledge_write",
+)
 
 
 def require(actor: ApplicationActor, capability: Capability) -> None:

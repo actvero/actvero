@@ -177,7 +177,9 @@ async def authorize(
 
         return await authorize_invocation(request, db, resource)
     if integrations.supplied(request):
-        return await integrations.authorize(request, db, "models")
+        return await integrations.authorize(
+            request, db, "models" if resource == "llm:catalog" else "models_write"
+        )
     if keys.supplied(request):
         resource_id = (
             UUID(resource.removeprefix("llm:")) if resource and resource != "llm:catalog" else None

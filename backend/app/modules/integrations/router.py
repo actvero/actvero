@@ -10,7 +10,7 @@ from app.modules.account.service import own_access
 from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB, digest, now, provider
 from app.modules.desktop.errors import fail
-from app.modules.integrations import catalog, knowledge, service
+from app.modules.integrations import catalog, knowledge, service, writes
 from app.modules.integrations.models import IntegrationApplication, IntegrationKey
 from app.modules.integrations.schemas import (
     ApplicationCallStatus,
@@ -33,6 +33,7 @@ bearer = HTTPBearer(scheme_name="ApplicationKey", description="组织应用集�
 public = APIRouter(prefix="/api/integrations/v1", dependencies=[Depends(bearer)])
 public.include_router(catalog.router)
 public.include_router(knowledge.router)
+public.include_router(writes.router)
 
 
 async def administrator(request: Request, db: DB, *, write: bool = False) -> Access:

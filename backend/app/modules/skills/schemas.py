@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -10,6 +10,9 @@ from app.modules.skills.categories import CategoryId
 from app.modules.skills.icons import library_image, uploaded_image
 
 Audience = Literal["administrators", "selected", "organization"]
+SkillVersionNumber = Annotated[
+    str, Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?$", max_length=50)
+]
 
 
 class SkillIconSelectionView(BaseModel):
@@ -191,9 +194,12 @@ class SkillDistributionPage(BaseModel):
     page: int
 
 
-class SkillImport(SkillMetadata):
+class SkillReleaseInput(SkillMetadata):
     skill_id: UUID | None = None
     revision: int | None = None
-    version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?$", max_length=50)
+    version: SkillVersionNumber
     release_notes: str = Field(default="", max_length=4000)
+
+
+class SkillImport(SkillReleaseInput):
     package_base64: str = Field(max_length=28_000_000, repr=False)

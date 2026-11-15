@@ -15,12 +15,13 @@ from starlette.concurrency import run_in_threadpool
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, now
 from app.modules.experts import dependency_updates
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.members.service import BusinessActor, record
 from app.modules.skills import service
 from app.modules.skills.categories import CategoryId, require_category
 from app.modules.skills.icons import catalog
 from app.modules.skills.models import Skill, SkillDistribution, SkillPackage, SkillVersion
-from app.modules.skills.packages import MAX_PACKAGE, inspect_package, read_file
+from app.modules.skills.packages import MAX_PACKAGE, Package, inspect_package, read_file
 from app.modules.skills.schemas import (
     Audience,
     SkillAction,
@@ -33,6 +34,7 @@ from app.modules.skills.schemas import (
     SkillOverview,
     SkillPage,
     SkillPreview,
+    SkillReleaseInput,
     SkillUpdate,
     SkillView,
 )
@@ -72,15 +74,30 @@ async def import_skill(
     except (ValueError, binascii.Error):
         raise HTTPException(422, "技能包编码无效") from None
     package = await run_in_threadpool(inspect_package, data)
-    if body.skill_id:
-        skill = await service.get_skill(db, actor, body.skill_id)
+    skill = await service.get_skill(db, actor, body.skill_id) if body.skill_id else None
+    grants = await service.scope(db, actor, body) if skill is None else []
+    skill, _ = await save_package(actor, db, body, package, data, skill, grants)
+    result = await service.view(db, actor, skill)
+    await db.flush()
+    return result
+
+
+async def save_package(
+    actor: BusinessActor | ApplicationActor,
+    db: DB,
+    body: SkillReleaseInput,
+    package: Package,
+    data: bytes,
+    skill: Skill | None,
+    grants: list[dict[str, object]],
+) -> tuple[Skill, SkillVersion]:
+    if skill:
         if body.revision != skill.revision:
             raise HTTPException(409, "技能已被修改，请刷新后重试")
         if package.name != skill.name:
             raise HTTPException(422, "新版本的技能 name 必须与原技能一致")
         skill.revision += 1
     else:
-        grants = await service.scope(db, actor, body)
         await require_category(db, actor.tenant.id, body.category or "uncategorized")
         if await db.scalar(
             select(Skill.id).where(Skill.tenant_id == actor.tenant.id, Skill.name == package.name)
@@ -111,7 +128,9 @@ async def import_skill(
         skill_id=skill.id,
         version=body.version,
         release_notes=body.release_notes,
-        uploader_name=actor.user.name,
+        uploader_name=actor.application.name
+        if isinstance(actor, ApplicationActor)
+        else actor.user.name,
         sha256=package.sha256,
         size=len(data),
         files=package.files,
@@ -123,9 +142,8 @@ async def import_skill(
     await db.flush()
     db.add(SkillPackage(version_id=version.id, data=data))
     record(db, actor, "skills.import", skill.id, skill.display_name, {"version": version.version})
-    result = await service.view(db, actor, skill)
     await db.flush()
-    return result
+    return skill, version
 
 
 async def list_skills(

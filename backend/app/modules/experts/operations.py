@@ -35,6 +35,7 @@ from app.modules.experts.schemas import (
     ExpertUpdate,
     ExpertView,
 )
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp.models import McpService
 from app.modules.members.service import BusinessActor, record
 from app.modules.skills.icons import uploaded_image
@@ -272,20 +273,7 @@ async def dependency_detail(
 
 async def create(actor: BusinessActor, request: Request, db: DB, body: ExpertSave) -> ExpertView:
     service.administrator(actor)
-    await require_category(db, actor.tenant.id, body.category)
-    await service.validate_refs(db, actor, body.content, None)
-    if body.content.avatar:
-        body.content.avatar = uploaded_image(body.content.avatar)
-    row = ExpertRecord(
-        tenant_id=actor.tenant.id,
-        name=body.content.name,
-        description=body.content.description,
-        category=body.category,
-        draft=body.content.model_dump(mode="json"),
-    )
-    db.add(row)
-    await db.flush()
-    record(db, actor, "experts.create", row.id, row.name, {})
+    row = await save_draft(actor, db, body)
     result = await service.view(db, row)
     await db.flush()
     return result
@@ -359,20 +347,37 @@ async def update(
     service.administrator(actor)
     row = await service.get_expert(db, actor, expert_id)
     service.revision(row, body.revision)
-    await require_category(db, actor.tenant.id, body.category)
-    await service.validate_refs(db, actor, body.content, ExpertContent.model_validate(row.draft))
-    if row.category != body.category:
-        row.metadata_revision += 1
-    row.category = body.category
-    if body.content.avatar and body.content.avatar != row.draft.get("avatar", ""):
-        body.content.avatar = uploaded_image(body.content.avatar)
-    (row.name, row.description) = (body.content.name, body.content.description)
-    row.draft = body.content.model_dump(mode="json")
-    row.revision += 1
-    record(db, actor, "experts.update", row.id, row.name, {})
+    await save_draft(actor, db, body, row)
     result = await service.view(db, row)
     await db.flush()
     return result
+
+
+async def save_draft(
+    actor: BusinessActor | ApplicationActor,
+    db: DB,
+    body: ExpertSave,
+    row: ExpertRecord | None = None,
+) -> ExpertRecord:
+    previous = ExpertContent.model_validate(row.draft) if row else None
+    await require_category(db, actor.tenant.id, body.category)
+    await service.validate_refs(db, actor, body.content, previous)
+    if body.content.avatar and (previous is None or body.content.avatar != previous.avatar):
+        body.content.avatar = uploaded_image(body.content.avatar)
+    action = "experts.update" if row else "experts.create"
+    if row:
+        if row.category != body.category:
+            row.metadata_revision += 1
+        row.revision += 1
+    else:
+        row = ExpertRecord(tenant_id=actor.tenant.id)
+        db.add(row)
+    row.category = body.category
+    (row.name, row.description) = (body.content.name, body.content.description)
+    row.draft = body.content.model_dump(mode="json")
+    await db.flush()
+    record(db, actor, action, row.id, row.name, {})
+    return row
 
 
 async def update_scope(

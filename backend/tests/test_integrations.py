@@ -86,6 +86,13 @@ async def test_application_discovery_invocation_and_key_rotation(env):
         catalog = await api.get(LLM + "/models", headers=headers)
         assert catalog.status_code == 200, catalog.text
         assert {m["id"] for m in catalog.json()["data"]} == {model["slug"]}
+        assert (await api.post(url, json=payload(model), headers=headers)).status_code == 403
+        assert not observed["calls"]
+        changes["models_write_enabled"] = True
+        updated = await operator.api.put(
+            path, json={**changes, "version": updated.json()["version"]}
+        )
+        assert updated.status_code == 200, updated.text
         response = await api.post(
             url, json=payload(model), headers={**headers, "Idempotency-Key": "odoo-1"}
         )
@@ -134,8 +141,19 @@ async def test_application_discovery_invocation_and_key_rotation(env):
         assert closed.status_code == 200, closed.text
         assert (await api.get(ME, headers=replacement)).status_code == 200
         assert (await api.get(LLM + "/models", headers=replacement)).status_code == 403
+        assert (await api.post(url, json=payload(model), headers=replacement)).status_code == 200
+        closed = await operator.api.put(
+            path,
+            json={
+                **changes,
+                "version": closed.json()["version"],
+                "models_enabled": False,
+                "models_write_enabled": False,
+            },
+        )
+        assert closed.status_code == 200, closed.text
         assert (await api.post(url, json=payload(model), headers=replacement)).status_code == 403
-        assert len(observed["calls"]) == 2
+        assert len(observed["calls"]) == 3
         assert (
             await operator.api.put(
                 path,
@@ -143,6 +161,7 @@ async def test_application_discovery_invocation_and_key_rotation(env):
                     **changes,
                     "version": closed.json()["version"],
                     "models_enabled": False,
+                    "models_write_enabled": False,
                     "enabled": False,
                 },
             )
@@ -166,7 +185,10 @@ async def test_application_tenant_and_receipt_boundaries(env):
     server, _ = upstream()
     async with listening(server) as base, native_client(env) as api:
         model, _ = await configured(env, first, base)
-        foreign = await second.api.post(APPS, json={"name": "External", "models_enabled": True})
+        foreign = await second.api.post(
+            APPS,
+            json={"name": "External", "models_enabled": True, "models_write_enabled": True},
+        )
         assert foreign.status_code == 201, foreign.text
         foreign_key = bearer(await create_key(second, foreign.json(), "External"))
         catalog = await api.get(LLM + "/models", headers=foreign_key)
@@ -174,7 +196,9 @@ async def test_application_tenant_and_receipt_boundaries(env):
         assert (
             await api.post(LLM + "/chat/completions", json=payload(model), headers=foreign_key)
         ).status_code == 404
-        app = (await first.api.post(APPS, json={"name": "Odoo", "models_enabled": True})).json()
+        app = (
+            await first.api.post(APPS, json={"name": "Odoo", "models_write_enabled": True})
+        ).json()
         key = await create_key(first, app, "App")
         response = await api.post(
             LLM + "/chat/completions", json=payload(model), headers=bearer(key)
@@ -215,6 +239,20 @@ async def test_application_knowledge_upload_index_retrieve_and_reader(env):
             "retrieval": {"mode": "hybrid", "embedding_model_id": model["id"]},
         }
         create_path = root + f"?creation_id={uuid4()}"
+        assert (await api.post(create_path, json=options, headers=headers)).status_code == 403
+        settings = {"name": app["name"], "enabled": True, "models_enabled": False}
+        application_path = f"{APPS}/{app['id']}"
+        authorized = await admin.api.put(
+            application_path,
+            json={
+                **settings,
+                "version": app["version"],
+                "knowledge_write_enabled": True,
+                "knowledge_enabled": False,
+            },
+        )
+        assert authorized.status_code == 200, authorized.text
+        assert (await api.get(root, headers=headers)).status_code == 403
         made = await api.post(create_path, json=options, headers=headers)
         assert made.status_code == 201, made.text
         item = made.json()
@@ -225,6 +263,12 @@ async def test_application_knowledge_upload_index_retrieve_and_reader(env):
             await api.post(create_path, json={**options, "name": "Different"}, headers=headers)
         ).status_code == 409
         path = root + "/" + item["id"]
+        assert (await api.get(path, headers=headers)).status_code == 403
+        authorized = await admin.api.put(
+            application_path,
+            json={**settings, "version": authorized.json()["version"], "knowledge_enabled": True},
+        )
+        assert authorized.status_code == 200, authorized.text
         assert (
             await api.put(
                 path,
@@ -295,6 +339,27 @@ async def test_application_knowledge_upload_index_retrieve_and_reader(env):
         assert (
             await api.get("/api/v1/knowledge-reader/source", headers=reader_headers)
         ).status_code == 404
+        disabled = await admin.api.put(
+            application_path,
+            json={
+                **settings,
+                "version": authorized.json()["version"],
+                "knowledge_write_enabled": False,
+            },
+        )
+        assert disabled.status_code == 200, disabled.text
+        assert not (await api.get(path, headers=headers)).json()["can_manage"]
+        assert (await api.delete(path, headers=headers)).status_code == 403
+        enabled = await admin.api.put(
+            application_path,
+            json={
+                **settings,
+                "version": disabled.json()["version"],
+                "knowledge_write_enabled": True,
+                "knowledge_enabled": False,
+            },
+        )
+        assert enabled.status_code == 200, enabled.text
         assert (await api.delete(path, headers=headers)).status_code == 204
 
 

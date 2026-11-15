@@ -100,6 +100,8 @@ def inspect_package(data: bytes) -> Package:
             if len(contents[skill_path]) > MAX_PREVIEW:
                 raise invalid("SKILL.md 不能超过 256 KB")
             raw = contents[skill_path].decode("utf-8-sig")
+            if "\0" in raw:
+                raise invalid("SKILL.md 不能包含空字符")
             match = re.match(r"\A---\s*\r?\n(.*?)\r?\n---(?:\r?\n|$)", raw, re.S)
             if not match or len(match[1]) > 16384:
                 raise invalid("SKILL.md 需要 YAML frontmatter，包含 name 和 description")
@@ -117,7 +119,11 @@ def inspect_package(data: bytes) -> Package:
                 raise invalid("name 须为不超过 64 位的小写字母、数字和单个连字符")
             if prefix and prefix[:-1] != name:
                 raise invalid("技能目录名须与 SKILL.md 中的 name 一致")
-            if not isinstance(description, str) or not 1 <= len(description.strip()) <= 1024:
+            if (
+                not isinstance(description, str)
+                or "\0" in description
+                or not 1 <= len(description.strip()) <= 1024
+            ):
                 raise invalid("description 必须为 1–1024 字的文本")
             files: list[dict[str, str | int | bool]] = []
             for path, content in sorted(contents.items()):

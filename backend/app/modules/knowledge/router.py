@@ -574,7 +574,7 @@ async def upload_document(
     digest = hashlib.sha256(content).hexdigest()
     if isinstance(actor, ApplicationActor):
         await db.scalar(select(Tenant.id).where(Tenant.id == actor.tenant.id).with_for_update())
-        actor = await integrations.authorize(request, db, "knowledge")
+        actor = await integrations.authorize(request, db, "knowledge_write")
     base = await get_base(db, actor, base_id, lock=True)
     require_manage(base, actor)
     old = await db.scalar(

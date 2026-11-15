@@ -21,6 +21,11 @@ class IntegrationApplication(Base):
     experts_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
     knowledge_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
     models_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    models_write_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    mcp_write_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    skills_write_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    experts_write_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
+    knowledge_write_enabled: Mapped[bool] = mapped_column(default=False, server_default="false")
     version: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
@@ -39,3 +44,16 @@ class IntegrationKey(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class IntegrationResourceSource(Base):
+    __tablename__ = "integration_resource_sources"
+    __table_args__ = (UniqueConstraint("kind", "resource_id"),)
+
+    application_id: Mapped[UUID] = mapped_column(
+        ForeignKey("integration_applications.id"), primary_key=True
+    )
+    kind: Mapped[str] = mapped_column(String(12), primary_key=True)
+    source_id: Mapped[str] = mapped_column(String(160), primary_key=True)
+    resource_id: Mapped[UUID]
+    fingerprint: Mapped[str] = mapped_column(String(64))

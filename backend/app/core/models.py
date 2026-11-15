@@ -16,7 +16,11 @@ from app.modules.departments.models import Department, DepartmentMember
 from app.modules.desktop.models import DesktopLogin, DeviceSession, DeviceToken
 from app.modules.desktop_mcp.models import NativeOAuthAttempt, ResourceToken
 from app.modules.experts.models import ExpertCategoryRecord, ExpertRecord, ExpertRelease
-from app.modules.integrations.models import IntegrationApplication, IntegrationKey
+from app.modules.integrations.models import (
+    IntegrationApplication,
+    IntegrationKey,
+    IntegrationResourceSource,
+)
 from app.modules.knowledge.models import (
     KnowledgeBase,
     KnowledgeChunk,
@@ -114,6 +118,7 @@ __all__ = [
     "ExpertRelease",
     "IntegrationApplication",
     "IntegrationKey",
+    "IntegrationResourceSource",
     "AccessKey",
     "AccessKeyPolicy",
     "UsageSettlement",

@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.departments.access import DepartmentAccess, load_access
+from app.modules.desktop.errors import fail
 from app.modules.experts.categories import require_category
 from app.modules.experts.dependencies import connector_option
 from app.modules.experts.models import ExpertRecord, ExpertRelease
@@ -21,6 +22,8 @@ from app.modules.experts.schemas import (
     ExpertSummary,
     ExpertView,
 )
+from app.modules.integrations.actor import ApplicationActor
+from app.modules.integrations.models import IntegrationResourceSource
 from app.modules.mcp.models import McpService
 from app.modules.members.models import Membership
 from app.modules.members.service import BusinessActor
@@ -57,9 +60,15 @@ def allowed(
 
 
 async def validate_refs(
-    db: AsyncSession, actor: BusinessActor, content: ExpertContent, previous: ExpertContent | None
+    db: AsyncSession,
+    actor: BusinessActor | ApplicationActor,
+    content: ExpertContent,
+    previous: ExpertContent | None,
 ) -> None:
     """Allow an unchanged stale reference to be edited; never accept new foreign resources."""
+    if isinstance(actor, ApplicationActor):
+        await validate_application_refs(db, actor, content, previous)
+        return
     for kind in ("skills", "connectors"):
         old = getattr(previous, kind) if previous else []
         for ref in getattr(content, kind):
@@ -98,6 +107,63 @@ async def validate_refs(
                     available = {t.key for t in details.tools if t.enabled}
                     if set(ref.tools) - retained - available:
                         raise HTTPException(422, "只能选用连接器已开放的工具，请刷新后重试")
+
+
+async def validate_application_refs(
+    db: AsyncSession,
+    actor: ApplicationActor,
+    content: ExpertContent,
+    previous: ExpertContent | None,
+) -> None:
+    from app.modules.experts.connector_contracts import capture
+
+    resource_ids = [ref.skill_id for ref in content.skills] + [
+        ref.connector_id for ref in content.connectors
+    ]
+    if not resource_ids:
+        return
+    owned = set(
+        (
+            await db.execute(
+                select(IntegrationResourceSource.kind, IntegrationResourceSource.resource_id).where(
+                    IntegrationResourceSource.application_id == actor.application.id,
+                    IntegrationResourceSource.resource_id.in_(resource_ids),
+                )
+            )
+        ).tuples()
+    )
+    for skill_ref in content.skills:
+        if previous and skill_ref in previous.skills:
+            continue
+        skill = await db.get(Skill, skill_ref.skill_id)
+        version = await db.get(SkillVersion, skill_ref.version_id)
+        if (
+            not skill
+            or skill.tenant_id != actor.tenant.id
+            or not version
+            or version.skill_id != skill.id
+            or version.sha256 != skill_ref.sha256
+            or not (
+                ("skills", skill.id) in owned
+                and version.status in {"draft", "published", "superseded"}
+                or skill.audience == "organization"
+                and version.status == "published"
+                and skill.default_version_id == version.id
+            )
+        ):
+            fail(422, "expert_skill_unavailable", f"技能依赖 {skill_ref.key} 的版本或摘要不可用")
+    for connector_ref in content.connectors:
+        if previous and connector_ref in previous.connectors:
+            continue
+        connector = await db.get(McpService, connector_ref.connector_id)
+        if not connector or connector.tenant_id != actor.tenant.id:
+            fail(422, "expert_mcp_unavailable", f"MCP 依赖 {connector_ref.key} 不可用")
+        if ("mcp", connector.id) in owned:
+            continue
+        if not connector.enabled or connector.audience != "organization":
+            fail(422, "expert_mcp_unavailable", f"MCP 依赖 {connector_ref.key} 不可用")
+        if await capture(db, connector.id, connector_ref.tools) is None:
+            fail(422, "expert_mcp_tools_unavailable", f"MCP 依赖 {connector_ref.key} 的工具未开放")
 
 
 async def check(

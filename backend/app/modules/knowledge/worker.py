@@ -47,7 +47,7 @@ async def phase(request: Request, db: AsyncSession, job: KnowledgeGeneration) ->
     actor: KnowledgeActor
     if job.actor_integration_key_id:
         actor = await integrations.bound(
-            request, db, job.actor_integration_key_id, "knowledge", admitted_job=True
+            request, db, job.actor_integration_key_id, "knowledge_write", admitted_job=True
         )
     else:
         member = await db.get(Membership, job.actor_member_id) if job.actor_member_id else None

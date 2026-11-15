@@ -22,7 +22,12 @@ import { ListPagination } from '@/components/list-pagination'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { useOrganization } from '@/features/auth/session'
 import { ApplicationCalls, ConnectionSettings } from './connection'
-import { applications, timestamp, type Application } from './data'
+import {
+  applicationPermissions,
+  applications,
+  timestamp,
+  type Application,
+} from './data'
 import { ApplicationKeys } from './keys'
 import { ApplicationPermissions } from './permissions'
 import { IntegrationTable, NoItems } from './shared'
@@ -97,14 +102,9 @@ export function IntegrationsPage({
                   <ApplicationBadge app={app} />
                 </TableCell>
                 <TableCell>
-                  {[
-                    app.models_enabled && '模型',
-                    app.mcp_enabled && 'MCP',
-                    app.skills_enabled && 'Skills',
-                    app.experts_enabled && '专家',
-                    app.knowledge_enabled && '知识库',
-                  ]
-                    .filter(Boolean)
+                  {applicationPermissions
+                    .filter(({ read, write }) => app[read] || app[write])
+                    .map(({ name }) => name)
                     .join('、') || '—'}
                 </TableCell>
                 <TableCell>{timestamp(app.last_used_at)}</TableCell>

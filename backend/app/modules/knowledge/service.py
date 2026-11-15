@@ -42,7 +42,11 @@ KnowledgeActor = BusinessActor | ApplicationActor
 
 def can_manage(base: KnowledgeBase, actor: KnowledgeActor) -> bool:
     if isinstance(actor, ApplicationActor):
-        return base.application_id == actor.application.id and base.tenant_id == actor.tenant.id
+        return (
+            actor.application.knowledge_write_enabled
+            and base.application_id == actor.application.id
+            and base.tenant_id == actor.tenant.id
+        )
     return actor.member.role == "administrator"
 
 

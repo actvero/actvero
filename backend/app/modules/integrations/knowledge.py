@@ -39,10 +39,10 @@ router = APIRouter(prefix="/knowledge/bases", tags=["application-knowledge"])
 
 
 async def access(request: Request, db: DB, *, write: bool = False) -> ApplicationActor:
-    actor = await service.authorize(request, db, "knowledge")
+    actor = await service.authorize(request, db, "knowledge_write" if write else "knowledge")
     if write:
         await db.scalar(select(Tenant.id).where(Tenant.id == actor.tenant.id).with_for_update())
-        return await service.authorize(request, db, "knowledge")
+        return await service.authorize(request, db, "knowledge_write")
     return actor
 
 
@@ -136,9 +136,8 @@ async def upload(
     request: Request,
     db: DB,
 ) -> DocumentView:
-    return await knowledge.upload_document(
-        db, await access(request, db), base_id, upload_id, filename, request
-    )
+    actor = await service.authorize(request, db, "knowledge_write")
+    return await knowledge.upload_document(db, actor, base_id, upload_id, filename, request)
 
 
 @router.get(
@@ -191,7 +190,7 @@ async def preview_chunks(
     response: Response,
     db: DB,
 ) -> ChunkPreviewView:
-    actor = await access(request, db)
+    actor = await service.authorize(request, db, "knowledge_write")
     return await knowledge.preview_document_chunks(db, actor, base_id, document_id, body, response)
 
 

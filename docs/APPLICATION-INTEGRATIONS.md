@@ -1,11 +1,11 @@
 # 应用集成
 
-本文供组织管理员和接入开发者使用。完成配置后，Odoo、机器人等外部服务可用一个应用 Key 同步模型、MCP、Skills、专家，管理应用自身的知识库并检索组织共享资料。
+本文供组织管理员和接入开发者使用。Odoo 等外部系统可用应用 Key 调用模型、管理应用自建知识库，并按授权读取或写入 MCP、Skills 和专家。
 
 ## 连接与鉴权
 
 1. 在「组织管理 → 应用集成」创建应用。生产和测试环境建议各用一个应用。
-2. 在「权限」按需要开启模型、MCP、Skills、专家、知识库。五项独立控制，打开某项后，同范围内新开放的资源自动可用。
+2. 在「权限」给各项资源分别开启「读」或「写」，按接入需要单独授权。
 3. 在「密钥」生成 Key，把它保存到接入系统的后端。完整 Key 只在生成时展示。换 Key 时先签发新 Key，在调用端切换后撤销旧 Key。
 4. 在「接入」复制集成 API 地址，令 `ACTVERO_API` 指向该地址（以 `/api/integrations/v1` 结尾），把 Key 注入 `ACTVERO_KEY`。以下命令在接入服务器执行：
 
@@ -13,23 +13,25 @@
 curl --fail-with-body -H "Authorization: Bearer $ACTVERO_KEY" "$ACTVERO_API/me"
 ```
 
-响应含 `application_id`、`name`、五个 `*_enabled` 开关、`integration_base_url` 和 `model_base_url`。其他请求使用同一个 `Authorization` 头。接入服务端应使用 HTTPS，应用 Key 不传给浏览器、iframe 或其他上游。后台「API 文档」链接提供 Swagger 界面，[OpenAPI](api/openapi.json) 收录所有请求、响应和字段约束。调试应用 Key 使用时，命令行客户端无需携带后台 Cookie 或浏览器 Origin。
+响应含 `application_id`、`name`、各项能力开关、`integration_base_url` 和 `model_base_url`。其他请求使用同一个 `Authorization` 头。接入服务端应使用 HTTPS，应用 Key 不传给浏览器、iframe 或其他上游。后台「API 文档」链接提供 Swagger 界面，[OpenAPI](api/openapi.json) 收录请求、响应和字段约束。调试应用 Key 使用时，命令行客户端无需携带后台 Cookie 或浏览器 Origin。
 
-| 能力 | 范围 |
-| --- | --- |
-| 模型 | 本组织已开放的模型与操作，可发现和调用 |
-| MCP | 本组织全员可用且启用的服务，使用组织凭据或免认证连接 |
-| Skills | 本组织全员可用且已发布的技能包 |
-| 专家 | 本组织全员可用且已发布的专家清单与依赖 |
-| 知识库 | 本组织全员可用的库可读取和检索。应用自建库还可更新、上传、重建、删除和归档 |
+| 资源 | 读（`*_enabled`） | 写（`*_write_enabled`） |
+| --- | --- | --- |
+| 模型（`models`） | 读取组织已开放的模型目录与参数 | 调用组织已开放的模型 |
+| MCP（`mcp`） | 发现和调用组织已开放的服务，使用组织凭据或免认证连接 | 创建及更新应用来源下的服务配置 |
+| Skills（`skills`） | 读取和下载组织已开放的发布版本 | 创建技能及上传版本草稿 |
+| 专家（`experts`） | 读取组织已开放的发布版本和依赖 | 创建及更新应用来源下的专家草稿 |
+| 知识库（`knowledge`） | 读取和检索组织共享库与应用自建库 | 建库及管理自建库的配置、文档和索引 |
 
-应用属于一个组织。创建它的管理员离开组织不会使应用失效。管理员可在后台停用应用、关闭能力、撤销密钥。现有逐模型授权升级后需手动打开模型开关。各新增能力默认关闭。后台用户应继续在模型网关、MCP、Skills、专家等业务页面配置和发布资源。管理员也可用 [管理 CLI](CLI.md) 自动化常规资源配置与发布。
+应用属于一个组织。创建它的管理员离开组织不会使应用失效。管理员可在后台停用应用、关闭权限、撤销密钥。新建应用的权限默认关闭。升级时，旧版已启用的模型和知识库会分别保留原有的读写权限。后台用户应继续在模型网关、MCP、Skills、专家等业务页面配置和发布资源。管理员也可用 [管理 CLI](CLI.md) 自动化常规资源配置与发布。
 
 除模型与 MCP 协议网关外，以下路径均相对于 `ACTVERO_API`。目录从 `page=1` 开始，每页 20 条，依据 `total` 或 `has_more` 决定是否继续。同步失败时保留上次成功的目录。资源下架、组织状态或应用授权变化后，后续调用以服务端判断为准。
 
 ## 模型
 
 将 `ACTVERO_MODEL_URL` 设置为 `me.model_base_url`，路径以 `/api/llm/v1` 结尾。模型目录以 `data`、`page`、`has_more` 分页。每个条目的 `id` 是调用时使用的模型标识，`operations` 含操作类型、参数、模态和限制。按该条目的操作类型选择接口。模型参数由已开放的配置和可用路由决定。
+
+模型目录需要读权限，模型调用需要写权限。只获写权限的应用可以按已知的模型标识发起调用。模型、渠道和计价配置由组织管理员维护。
 
 | 方法与路径 | 用途 |
 | --- | --- |
@@ -100,7 +102,7 @@ curl --fail-with-body -H "Authorization: Bearer $ACTVERO_KEY" \
 
 ## 知识库
 
-将 `KB` 设置为 `$ACTVERO_API/knowledge/bases`。可先读 `GET /knowledge/bases/defaults`，返回默认检索策略、配置版本及向量和重排模型选项。建库可传 `defaults_version` 固化默认策略，或明确提交 `retrieval`。使用向量或混合检索时提交向量模型 ID。后台索引与检索调用库已配置的模型，可独立于应用的直接模型开关使用。
+将 `KB` 设置为 `$ACTVERO_API/knowledge/bases`。读取默认值、列表、检索和原文需要读权限。建库、修改配置、上传、切片预览、重建、删除和归档需要写权限。可先读 `GET /knowledge/bases/defaults` 获取默认检索策略、配置版本及向量和重排模型选项。建库可传 `defaults_version` 固化默认策略，或明确提交 `retrieval`。使用向量或混合检索时提交向量模型 ID。索引任务继续检查知识库写权限，检索模型调用检查知识库读权限。
 
 | 方法与路径（相对 `KB`） | 输入与返回 |
 | --- | --- |
@@ -137,9 +139,89 @@ curl --fail-with-body -H "Authorization: Bearer $ACTVERO_KEY" \
 
 示例 UUID 由调用端生成并按业务操作保存。建库在同一应用下用相同 `creation_id` 和配置重试会返回原库。上传在同一库内使用相同 `upload_id`、文件名和原件重试会返回原文档。更改正文后应使用新标识。单文件最多 20 MiB，每库最多 100 份文档。对文件名等查询参数做 URL 编码。
 
-上传成功不等于可检索。轮询文档状态，在 `ready` 后开始检索。失败时读取 `error`，纠正配置后重建。换 Key 不影响已受理任务。关闭知识库权限或停用应用会停止后续阶段。重建保留旧的可用索引，直至新处理版本生效。
+上传后可用读权限轮询文档状态，在 `ready` 后开始检索。失败时读取 `error`，纠正配置后重建。换 Key 不影响已受理任务。关闭知识库写权限或停用应用会停止后续处理阶段。重建保留旧的可用索引，直至新处理版本生效。
 
 引用的 `source_url` 是受保护的原件地址。宿主可用引用内容自行绘制角标和悬浮卡片。点开时，宿主后端先检查自己用户的访问资格，再申请短期阅读凭证。前端只接收 `viewer_url`、`token`、`parent_origin` 和有效期，通过 [阅读器消息协议](KNOWLEDGE.md#宿主集成与嵌入阅读器) 进行嵌入。停用应用、关闭能力、撤销签发 Key 或删除原件会影响后续访问。
+
+## 从外部系统写入资源
+
+写入 MCP、Skills 和专家分别检查 `/me` 中的 `mcp_write_enabled`、`skills_write_enabled` 和 `experts_write_enabled`，包括查询各自的写入状态。接入端用同一个组织应用 Key 调用。启用服务、配置成员和部门范围及发布版本由组织管理员在各资源页面完成。
+
+| 方法与路径 | 请求 | 处理结果 |
+| --- | --- | --- |
+| `GET /write/{kind}/{source_id}` | `kind` 为 `mcp`、`skills` 或 `experts` | 查询当前修订、审核状态和已生效版本 |
+| `PUT /write/mcp/{source_id}` | JSON，含 `revision`、`name` 和 `url`，按需声明个人认证字段 | 首次创建为关闭状态。连接地址或认证定义变更后，需要管理员重新核验和启用 |
+| `PUT /write/skills/{source_id}?version=1.0.0&revision=0` | ZIP 原始字节，媒体类型为 `application/zip` 或 `application/octet-stream` | 上传完整技能包，返回草稿版本 ID、版本号和 SHA-256 |
+| `PUT /write/experts/{source_id}` | JSON，含 `revision` 和 `content` | 保存草稿并返回依赖检查结果，已发布版本继续提供服务 |
+
+`source_id` 由接入端生成并长期保留，例如 `odoo:agent.42`。长度为 1–160 个字符，以字母或数字开头，可以包含字母、数字、点、下划线、冒号和连字符。同一个应用换 Key 后仍可通过原来源 ID 继续同步。不同应用各自拥有来源记录。首次推送填 `revision=0`，后续使用响应或状态查询返回的最新 `revision`。管理员保存配置或发布后，修订号也会变化。
+
+MCP 和专家最近一次推送可用相同正文安全重试。技能按 ZIP 字节摘要去重，重试返回已存在的版本。相同版本号遇到不同包时返回 `409`。过期修订返回 `source_revision_conflict`，先查询状态并确认应保留的后台修改，再使用最新修订提交。管理员删除资源后，旧来源返回 `source_resource_removed`。如要新建，使用新的来源 ID。审计事件以组织应用为操作方。
+
+### 写入 MCP
+
+下面的连接器使用 Streamable HTTP。管理员在 MCP 页面核验和启用，每名成员在自己的个人连接填写 Odoo API Key。连接地址可按 Odoo 的部署约定包含数据库路径。后台可配置连接超时、健康检查及成员范围。内网地址须先由部署人员加入 MCP 私有来源配置。
+
+```sh
+curl --fail-with-body -X PUT "$ACTVERO_API/write/mcp/odoo:tools" \
+  -H "Authorization: Bearer $ACTVERO_KEY" -H 'Content-Type: application/json' \
+  --data '{
+    "revision": 0,
+    "name": "Odoo 工具",
+    "url": "https://odoo.example.com/mcp",
+    "auth_mode": "personal",
+    "credential_fields": [
+      {"key":"token","label":"Odoo API Key","header":"Authorization","bearer":true}
+    ]
+  }'
+```
+
+### 写入 Skills
+
+ZIP 上限为 20 MiB，包内须包含带 `name` 和 `description` 的 `SKILL.md`，参考文件与包内图标随 ZIP 保存。后续版本的 `name` 与首版一致。首次推送遇到组织已有同名技能时返回 `409`。管理员在 Skills 页面预览和发布。
+
+```sh
+curl --fail-with-body -X PUT "$ACTVERO_API/write/skills/odoo:manual?version=1.0.0&revision=0" \
+  -H "Authorization: Bearer $ACTVERO_KEY" -H 'Content-Type: application/zip' \
+  --data-binary @manual.zip
+```
+
+### 写入专家
+
+专家正文支持名称、简介、头像、标签、指令和开场问题。技能依赖使用资源 ID、版本 ID 和 SHA-256。MCP 依赖使用服务 ID 与明确的 `tools` 白名单。可引用本应用推送的待发布资源，也可引用已向组织全员开放的依赖。缺失的依赖或不匹配的版本返回对应依赖标识及原因。待启用 MCP 或待发布技能会出现在 `dependency_check.dependencies`，管理员解决必需依赖后才能发布。
+
+将示例中的 ID 和摘要换成前两个推送响应里的 `resource_id`、`skill_version.id` 和 `skill_version.sha256`。然后提交 `expert.json`。
+
+```json
+{
+  "revision": 0,
+  "content": {
+    "name": "Odoo 采购助手",
+    "description": "查询采购订单和采购手册",
+    "instructions": "依据采购手册和订单数据回答问题。",
+    "conversation_starters": ["查找待审批采购订单"],
+    "skills": [{
+      "key": "manual",
+      "label": "采购手册",
+      "skill_id": "00000000-0000-0000-0000-000000000001",
+      "version_id": "00000000-0000-0000-0000-000000000002",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }],
+    "connectors": [{
+      "key": "odoo",
+      "label": "Odoo 工具",
+      "connector_id": "00000000-0000-0000-0000-000000000003",
+      "tools": ["list_purchase_orders"]
+    }]
+  }
+}
+```
+
+```sh
+curl --fail-with-body -X PUT "$ACTVERO_API/write/experts/odoo:agent.42" \
+  -H "Authorization: Bearer $ACTVERO_KEY" -H 'Content-Type: application/json' \
+  --data-binary @expert.json
+```
 
 ## 错误与同步
 

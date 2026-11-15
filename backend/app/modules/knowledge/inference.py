@@ -56,7 +56,7 @@ async def authorize_invocation(
             request,
             db,
             context.application_key_id,
-            "knowledge",
+            "knowledge_write" if context.purpose == "index" else "knowledge",
             admitted_job=context.purpose == "index",
         )
     else:

@@ -366,6 +366,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/v1/write/experts/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 推送专家草稿并校验精确依赖 */
+        put: operations["push_expert_api_integrations_v1_write_experts__source_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/write/mcp/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 推送 MCP 服务配置 */
+        put: operations["push_mcp_api_integrations_v1_write_mcp__source_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/write/skills/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 推送完整技能 ZIP 并追加版本草稿 */
+        put: operations["push_skill_api_integrations_v1_write_skills__source_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/v1/write/{kind}/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取本应用推送资源的修订和审核状态 */
+        get: operations["status_api_integrations_v1_write__kind___source_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/knowledge/v1/bases": {
         parameters: {
             query?: never;
@@ -7691,6 +7759,11 @@ export interface components {
              * @default false
              */
             experts_enabled: boolean;
+            /**
+             * Experts Write Enabled
+             * @default false
+             */
+            experts_write_enabled: boolean;
             /** Integration Base Url */
             integration_base_url: string;
             /**
@@ -7699,10 +7772,20 @@ export interface components {
              */
             knowledge_enabled: boolean;
             /**
+             * Knowledge Write Enabled
+             * @default false
+             */
+            knowledge_write_enabled: boolean;
+            /**
              * Mcp Enabled
              * @default false
              */
             mcp_enabled: boolean;
+            /**
+             * Mcp Write Enabled
+             * @default false
+             */
+            mcp_write_enabled: boolean;
             /** Model Base Url */
             model_base_url: string;
             /**
@@ -7710,6 +7793,11 @@ export interface components {
              * @default false
              */
             models_enabled: boolean;
+            /**
+             * Models Write Enabled
+             * @default false
+             */
+            models_write_enabled: boolean;
             /** Name */
             name: string;
             /**
@@ -7717,6 +7805,11 @@ export interface components {
              * @default false
              */
             skills_enabled: boolean;
+            /**
+             * Skills Write Enabled
+             * @default false
+             */
+            skills_write_enabled: boolean;
         };
         /** ApplicationCreate */
         ApplicationCreate: {
@@ -7726,20 +7819,40 @@ export interface components {
              */
             experts_enabled: boolean;
             /**
+             * Experts Write Enabled
+             * @default false
+             */
+            experts_write_enabled: boolean;
+            /**
              * Knowledge Enabled
              * @default false
              */
             knowledge_enabled: boolean;
+            /**
+             * Knowledge Write Enabled
+             * @default false
+             */
+            knowledge_write_enabled: boolean;
             /**
              * Mcp Enabled
              * @default false
              */
             mcp_enabled: boolean;
             /**
+             * Mcp Write Enabled
+             * @default false
+             */
+            mcp_write_enabled: boolean;
+            /**
              * Models Enabled
              * @default false
              */
             models_enabled: boolean;
+            /**
+             * Models Write Enabled
+             * @default false
+             */
+            models_write_enabled: boolean;
             /** Name */
             name: string;
             /**
@@ -7747,6 +7860,11 @@ export interface components {
              * @default false
              */
             skills_enabled: boolean;
+            /**
+             * Skills Write Enabled
+             * @default false
+             */
+            skills_write_enabled: boolean;
         };
         /** ApplicationKeyCreate */
         ApplicationKeyCreate: {
@@ -7854,17 +7972,37 @@ export interface components {
              */
             experts_enabled: boolean;
             /**
+             * Experts Write Enabled
+             * @default false
+             */
+            experts_write_enabled: boolean;
+            /**
              * Knowledge Enabled
              * @default false
              */
             knowledge_enabled: boolean;
             /**
+             * Knowledge Write Enabled
+             * @default false
+             */
+            knowledge_write_enabled: boolean;
+            /**
              * Mcp Enabled
              * @default false
              */
             mcp_enabled: boolean;
+            /**
+             * Mcp Write Enabled
+             * @default false
+             */
+            mcp_write_enabled: boolean;
             /** Models Enabled */
             models_enabled: boolean;
+            /**
+             * Models Write Enabled
+             * @default false
+             */
+            models_write_enabled: boolean;
             /** Name */
             name: string;
             /**
@@ -7872,6 +8010,11 @@ export interface components {
              * @default false
              */
             skills_enabled: boolean;
+            /**
+             * Skills Write Enabled
+             * @default false
+             */
+            skills_write_enabled: boolean;
             /** Version */
             version: number;
         };
@@ -7886,6 +8029,8 @@ export interface components {
             enabled: boolean;
             /** Experts Enabled */
             experts_enabled: boolean;
+            /** Experts Write Enabled */
+            experts_write_enabled: boolean;
             /**
              * Id
              * Format: uuid
@@ -7895,18 +8040,26 @@ export interface components {
             integration_base_url: string;
             /** Knowledge Enabled */
             knowledge_enabled: boolean;
+            /** Knowledge Write Enabled */
+            knowledge_write_enabled: boolean;
             /** Last Used At */
             last_used_at: string | null;
             /** Mcp Enabled */
             mcp_enabled: boolean;
+            /** Mcp Write Enabled */
+            mcp_write_enabled: boolean;
             /** Model Base Url */
             model_base_url: string;
             /** Models Enabled */
             models_enabled: boolean;
+            /** Models Write Enabled */
+            models_write_enabled: boolean;
             /** Name */
             name: string;
             /** Skills Enabled */
             skills_enabled: boolean;
+            /** Skills Write Enabled */
+            skills_write_enabled: boolean;
             /** Version */
             version: number;
         };
@@ -11848,6 +12001,15 @@ export interface components {
             /** Update Available */
             update_available?: boolean | null;
         };
+        /** ExpertResourceWrite */
+        ExpertResourceWrite: {
+            content: components["schemas"]["ExpertContent"];
+            /**
+             * Revision
+             * @description 首次推送填 0，更新填当前资源修订号。
+             */
+            revision: number;
+        };
         /** ExpertRevision */
         ExpertRevision: {
             /** Revision */
@@ -13893,6 +14055,43 @@ export interface components {
             icon: string;
             /** Version */
             version: number;
+        };
+        /** McpResourceWrite */
+        McpResourceWrite: {
+            /**
+             * Auth Mode
+             * @default none
+             * @enum {string}
+             */
+            auth_mode: "none" | "personal";
+            /** Credential Fields */
+            credential_fields?: components["schemas"]["CredentialField"][];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Display Name
+             * @default
+             */
+            display_name: string;
+            /** Examples */
+            examples?: string[];
+            /**
+             * Icon
+             * @default
+             */
+            icon: string;
+            /** Name */
+            name: string;
+            /**
+             * Revision
+             * @description 首次推送填 0，更新填当前资源修订号。
+             */
+            revision: number;
+            /** Url */
+            url: string;
         };
         /** McpResult */
         McpResult: {
@@ -16344,6 +16543,18 @@ export interface components {
              */
             version_id: string;
         };
+        /** PushedSkillVersion */
+        PushedSkillVersion: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Sha256 */
+            sha256: string;
+            /** Version */
+            version: string;
+        };
         /** QuotaArchive */
         QuotaArchive: {
             /** Archived */
@@ -17460,6 +17671,32 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** ResourceWriteView */
+        ResourceWriteView: {
+            /** Current Release Id */
+            current_release_id?: string | null;
+            dependency_check?: components["schemas"]["ExpertCheck"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mcp" | "skills" | "experts";
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /** Revision */
+            revision: number;
+            skill_version?: components["schemas"]["PushedSkillVersion"] | null;
+            /** Source Id */
+            source_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "disabled" | "enabled" | "draft" | "published" | "superseded" | "withdrawn";
         };
         /** ResponseFormat */
         ResponseFormat: {
@@ -20169,6 +20406,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillFileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_expert_api_integrations_v1_write_experts__source_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertResourceWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceWriteView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_mcp_api_integrations_v1_write_mcp__source_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpResourceWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceWriteView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_skill_api_integrations_v1_write_skills__source_id__put: {
+        parameters: {
+            query: {
+                version: string;
+                revision: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+                "application/zip": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceWriteView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_integrations_v1_write__kind___source_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "mcp" | "skills" | "experts";
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceWriteView"];
                 };
             };
             /** @description Validation Error */

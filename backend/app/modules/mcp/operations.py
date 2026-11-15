@@ -13,6 +13,7 @@ from sqlalchemy import delete, func, or_, select
 from app.modules.auth.schemas import Message
 from app.modules.auth.service import DB, provider
 from app.modules.departments.access import resolve_grants
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp import credentials
 from app.modules.mcp import service as logic
 from app.modules.mcp.importing import parse_import
@@ -56,12 +57,11 @@ from app.modules.members.service import BusinessActor, record
 async def validate_config(
     request: Request,
     db: DB,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     body: McpServiceInput,
     service_id: UUID | None = None,
     current_grants: list[dict[str, object]] | None = None,
 ) -> list[dict[str, object]]:
-    logic.administrator(actor)
     duplicate = await db.scalar(
         select(McpService).where(
             McpService.tenant_id == actor.tenant.id, McpService.name == body.name
@@ -117,6 +117,16 @@ async def services(actor: BusinessActor, request: Request, db: DB) -> McpService
 async def create_service(
     actor: BusinessActor, request: Request, db: DB, body: McpServiceWrite
 ) -> McpServiceView:
+    logic.administrator(actor)
+    row = await insert_service(actor, request, db, body)
+    result = await logic.view(db, row, actor)
+    await db.flush()
+    return result
+
+
+async def insert_service(
+    actor: BusinessActor | ApplicationActor, request: Request, db: DB, body: McpServiceWrite
+) -> McpService:
     grants = await validate_config(request, db, actor, body)
     body.icon = normalize_icon(body.icon)
     row = McpService(
@@ -131,15 +141,27 @@ async def create_service(
         await credentials.store(request, db, row, actor, body.credential_values)
         await db.flush()
     record(db, actor, "mcp.create", row.id, row.name)
-    result = await logic.view(db, row, actor)
     await db.flush()
-    return result
+    return row
 
 
 async def update_service(
     actor: BusinessActor, service_id: UUID, request: Request, db: DB, body: McpServiceUpdate
 ) -> McpServiceView:
     row = await logic.get_service(db, actor, service_id, admin=True)
+    await save_service(actor, request, db, row, body)
+    result = await logic.view(db, row, actor)
+    await db.flush()
+    return result
+
+
+async def save_service(
+    actor: BusinessActor | ApplicationActor,
+    request: Request,
+    db: DB,
+    row: McpService,
+    body: McpServiceUpdate,
+) -> None:
     if body.version != row.version:
         raise HTTPException(409, "配置已被修改，请刷新后重试")
     grants = await validate_config(request, db, actor, body, row.id, row.department_grants)
@@ -167,9 +189,7 @@ async def update_service(
         await credentials.store(request, db, row, actor, body.credential_values)
         await db.flush()
     record(db, actor, "mcp.update", row.id, row.name)
-    result = await logic.view(db, row, actor)
     await db.flush()
-    return result
 
 
 async def delete_service(

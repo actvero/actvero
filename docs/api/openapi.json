@@ -210,6 +210,11 @@
             "title": "Experts Enabled",
             "type": "boolean"
           },
+          "experts_write_enabled": {
+            "default": false,
+            "title": "Experts Write Enabled",
+            "type": "boolean"
+          },
           "integration_base_url": {
             "title": "Integration Base Url",
             "type": "string"
@@ -219,9 +224,19 @@
             "title": "Knowledge Enabled",
             "type": "boolean"
           },
+          "knowledge_write_enabled": {
+            "default": false,
+            "title": "Knowledge Write Enabled",
+            "type": "boolean"
+          },
           "mcp_enabled": {
             "default": false,
             "title": "Mcp Enabled",
+            "type": "boolean"
+          },
+          "mcp_write_enabled": {
+            "default": false,
+            "title": "Mcp Write Enabled",
             "type": "boolean"
           },
           "model_base_url": {
@@ -233,6 +248,11 @@
             "title": "Models Enabled",
             "type": "boolean"
           },
+          "models_write_enabled": {
+            "default": false,
+            "title": "Models Write Enabled",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -240,6 +260,11 @@
           "skills_enabled": {
             "default": false,
             "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "skills_write_enabled": {
+            "default": false,
+            "title": "Skills Write Enabled",
             "type": "boolean"
           }
         },
@@ -260,9 +285,19 @@
             "title": "Experts Enabled",
             "type": "boolean"
           },
+          "experts_write_enabled": {
+            "default": false,
+            "title": "Experts Write Enabled",
+            "type": "boolean"
+          },
           "knowledge_enabled": {
             "default": false,
             "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "knowledge_write_enabled": {
+            "default": false,
+            "title": "Knowledge Write Enabled",
             "type": "boolean"
           },
           "mcp_enabled": {
@@ -270,9 +305,19 @@
             "title": "Mcp Enabled",
             "type": "boolean"
           },
+          "mcp_write_enabled": {
+            "default": false,
+            "title": "Mcp Write Enabled",
+            "type": "boolean"
+          },
           "models_enabled": {
             "default": false,
             "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "models_write_enabled": {
+            "default": false,
+            "title": "Models Write Enabled",
             "type": "boolean"
           },
           "name": {
@@ -284,6 +329,11 @@
           "skills_enabled": {
             "default": false,
             "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "skills_write_enabled": {
+            "default": false,
+            "title": "Skills Write Enabled",
             "type": "boolean"
           }
         },
@@ -529,9 +579,19 @@
             "title": "Experts Enabled",
             "type": "boolean"
           },
+          "experts_write_enabled": {
+            "default": false,
+            "title": "Experts Write Enabled",
+            "type": "boolean"
+          },
           "knowledge_enabled": {
             "default": false,
             "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "knowledge_write_enabled": {
+            "default": false,
+            "title": "Knowledge Write Enabled",
             "type": "boolean"
           },
           "mcp_enabled": {
@@ -539,8 +599,18 @@
             "title": "Mcp Enabled",
             "type": "boolean"
           },
+          "mcp_write_enabled": {
+            "default": false,
+            "title": "Mcp Write Enabled",
+            "type": "boolean"
+          },
           "models_enabled": {
             "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "models_write_enabled": {
+            "default": false,
+            "title": "Models Write Enabled",
             "type": "boolean"
           },
           "name": {
@@ -552,6 +622,11 @@
           "skills_enabled": {
             "default": false,
             "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "skills_write_enabled": {
+            "default": false,
+            "title": "Skills Write Enabled",
             "type": "boolean"
           },
           "version": {
@@ -585,6 +660,10 @@
             "title": "Experts Enabled",
             "type": "boolean"
           },
+          "experts_write_enabled": {
+            "title": "Experts Write Enabled",
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -596,6 +675,10 @@
           },
           "knowledge_enabled": {
             "title": "Knowledge Enabled",
+            "type": "boolean"
+          },
+          "knowledge_write_enabled": {
+            "title": "Knowledge Write Enabled",
             "type": "boolean"
           },
           "last_used_at": {
@@ -614,12 +697,20 @@
             "title": "Mcp Enabled",
             "type": "boolean"
           },
+          "mcp_write_enabled": {
+            "title": "Mcp Write Enabled",
+            "type": "boolean"
+          },
           "model_base_url": {
             "title": "Model Base Url",
             "type": "string"
           },
           "models_enabled": {
             "title": "Models Enabled",
+            "type": "boolean"
+          },
+          "models_write_enabled": {
+            "title": "Models Write Enabled",
             "type": "boolean"
           },
           "name": {
@@ -630,6 +721,10 @@
           },
           "skills_enabled": {
             "title": "Skills Enabled",
+            "type": "boolean"
+          },
+          "skills_write_enabled": {
+            "title": "Skills Write Enabled",
             "type": "boolean"
           },
           "version": {
@@ -644,6 +739,11 @@
           "skills_enabled",
           "experts_enabled",
           "knowledge_enabled",
+          "models_write_enabled",
+          "mcp_write_enabled",
+          "skills_write_enabled",
+          "experts_write_enabled",
+          "knowledge_write_enabled",
           "name",
           "enabled",
           "version",
@@ -11011,6 +11111,26 @@
         "title": "ExpertResolution",
         "type": "object"
       },
+      "ExpertResourceWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/ExpertContent"
+          },
+          "revision": {
+            "description": "首次推送填 0，更新填当前资源修订号。",
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "content"
+        ],
+        "title": "ExpertResourceWrite",
+        "type": "object"
+      },
       "ExpertRevision": {
         "additionalProperties": false,
         "properties": {
@@ -16162,6 +16282,79 @@
           "version"
         ],
         "title": "McpPresentationUpdate",
+        "type": "object"
+      },
+      "McpResourceWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "auth_mode": {
+            "default": "none",
+            "enum": [
+              "none",
+              "personal"
+            ],
+            "title": "Auth Mode",
+            "type": "string"
+          },
+          "credential_fields": {
+            "items": {
+              "$ref": "#/components/schemas/CredentialField"
+            },
+            "maxItems": 10,
+            "title": "Credential Fields",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "examples": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Examples",
+            "type": "array"
+          },
+          "icon": {
+            "default": "",
+            "maxLength": 350000,
+            "title": "Icon",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "revision": {
+            "description": "首次推送填 0，更新填当前资源修订号。",
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "url": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "name",
+          "url"
+        ],
+        "title": "McpResourceWrite",
         "type": "object"
       },
       "McpResult": {
@@ -22620,6 +22813,30 @@
         "title": "PublishedSkillRef",
         "type": "object"
       },
+      "PushedSkillVersion": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "sha256"
+        ],
+        "title": "PushedSkillVersion",
+        "type": "object"
+      },
       "QuotaArchive": {
         "additionalProperties": false,
         "properties": {
@@ -25731,6 +25948,85 @@
           "endpoint"
         ],
         "title": "ResourceTokenView",
+        "type": "object"
+      },
+      "ResourceWriteView": {
+        "properties": {
+          "current_release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Release Id"
+          },
+          "dependency_check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExpertCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": [
+              "mcp",
+              "skills",
+              "experts"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "skill_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PushedSkillVersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "disabled",
+              "enabled",
+              "draft",
+              "published",
+              "superseded",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "source_id",
+          "resource_id",
+          "revision",
+          "status"
+        ],
+        "title": "ResourceWriteView",
         "type": "object"
       },
       "ResponseFormat": {
@@ -31988,6 +32284,270 @@
         "summary": "读取生效 Skill 的文本文件",
         "tags": [
           "application-skills"
+        ]
+      }
+    },
+    "/api/integrations/v1/write/experts/{source_id}": {
+      "put": {
+        "operationId": "push_expert_api_integrations_v1_write_experts__source_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,159}$",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpertResourceWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceWriteView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "推送专家草稿并校验精确依赖",
+        "tags": [
+          "application-resource-writes"
+        ]
+      }
+    },
+    "/api/integrations/v1/write/mcp/{source_id}": {
+      "put": {
+        "operationId": "push_mcp_api_integrations_v1_write_mcp__source_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,159}$",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpResourceWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceWriteView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "推送 MCP 服务配置",
+        "tags": [
+          "application-resource-writes"
+        ]
+      }
+    },
+    "/api/integrations/v1/write/skills/{source_id}": {
+      "put": {
+        "operationId": "push_skill_api_integrations_v1_write_skills__source_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,159}$",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "maxLength": 50,
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-zA-Z0-9.-]+)?$",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "application/zip": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceWriteView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "推送完整技能 ZIP 并追加版本草稿",
+        "tags": [
+          "application-resource-writes"
+        ]
+      }
+    },
+    "/api/integrations/v1/write/{kind}/{source_id}": {
+      "get": {
+        "operationId": "status_api_integrations_v1_write__kind___source_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "mcp",
+                "skills",
+                "experts"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,159}$",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceWriteView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ApplicationKey": []
+          }
+        ],
+        "summary": "读取本应用推送资源的修订和审核状态",
+        "tags": [
+          "application-resource-writes"
         ]
       }
     },

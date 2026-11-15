@@ -13,6 +13,11 @@ class IntegrationCapabilities(BaseModel):
     skills_enabled: bool = False
     experts_enabled: bool = False
     knowledge_enabled: bool = False
+    models_write_enabled: bool = False
+    mcp_write_enabled: bool = False
+    skills_write_enabled: bool = False
+    experts_write_enabled: bool = False
+    knowledge_write_enabled: bool = False
 
 
 class ApplicationCreate(IntegrationCapabilities):
@@ -32,6 +37,11 @@ class ApplicationView(ApplicationUpdate):
     skills_enabled: bool
     experts_enabled: bool
     knowledge_enabled: bool
+    models_write_enabled: bool
+    mcp_write_enabled: bool
+    skills_write_enabled: bool
+    experts_write_enabled: bool
+    knowledge_write_enabled: bool
     id: UUID
     created_at: datetime
     last_used_at: datetime | None
