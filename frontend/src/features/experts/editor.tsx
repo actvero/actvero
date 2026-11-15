@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { AvatarEditor } from '@/components/avatar-editor'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { PageBack } from '@/components/layout/page-header'
 import { PageShell } from '@/components/layout/page-shell'
 import { MemberPicker } from '@/components/member-picker'
 import { LoadingState, RequestError } from '@/components/request-state'
@@ -502,6 +503,13 @@ function Editor({
   return (
     <PageShell
       title={expert ? expert.name : '创建专家'}
+      titleBefore={
+        <PageBack label='返回专家列表' asChild>
+          <Link to='/experts'>
+            <ArrowLeft />
+          </Link>
+        </PageBack>
+      }
       titleAfter={
         expert && (
           <div className='flex flex-wrap gap-2'>
@@ -517,13 +525,11 @@ function Editor({
       }
       action={
         <div className='flex flex-wrap gap-2'>
-          <Button variant='outline' asChild>
-            <Link to='/experts'>
-              <ArrowLeft />
-              返回
-            </Link>
-          </Button>
-          <Button variant='outline' form='expert-config' disabled={busy}>
+          <Button
+            variant={expert ? 'outline' : 'default'}
+            form='expert-config'
+            disabled={busy}
+          >
             {busy ? '保存中…' : '保存草稿'}
           </Button>
           {expert && (
@@ -549,7 +555,7 @@ function Editor({
     >
       {error != null && <RequestError error={error} />}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList variant='line' aria-label='专家详情'>
           <TabsTrigger value='config'>配置</TabsTrigger>
           <TabsTrigger value='scope' disabled={!expert}>
             使用范围

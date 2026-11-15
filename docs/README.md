@@ -46,6 +46,7 @@
 - [服务器部署与维护](SERVER-DEPLOYMENT.md)
 - [Skills 管理](SKILLS-WORKBENCH.md)
 - [界面开发规范](UI-DEVELOPMENT.md)
+- [设计语言](../design.md)
 - [统一品牌配置](UNIFIED-BRANDING.md)
 
 ## 机器契约与来源

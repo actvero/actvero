@@ -6,9 +6,9 @@ import { Plus, Settings2 } from 'lucide-react'
 import { api, type Schema } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ServerTable } from '@/components/data-table/server-table'
 import { PageShell } from '@/components/layout/page-shell'
+import { ListSearch, ListToolbar } from '@/components/list-toolbar'
 import { LoadingState, RequestError } from '@/components/request-state'
 import { ResourceCategoriesDialog } from '@/components/resource-categories-dialog'
 import { ResourceIcon } from '@/components/resource-icon'
@@ -129,6 +129,7 @@ export function ExpertsPage() {
   return (
     <PageShell
       title='专家'
+      fixedContent
       action={
         <div className='flex gap-2'>
           <Button variant='outline' onClick={() => setCategoriesOpen(true)}>
@@ -144,9 +145,8 @@ export function ExpertsPage() {
         </div>
       }
     >
-      <div className='flex flex-wrap gap-3'>
-        <Input
-          className='w-full sm:w-72'
+      <ListToolbar>
+        <ListSearch
           aria-label='搜索专家'
           placeholder='搜索名称或简介…'
           maxLength={100}
@@ -177,7 +177,7 @@ export function ExpertsPage() {
             { value: 'unpublished', label: '未发布' },
           ]}
         />
-      </div>
+      </ListToolbar>
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
@@ -190,6 +190,7 @@ export function ExpertsPage() {
         />
       ) : (
         <ServerTable
+          fixed
           items={query.data.items}
           columns={actionableColumns}
           onRowClick={(expert) =>

@@ -1,6 +1,6 @@
 # Actvero Web 后台
 
-安装和启动见 [项目首页](../README.md)，组件规范见 [界面开发](../docs/UI-DEVELOPMENT.md)。
+安装和启动见 [项目首页](../README.md)，视觉与交互约定见 [设计语言](../design.md)，组件接入见 [界面开发](../docs/UI-DEVELOPMENT.md)。开发服务的 `/design.html` 提供使用合成数据的组件示例。
 
 业务页面位于 `src/features/`，路由位于 `src/routes/`，公共控件与布局位于 `src/components/`。通过 `src/styles/theme.css` 维护统一语义主题。身份页面的 CSS 与 Web 控件由同一构建生成。
 
