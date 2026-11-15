@@ -8,16 +8,19 @@ from uuid import UUID
 from cryptography.fernet import InvalidToken
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPBearer
+from pydantic import BaseModel
 
 from app.modules.access_keys import service as keys
 from app.modules.access_keys.models import AccessKey
 from app.modules.auth.models import WebSession
 from app.modules.auth.service import DB, now, provider
 from app.modules.desktop.oidc import NativeIdentity
+from app.modules.integrations import service as integrations
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.knowledge.models import KnowledgeChunk, KnowledgeGeneration
 from app.modules.knowledge.preview import original_response, preview
 from app.modules.knowledge.schemas import DocumentPreview, ReaderSessionView
-from app.modules.knowledge.service import get_document
+from app.modules.knowledge.service import KnowledgeActor, get_document
 from app.modules.members.models import Membership
 from app.modules.members.service import Access, BusinessActor, membership_state, with_departments
 from app.modules.tenants.models import Installation, Tenant
@@ -65,7 +68,7 @@ def normalize_parent(value: str) -> str:
 async def issue(
     request: Request,
     db: DB,
-    actor: Access | keys.KeyActor,
+    actor: Access | keys.KeyActor | ApplicationActor,
     base_id: UUID,
     chunk_id: UUID,
     parent_origin: str,
@@ -77,7 +80,10 @@ async def issue(
         raise HTTPException(404, "引用不存在")
     _, doc = await get_document(db, actor, base_id, generation.document_id)
     expires = now() + timedelta(minutes=10)
-    if isinstance(actor, keys.KeyActor):
+    if isinstance(actor, ApplicationActor):
+        origin_kind, origin_id = "application", actor.key.id
+        expires = min(expires, actor.key.expires_at)
+    elif isinstance(actor, keys.KeyActor):
         origin_kind, origin_id = "key", actor.key.id
         if actor.key.expires_at:
             expires = min(expires, actor.key.expires_at)
@@ -92,7 +98,8 @@ async def issue(
             "kind": origin_kind,
             "credential": str(origin_id),
             "tenant": str(actor.tenant.id),
-            "member": str(actor.member.id),
+            "subject": str(actor.application.id) if isinstance(actor, ApplicationActor) else None,
+            "member": str(actor.member.id) if isinstance(actor, BusinessActor) else None,
             "base": str(base_id),
             "document": str(doc.id),
             "generation": str(generation.id),
@@ -111,11 +118,20 @@ async def issue(
 
 @dataclass
 class ReaderAccess:
-    actor: BusinessActor
+    actor: KnowledgeActor
     base_id: UUID
     document_id: UUID
     generation_id: UUID
     chunk_id: UUID
+
+
+class ReaderChunk(BaseModel):
+    sequence: int
+    content: str
+
+
+class ReaderManifest(DocumentPreview):
+    chunk: ReaderChunk
 
 
 async def authorize(request: Request, db: DB) -> ReaderAccess:
@@ -130,14 +146,21 @@ async def authorize(request: Request, db: DB) -> ReaderAccess:
             or claims["parent"] != request.headers.get("x-knowledge-parent")
         ):
             raise ValueError()
-        tenant_id, member_id, credential_id = (
-            UUID(claims[k]) for k in ("tenant", "member", "credential")
-        )
+        tenant_id, credential_id = (UUID(claims[k]) for k in ("tenant", "credential"))
+        kind = claims["kind"]
+        subject_id = UUID(claims["subject"] if kind == "application" else claims["member"])
         base_id, document_id, generation_id, chunk_id = (
             UUID(claims[k]) for k in ("base", "document", "generation", "chunk")
         )
     except (InvalidToken, ValueError, KeyError, TypeError, OverflowError):
         raise HTTPException(401, "原文预览已过期或凭证无效，请重新打开引用") from None
+    if kind == "application":
+        application = await integrations.bound(request, db, credential_id, "knowledge")
+        if application.application.id != subject_id or application.tenant.id != tenant_id:
+            raise HTTPException(403, "原文访问权限已变化")
+        await get_document(db, application, base_id, document_id)
+        return ReaderAccess(application, base_id, document_id, generation_id, chunk_id)
+    member_id = subject_id
     tenant = await db.get(Tenant, tenant_id, populate_existing=True)
     member = await db.get(Membership, member_id, populate_existing=True)
     if not member or not tenant or member.tenant_id != tenant.id:
@@ -196,15 +219,21 @@ async def authorize(request: Request, db: DB) -> ReaderAccess:
 
 
 @router.get(
-    "/manifest", response_model=DocumentPreview, summary="读取被授权原文的展示信息与高亮位置"
+    "/manifest", response_model=ReaderManifest, summary="读取被授权原文的展示信息与单条切片"
 )
-async def manifest(request: Request, db: DB) -> DocumentPreview:
+async def manifest(request: Request, db: DB) -> ReaderManifest:
     grant = await authorize(request, db)
     result = await preview(
         db, grant.actor, grant.base_id, grant.document_id, grant.generation_id, grant.chunk_id
     )
-    result.source_url = "/api/v1/knowledge-reader/source"
-    return result
+    chunk = await db.get(KnowledgeChunk, grant.chunk_id)
+    if not chunk or chunk.generation_id != grant.generation_id:
+        raise HTTPException(404, "引用不属于此文档版本")
+    return ReaderManifest(
+        **result.model_dump(exclude={"source_url"}),
+        source_url="/api/v1/knowledge-reader/source",
+        chunk=ReaderChunk(sequence=chunk.sequence, content=chunk.content),
+    )
 
 
 @router.get("/source", response_class=Response, summary="读取凭证绑定原件；每次重新验证当前权限")

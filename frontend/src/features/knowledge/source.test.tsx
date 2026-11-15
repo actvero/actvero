@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@/styles/index.css'
 import { afterEach, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { DocumentDialog } from './documents'
 import { sourceBox, textSegments } from './reader-geometry'
 import { initial, type Base, type Document } from './shared'
@@ -26,6 +26,7 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
     name: '说明资料',
     version: 1,
     embedding_profile: {},
+    retrieval: { mode: 'keyword', vector_weight: 50 },
     document_count: 1,
     status: 'ready',
     updated_at: '2026-11-12T00:00:00Z',
@@ -41,7 +42,7 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
     active_generation_id: 'generation',
     status: 'unconfigured',
     error: '',
-    chunk_count: 2,
+    chunk_count: 51,
     indexed_count: 0,
   }
   const source = {
@@ -54,7 +55,18 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
   }
   const original = '# 原件标题\n\n第一段😀原文\n\n第二段原文'
   const sourceUrl = '/api/v1/knowledge/base/documents/document/source'
+  const chunks = [
+    { id: 'first', sequence: 1, content: '第一段😀原文', sources: [source] },
+    { id: 'second', sequence: 2, content: '第二段原文', sources: [source] },
+    ...Array.from({ length: 49 }, (_, index) => ({
+      id: String(index + 3),
+      sequence: index + 3,
+      content: `第 ${index + 3} 段原文`,
+      sources: [source],
+    })),
+  ]
   const fetcher = vi.fn(async (url: string) => {
+    const params = new URL(url, window.location.href).searchParams
     if (url === sourceUrl) return new Response(original)
     if (url.includes('/preview?')) {
       const second = url.includes('chunk_id=second')
@@ -65,24 +77,17 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
         media_type: doc.media_type,
         source_url: sourceUrl,
         sources: [source],
-        citation_id: second ? 'second' : 'first',
+        citation_id: params.get('chunk_id'),
         text_ranges: second
           ? [{ start: 16, end: 21 }]
           : [{ start: 8, end: 15 }],
       })
     }
+    const start = (Number(params.get('page')) - 1) * 50
     return Response.json({
       ...doc,
-      chunks: [
-        {
-          id: 'first',
-          sequence: 1,
-          content: '第一段😀原文',
-          sources: [source],
-        },
-        { id: 'second', sequence: 2, content: '第二段原文', sources: [source] },
-      ],
-      total_chunks: 2,
+      chunks: chunks.slice(start, start + 50),
+      total_chunks: chunks.length,
       can_manage: true,
       source_url: sourceUrl,
     })
@@ -107,6 +112,18 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
   await expect
     .poll(() => document.querySelector('mark')?.textContent)
     .toBe('第二段原文')
+  await page.getByRole('button', { name: '查看切片 2 正文' }).click()
+  await expect
+    .element(page.getByLabelText('切片全文').getByText('第二段原文'))
+    .toBeVisible()
+  await page.getByRole('button', { name: '上一切片' }).click()
+  await expect
+    .element(page.getByLabelText('切片全文').getByText('第一段😀原文'))
+    .toBeVisible()
+  await page.getByRole('button', { name: '切片列表' }).click()
+  await expect
+    .element(page.getByRole('button', { name: '切片 1', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true')
   expect(fetcher.mock.calls.filter(([url]) => url === sourceUrl)).toHaveLength(
     1
   )
@@ -128,6 +145,31 @@ it('全屏查看原件，点击切片切换高亮；不请求解析文本或重�
   await expect
     .element(page.getByRole('complementary', { name: '文档切片' }))
     .toBeVisible()
+  const separator = page.getByRole('separator', { name: '调整原文和切片宽度' })
+  await page.viewport(1100, 780)
+  await separator.click()
+  await userEvent.keyboard('{Home}')
+  await expect.element(separator).toHaveAttribute('aria-valuenow', '320')
+  await userEvent.keyboard('{ArrowRight}')
+  await expect.element(separator).toHaveAttribute('aria-valuenow', '336')
+  await page.getByRole('button', { name: '查看切片 50 正文' }).click()
+  await page.getByRole('button', { name: '下一切片' }).click()
+  await expect
+    .element(page.getByLabelText('切片全文').getByText('第 51 段原文'))
+    .toBeVisible()
+  await expect
+    .element(page.getByRole('button', { name: '下一切片' }))
+    .toBeDisabled()
+  await page.getByRole('button', { name: '切片列表' }).click()
+  await expect
+    .element(page.getByRole('button', { name: '切片 51', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true')
+  await expect
+    .element(page.getByRole('textbox', { name: '查找切片' }))
+    .toHaveValue('原文')
+  expect(fetcher.mock.calls.filter(([url]) => url === sourceUrl)).toHaveLength(
+    1
+  )
 })
 
 it('高亮坐标按原图比例转换，拒绝未知坐标，Unicode 偏移保持一致', () => {

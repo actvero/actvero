@@ -8,6 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.service import now, provider
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp.models import McpConnection, McpHealth, McpService, McpSnapshot
 from app.modules.mcp.oauth_tokens import token_request as token_request
 from app.modules.members.service import BusinessActor
@@ -15,8 +16,12 @@ from app.modules.members.service import BusinessActor
 SHARED = UUID(int=0)
 
 
-def owner(service: McpService, actor: BusinessActor) -> UUID:
-    return actor.member.id if service.auth_mode in {"personal", "oauth"} else SHARED
+def owner(service: McpService, actor: BusinessActor | ApplicationActor) -> UUID:
+    if service.auth_mode in {"personal", "oauth"}:
+        if isinstance(actor, ApplicationActor):
+            raise HTTPException(403, "此 MCP 服务需要个人凭据")
+        return actor.member.id
+    return SHARED
 
 
 def remember(request: Request, service_id: UUID, owner_id: UUID, sealed: str) -> None:
@@ -26,7 +31,7 @@ def remember(request: Request, service_id: UUID, owner_id: UUID, sealed: str) ->
 
 
 def connection_guard(
-    request: Request, db: AsyncSession, service: McpService, actor: BusinessActor
+    request: Request, db: AsyncSession, service: McpService, actor: BusinessActor | ApplicationActor
 ) -> Callable[[], Awaitable[None]]:
     key = (service.id, owner(service, actor))
     stamp = getattr(request.state, "mcp_credentials", {}).get(key)
@@ -50,7 +55,7 @@ async def store(
     request: Request,
     db: AsyncSession,
     service: McpService,
-    actor: BusinessActor,
+    actor: BusinessActor | ApplicationActor,
     values: dict[str, Any],
 ) -> None:
     key = (service.id, owner(service, actor))
@@ -75,7 +80,7 @@ async def store(
 
 
 async def headers_for(
-    request: Request, db: AsyncSession, service: McpService, actor: BusinessActor
+    request: Request, db: AsyncSession, service: McpService, actor: BusinessActor | ApplicationActor
 ) -> tuple[dict[str, str], list[str]]:
     return await headers_for_owner(request, db, service, owner(service, actor))
 

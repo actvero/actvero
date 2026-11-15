@@ -16,9 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Plus, MoreHorizontal, List, AlertCircle } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-
 import { Button } from '@newapi/components/ui/button'
 import {
   DropdownMenu,
@@ -29,7 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@newapi/components/ui/dropdown-menu'
 import { useCanEditModelPricing } from '@newapi/features/model-pricing/api'
-
+import { Plus, MoreHorizontal, List, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useModels } from './models-provider'
 
 export function ModelsPrimaryButtons() {
@@ -56,21 +54,17 @@ export function ModelsPrimaryButtons() {
 
   return (
     <div className='flex flex-wrap items-center gap-2'>
-      <Button onClick={handleSync} variant='outline' size='sm'>
+      <Button onClick={handleSync} variant='outline'>
         {t('Sync metadata')}
       </Button>
       {canPrice && (
-        <Button
-          onClick={() => setOpen('price-sync')}
-          variant='outline'
-          size='sm'
-        >
+        <Button onClick={() => setOpen('price-sync')} variant='outline'>
           {t('Sync pricing')}
         </Button>
       )}
       {/* Create Model */}
-      <Button onClick={handleCreateModel} size='sm'>
-        <Plus className='h-4 w-4' />
+      <Button onClick={handleCreateModel}>
+        <Plus data-icon='inline-start' />
         {t('Add Model')}
       </Button>
 
@@ -78,7 +72,7 @@ export function ModelsPrimaryButtons() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant='outline' size='sm' aria-label={t('Open menu')} />
+            <Button variant='outline' size='icon' aria-label={t('Open menu')} />
           }
         >
           <MoreHorizontal className='h-4 w-4' />
@@ -104,4 +98,3 @@ export function ModelsPrimaryButtons() {
     </div>
   )
 }
-

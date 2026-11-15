@@ -14,8 +14,11 @@ from app.modules.desktop.errors import fail
 from app.modules.desktop_mcp import service
 from app.modules.desktop_mcp.router import RESOURCE
 from app.modules.desktop_mcp.schemas import RpcRequest
+from app.modules.integrations import service as integrations
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.mcp import service as mcp
 from app.modules.mcp.schemas import McpRun
+from app.modules.members.service import BusinessActor
 
 VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
 router = APIRouter(prefix="/api/mcp/services", tags=["mcp-gateway"])
@@ -37,15 +40,21 @@ def rpc_error(
     )
 
 
+async def authorize_actor(
+    request: Request, db: DB, service_id: UUID, action: str = "read"
+) -> BusinessActor | ApplicationActor:
+    if integrations.supplied(request):
+        return await integrations.authorize(request, db, "mcp")
+    if keys.supplied(request):
+        return await keys.authorize(request, db, "mcp", service_id, action)
+    return await service.authorize(request, db, "mcp:" + str(service_id))
+
+
 @router.api_route("/{service_id}", methods=["GET", "DELETE"], include_in_schema=False)
 async def unsupported_stream(service_id: UUID, request: Request, db: DB) -> Response:
     if request.headers.get("origin"):
         fail(403, "origin_denied", "此入口仅接受原生客户端")
-    actor = (
-        await keys.authorize(request, db, "mcp", service_id)
-        if keys.supplied(request)
-        else await service.authorize(request, db, "mcp:" + str(service_id))
-    )
+    actor = await authorize_actor(request, db, service_id)
     await service.get_service(db, actor, service_id)
     return Response(status_code=405, headers={"Allow": "POST"})
 
@@ -55,7 +64,7 @@ async def unsupported_stream(service_id: UUID, request: Request, db: DB) -> Resp
     dependencies=RESOURCE,
     summary="调用标准 MCP 协议（Streamable HTTP）",
     description=(
-        "接受含当前服务权限的个人访问密钥或单服务资源令牌；"
+        "接受应用密钥、含当前服务权限的个人访问密钥或单服务资源令牌；"
         "每次校验凭据、成员与能力授权。个人密钥不替代 MCP OAuth 授权流程。"
         "无状态 Streamable HTTP，返回 JSON；GET/DELETE 为 405。"
         "支持 initialize、ping、tools/list、tools/call、prompts/list、prompts/get、"
@@ -125,11 +134,7 @@ async def _protocol(
 ) -> Response:
     if request.headers.get("origin"):
         fail(403, "origin_denied", "此入口仅接受原生客户端")
-    actor = (
-        await keys.authorize(request, db, "mcp", service_id)
-        if keys.supplied(request)
-        else await service.authorize(request, db, "mcp:" + str(service_id))
-    )
+    actor = await authorize_actor(request, db, service_id)
     row = await service.get_service(db, actor, service_id)
     original_version = row.version
     action = "read"
@@ -146,11 +151,7 @@ async def _protocol(
         unverified_new_scope = locked_ref.get("reference_version") == 3 and not precise_scope
 
     async def guard(entry: dict[str, Any] | None) -> None:
-        current_actor = (
-            await keys.authorize(request, db, "mcp", service_id, action)
-            if isinstance(actor, keys.KeyActor)
-            else await service.authorize(request, db, "mcp:" + str(service_id))
-        )
+        current_actor = await authorize_actor(request, db, service_id, action)
         current = await service.get_service(db, current_actor, service_id)
         if current.version != original_version:
             raise HTTPException(409, "连接器配置已变化，请重新读取后重试")
@@ -226,6 +227,9 @@ async def _protocol(
     action = "invoke" if body.method == "tools/call" else "read"
     if isinstance(actor, keys.KeyActor):
         actor = await keys.authorize(request, db, "mcp", service_id, action)
+        actor.key.last_used_at = now()
+        await db.commit()
+    elif isinstance(actor, ApplicationActor):
         actor.key.last_used_at = now()
         await db.commit()
     p = body.params

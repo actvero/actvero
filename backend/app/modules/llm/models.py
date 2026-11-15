@@ -104,12 +104,24 @@ class ModelCall(Base):
             "(source <> 'channel_diagnostic' AND model_id IS NOT NULL)",
             name="ck_llm_call_model_source",
         ),
+        CheckConstraint(
+            "(source IN ('application', 'knowledge_index', 'knowledge_search') "
+            "AND actor_id IS NULL AND application_id IS NOT NULL "
+            "AND integration_key_id IS NOT NULL) "
+            "OR (source <> 'application' AND actor_id IS NOT NULL "
+            "AND application_id IS NULL AND integration_key_id IS NULL)",
+            name="ck_llm_call_principal",
+        ),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
     model_id: Mapped[UUID | None] = mapped_column(ForeignKey("llm_models.id"), index=True)
     channel_id: Mapped[UUID] = mapped_column(ForeignKey("model_channels.id"))
-    actor_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    actor_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    application_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("integration_applications.id"), index=True
+    )
+    integration_key_id: Mapped[UUID | None] = mapped_column(ForeignKey("integration_keys.id"))
     device_id: Mapped[UUID | None] = mapped_column(ForeignKey("device_sessions.id"))
     access_key_id: Mapped[UUID | None] = mapped_column(ForeignKey("access_keys.id"), index=True)
     source: Mapped[str] = mapped_column(String(20))
@@ -167,23 +179,35 @@ class PointConversion(Base):
 
 
 class UsageSettlement(Base):
-    """One monetary reservation/settlement per logical request; points are derived."""
+    """Monetary settlement for a logical request, with optional member quota accounting."""
 
     __tablename__ = "llm_settlements"
     __table_args__ = (
         UniqueConstraint("tenant_id", "member_id", "idempotency_key"),
+        UniqueConstraint(
+            "tenant_id", "application_id", "idempotency_key", name="uq_llm_application_request"
+        ),
         CheckConstraint("reserved_amount >= 0 AND (amount IS NULL OR amount >= 0)"),
         CheckConstraint("status IN ('reserved', 'review', 'settled', 'released')"),
+        CheckConstraint(
+            "(member_id IS NOT NULL AND application_id IS NULL "
+            "AND conversion_id IS NOT NULL AND ratio IS NOT NULL) OR "
+            "(member_id IS NULL AND conversion_id IS NULL AND ratio IS NULL "
+            "AND (application_id IS NOT NULL OR "
+            "(idempotency_key IS NULL AND request_fingerprint IS NULL)))",
+            name="ck_llm_settlement_quota_subject",
+        ),
     )
     id: Mapped[UUID] = mapped_column(ForeignKey("llm_calls.id"), primary_key=True)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
-    member_id: Mapped[UUID] = mapped_column(ForeignKey("memberships.id"), index=True)
+    member_id: Mapped[UUID | None] = mapped_column(ForeignKey("memberships.id"), index=True)
+    application_id: Mapped[UUID | None] = mapped_column(ForeignKey("integration_applications.id"))
     idempotency_key: Mapped[str | None] = mapped_column(String(128))
     request_fingerprint: Mapped[str | None] = mapped_column(String(67))
     evidence: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     currency: Mapped[str] = mapped_column(String(3))
-    conversion_id: Mapped[UUID] = mapped_column(ForeignKey("llm_point_conversions.id"))
-    ratio: Mapped[Decimal] = mapped_column(Numeric(25, 12))
+    conversion_id: Mapped[UUID | None] = mapped_column(ForeignKey("llm_point_conversions.id"))
+    ratio: Mapped[Decimal | None] = mapped_column(Numeric(25, 12))
     reserved_amount: Mapped[Decimal] = mapped_column(Numeric(60, 30))
     amount: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
     price: Mapped[dict[str, Any]] = mapped_column(JSONB)

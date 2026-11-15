@@ -741,6 +741,7 @@ function DashboardPage({ search }: { search: DashboardSearch }) {
                       source: path.source as
                         | 'desktop'
                         | 'access_key'
+                        | 'application'
                         | 'knowledge_index'
                         | 'knowledge_search',
                       channel_id: path.channel_id || '',

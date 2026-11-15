@@ -211,14 +211,15 @@ async def usage_dashboard(
     try:
         with localcontext() as context:
             context.prec = 80
-            async for call, settlement, model, membership, user in stream:
+            async for call, settlement, model, membership, user, _ in stream:
                 if total.calls >= MAX_CALLS:
                     raise HTTPException(
                         422, "范围内超过50000次调用，请缩短范围或增加筛选；未返回截断统计"
                     )
                 point = Decimal(0)
                 if settlement and settlement.status == "settled" and settlement.amount is not None:
-                    point = settlement.amount * settlement.ratio
+                    if settlement.ratio is not None:
+                        point = settlement.amount * settlement.ratio
                     amounts[settlement.currency] = (
                         amounts.get(settlement.currency, Decimal(0)) + settlement.amount
                     )
@@ -226,24 +227,37 @@ async def usage_dashboard(
                 accumulate_metrics(call, settlement, quantities)
                 counts[result_status(call)] += 1
                 settlement_counts[settlement.status if settlement else "not_applicable"] += 1
+                organization_call = settlement is not None and settlement.member_id is None
                 member_key = (
                     str(settlement.member_id)
-                    if settlement
+                    if settlement is not None and settlement.member_id is not None
                     else str(membership.id)
-                    if membership
+                    if settlement is None and membership
                     else "unknown"
                 )
-                member_name = safe_name(user.name) if user else None
+                member_name = (
+                    "应用集成"
+                    if call.application_id
+                    else "组织知识库"
+                    if organization_call
+                    else safe_name(user.name)
+                    if user
+                    else None
+                )
                 model_key = str(call.model_id) if call.model_id else "unknown"
                 model_name = safe_name(model.name) if model else None
                 index = bisect_right(edges, call.created_at.astimezone(UTC)) - 1
-                for group in (
+                groups = [
                     total,
                     timeline[index],
-                    members.setdefault(member_key, Group(member_name or "未确定成员")),
                     models.setdefault(model_key, Group(model_name or "未确定模型")),
                     operations.setdefault(call.kind, Group(call.kind)),
-                ):
+                ]
+                if not organization_call:
+                    groups.append(
+                        members.setdefault(member_key, Group(member_name or "未确定成员"))
+                    )
+                for group in groups:
                     group.add(call, settlement, point, quantities)
                 if member_key in selected:
                     selected[member_key][index].add(call, settlement, point, quantities)

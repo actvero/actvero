@@ -8,24 +8,28 @@ from app.modules.desktop import adoptions
 from app.modules.desktop.errors import fail
 from app.modules.desktop.resources import NativeActor
 from app.modules.desktop_skills.schemas import DesktopSkill, DesktopSkillVersion
+from app.modules.integrations.actor import ApplicationActor
 from app.modules.skills.categories import CategoryId, category_view
 from app.modules.skills.icons import resolved_icon
 from app.modules.skills.models import Skill, SkillVersion
 
 
-def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
+def visibility(actor: NativeActor | ApplicationActor, q: str = "") -> list[ColumnElement[bool]]:
     # Desktop administrators get the explicitly declared administrator scope,
     # never the Web administrator's blanket inspection bypass.
-    scopes = [
-        Skill.audience == "organization",
-        (Skill.audience == "selected")
-        & or_(
-            Skill.member_ids.contains([str(actor.member.id)]),
-            actor.departments.predicate(Skill.department_grants),
-        ),
-    ]
-    if actor.member.role == "administrator":
-        scopes.append(Skill.audience == "administrators")
+    if isinstance(actor, ApplicationActor):
+        scopes = [Skill.audience == "organization"]
+    else:
+        scopes = [
+            Skill.audience == "organization",
+            (Skill.audience == "selected")
+            & or_(
+                Skill.member_ids.contains([str(actor.member.id)]),
+                actor.departments.predicate(Skill.department_grants),
+            ),
+        ]
+        if actor.member.role == "administrator":
+            scopes.append(Skill.audience == "administrators")
     conditions = [
         Skill.tenant_id == actor.tenant.id,
         or_(*scopes),
@@ -46,7 +50,10 @@ def visibility(actor: NativeActor, q: str = "") -> list[ColumnElement[bool]]:
 
 
 async def current(
-    db: AsyncSession, actor: NativeActor, skill_id: UUID, version_id: UUID | None = None
+    db: AsyncSession,
+    actor: NativeActor | ApplicationActor,
+    skill_id: UUID,
+    version_id: UUID | None = None,
 ) -> tuple[Skill, SkillVersion]:
     row = (
         await db.execute(

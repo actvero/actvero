@@ -29,7 +29,7 @@ if "--css" in sys.argv or "--version" in sys.argv:
     raise SystemExit(0)
 source = (root / "frontend/src/components/ui/input.tsx").read_text()
 input_classes = " ".join(re.findall(r"'([^'\n]+)'", source.split("className={cn(")[1].split("className")[0]))
-source = (root / "frontend/src/components/ui/button.tsx").read_text()
+source = (root / "frontend/src/components/ui/button-styles.ts").read_text()
 base = re.search(r'cva\(\s*"([^"]+)"', source).group(1)
 variant = re.search(r"default:\s*'([^']+)'", source).group(1)
 size = re.search(r"size:\s*\{\s*default:\s*'([^']+)'", source).group(1)

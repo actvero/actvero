@@ -182,6 +182,16 @@ const overview: Schema['OrganizationOverview'] = {
   mcp_failed: 1,
   mcp_unchecked: 1,
   activities: [],
+  experts: { total: 3, enabled: 2 },
+  experts_with_changes: 1,
+  workbenches: { total: 2, enabled: 1 },
+  workbenches_with_drafts: 1,
+  knowledge: { total: 2, documents: 6, processing: 1 },
+  active_members: 4,
+  mcp_tool_calls: 6,
+  expert_attention: null,
+  knowledge_attention: null,
+  mcp_attention: null,
 }
 const base =
   '/llm-usage?from=2026-10-01T00:00:00Z&to=2026-10-01T04:00:00Z&timezone=UTC'
@@ -282,7 +292,9 @@ it('renders real charts, exact quantities and separate unknown coverage', async 
   await expect
     .poll(() => document.querySelectorAll('.recharts-surface').length)
     .toBeGreaterThan(1)
-  await page.screenshot({ path: '__screenshots__/actvero-dashboard-models.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-dashboard-models.png',
+  })
   await page.getByRole('combobox', { name: '统计指标' }).click()
   await page.getByRole('option', { name: '输入 Token', exact: true }).click()
   await page.getByRole('combobox', { name: '图表形式' }).click()
@@ -358,7 +370,9 @@ it('member comparison uses stable IDs and survives URL navigation', async () => 
   await expect
     .element(page.getByText('所选成员趋势', { exact: true }))
     .toBeVisible()
-  await page.screenshot({ path: '__screenshots__/actvero-dashboard-members.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-dashboard-members.png',
+  })
   await page.getByRole('button', { name: '清除比较' }).click()
   await expect
     .element(page.getByText('所选成员趋势', { exact: true }))
@@ -431,17 +445,30 @@ it('390px flow switches to accessible paths without page overflow', async () => 
     .element(page.getByRole('cell', { name: '未确定渠道', exact: true }))
     .toBeVisible()
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
-  await page.screenshot({ path: '__screenshots__/actvero-dashboard-flow-390.png' })
+  await page.screenshot({
+    path: '__screenshots__/actvero-dashboard-flow-390.png',
+  })
 })
 it('administrator overview exposes scoped resources and recent24h trend', async () => {
   await show('/overview')
   await expect
     .element(page.getByText('近24小时调用趋势', { exact: true }))
     .toBeVisible()
-  await expect.element(page.getByText('5 / 8', { exact: true })).toBeVisible()
   await expect
-    .element(page.getByText('技能分发记录代表下载交付，不代表已安装。'))
+    .element(page.getByRole('link', { name: /模型.*5 个已开放/ }))
     .toBeVisible()
+  await expect
+    .element(page.getByRole('link', { name: /知识库.*6 份文档/ }))
+    .toBeVisible()
+  await expect
+    .element(page.getByRole('link', { name: /工作台.*1 个已发布/ }))
+    .toBeVisible()
+  await expect
+    .element(page.getByRole('link', { name: '查看调用' }))
+    .toHaveAttribute(
+      'href',
+      expect.stringContaining('settlement_status=review')
+    )
   await page.screenshot({ path: '__screenshots__/actvero-overview-admin.png' })
 })
 it('member overview requests only personal APIs and handles missing quota', async () => {
@@ -508,32 +535,27 @@ it('800px指标保持单行且只在卡片区域内滚动，最后一项仍可�
   })
 })
 
-it('中等宽度概览指标及资源都保持一行，390px恢复竖排且无溢出', async () => {
+it('概览指标和资源在中等宽度和窄屏均无需横向滚动', async () => {
   await page.viewport(900, 900)
   await show('/overview')
   await expect
-    .element(page.getByRole('region', { name: '概览指标' }))
+    .element(page.getByRole('region', { name: '组织能力' }))
     .toBeVisible()
-  for (const name of ['概览指标', '组织资源']) {
-    const strip = document.querySelector(
-      `[aria-label="${name}"]`
-    ) as HTMLElement
-    expect(strip.clientHeight).toBeGreaterThan(80)
-    const cards = [...strip.querySelectorAll('[data-slot="card"]')]
-    expect(
-      new Set(cards.map((card) => Math.round(card.getBoundingClientRect().top)))
-        .size
-    ).toBe(1)
+  const regions = [
+    '[aria-label="使用概况"] dl',
+    '[aria-labelledby="overview-resources"] > div',
+  ]
+  for (const selector of regions) {
+    const strip = document.querySelector(selector) as HTMLElement
+    expect(strip.scrollWidth).toBeLessThanOrEqual(strip.clientWidth)
   }
   await page.screenshot({
     path: '__screenshots__/actvero-overview-metrics-900.png',
   })
   await page.viewport(390, 844)
-  const strip = document.querySelector('[aria-label="概览指标"]') as HTMLElement
-  const cards = [...strip.querySelectorAll('[data-slot="card"]')]
-  expect(
-    new Set(cards.map((card) => Math.round(card.getBoundingClientRect().top)))
-      .size
-  ).toBe(4)
+  for (const selector of regions) {
+    const strip = document.querySelector(selector) as HTMLElement
+    expect(strip.scrollWidth).toBeLessThanOrEqual(strip.clientWidth)
+  }
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
 })

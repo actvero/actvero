@@ -68,6 +68,19 @@ class OverviewActivity(BaseModel):
     actor: str
     action: str
     target: str
+    target_id: UUID
+
+
+class OverviewAttention(BaseModel):
+    count: int
+    resource_id: UUID
+    name: str
+
+
+class OverviewKnowledge(BaseModel):
+    total: int
+    documents: int
+    processing: int
 
 
 class OrganizationOverview(BaseModel):
@@ -84,6 +97,16 @@ class OrganizationOverview(BaseModel):
     mcp_failed: int
     mcp_unchecked: int
     activities: list[OverviewActivity]
+    experts: ResourceCount
+    experts_with_changes: int
+    workbenches: ResourceCount
+    workbenches_with_drafts: int
+    knowledge: OverviewKnowledge
+    active_members: int
+    mcp_tool_calls: int
+    expert_attention: OverviewAttention | None
+    knowledge_attention: OverviewAttention | None
+    mcp_attention: OverviewAttention | None
 
 
 class PersonalOverview(BaseModel):

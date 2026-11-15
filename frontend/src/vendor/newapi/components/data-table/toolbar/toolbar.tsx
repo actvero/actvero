@@ -16,17 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { Table } from '@tanstack/react-table'
-import { ChevronDown, Loader2, X as Cross2Icon } from 'lucide-react'
 import * as React from 'react'
 import { useState, type ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-
+import type { Table } from '@tanstack/react-table'
 import { Button } from '@newapi/components/ui/button'
-import { Input } from '@newapi/components/ui/input'
 import { useDebounce, useMediaQuery } from '@newapi/hooks'
 import { cn } from '@newapi/lib/utils'
-
+import { ChevronDown, Loader2, X as Cross2Icon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { ListSearch } from '@/components/list-toolbar'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableMobileFilterPanel } from './mobile-filter-panel'
 import { DataTableViewOptions } from './view-options'
@@ -250,13 +248,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
   }
 
   const searchInput = (
-    <Input
+    <ListSearch
+      aria-label={placeholder}
       placeholder={placeholder}
       value={searchValue}
       onChange={handleSearchChange}
       onCompositionStart={handleSearchCompositionStart}
       onCompositionEnd={handleSearchCompositionEnd}
-      className='w-full sm:w-[200px] lg:w-[240px]'
     />
   )
 
@@ -302,7 +300,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
       <Button
         variant='ghost'
         onClick={handleReset}
-        className='text-muted-foreground hover:text-foreground gap-1 px-2'
+        className='gap-1 px-2 text-muted-foreground hover:text-foreground'
       >
         {t('Reset')}
         <Cross2Icon />
@@ -329,7 +327,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
       onClick={() => setExpanded((p) => !p)}
       aria-expanded={expanded}
       className={cn(
-        'text-muted-foreground hover:text-foreground gap-1 px-2',
+        'gap-1 px-2 text-muted-foreground hover:text-foreground',
         props.hasExpandedActiveFilters &&
           !expanded &&
           'text-primary hover:text-primary'
@@ -429,4 +427,3 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     </div>
   )
 }
-

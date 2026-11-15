@@ -12,6 +12,7 @@ from sqlalchemy import cast as sql_cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.access_keys import service as keys
+from app.modules.integrations.service import ApplicationActor
 from app.modules.llm import runtime
 from app.modules.llm.catalog_schemas import (
     CatalogInput,
@@ -63,7 +64,7 @@ class MemberModelPage(BaseModel):
 
 
 async def available_models(
-    db: AsyncSession, actor: BusinessActor, request: Request | None = None
+    db: AsyncSession, actor: BusinessActor | ApplicationActor, request: Request | None = None
 ) -> list[tuple[UUID, PublicModel, dict[OperationKind, str]]]:
     """Filter current member permission and route readiness before any pagination.
 
@@ -82,7 +83,8 @@ async def available_models(
         )
     )
     available: list[tuple[UUID, PublicModel, dict[OperationKind, str]]] = []
-    conversion = await current_conversion(db, actor.tenant.id)
+    application = actor if isinstance(actor, ApplicationActor) else None
+    conversion = None if application else await current_conversion(db, actor.tenant.id)
     gateway_channels: list[dict[str, Any]] | None = None
     for row in rows:
         config = CatalogInput.model_validate(row.configuration)
@@ -97,7 +99,9 @@ async def available_models(
                 config = await effective(request, actor.tenant.id, config, gateway_channels)
             except HTTPException:
                 continue
-        if not runtime.visible(config, actor) or not keys.permits(actor, "llm", row.id, "read"):
+        if not runtime.visible(config, actor):
+            continue
+        if isinstance(actor, BusinessActor) and not keys.permits(actor, "llm", row.id, "read"):
             continue
         operations: list[PublicOperation] = []
         price_statuses: dict[OperationKind, str] = {}
@@ -164,7 +168,11 @@ async def available_models(
                         if profile not in profiles:
                             profiles.append(profile)
             point_price_view = point_price(operation.budget_price, conversion)
-            if operation.gateway:
+            if application:
+                point_price_view.status = (
+                    "ready" if operation.gateway or operation.budget_price else "no_price"
+                )
+            elif operation.gateway:
                 point_price_view.status = (
                     "unconfigured"
                     if not conversion
@@ -241,7 +249,10 @@ async def available_models(
 
 
 async def public_page(
-    db: AsyncSession, actor: BusinessActor, page: int, request: Request | None = None
+    db: AsyncSession,
+    actor: BusinessActor | ApplicationActor,
+    page: int,
+    request: Request | None = None,
 ) -> PublicModels:
     available = await available_models(db, actor, request)
     start = (page - 1) * 20

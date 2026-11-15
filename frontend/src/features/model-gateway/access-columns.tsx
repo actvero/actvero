@@ -77,7 +77,7 @@ export function useAccessColumns(onManage: (model: Model) => void) {
                 ? !state.enabled
                   ? '未开放'
                   : state.audience === 'organization'
-                    ? '全体成员'
+                    ? '组织全员'
                     : state.audience === 'selected'
                       ? '指定范围'
                       : '仅管理员'

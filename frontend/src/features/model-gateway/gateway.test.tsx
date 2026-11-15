@@ -44,6 +44,9 @@ vi.mock('@tanstack/react-router', async () => {
   const navigate = () => Promise.resolve()
   return {
     ...actual,
+    Link: ({ to, children }: { to: string; children: ReactNode }) => (
+      <a href={to}>{children}</a>
+    ),
     getRouteApi: (id: string) =>
       id === '/_authenticated/models'
         ? { useSearch: () => search, useNavigate: () => navigate }

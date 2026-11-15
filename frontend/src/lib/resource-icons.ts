@@ -1,3 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { useOrganization } from '@/features/auth/session'
+
 export type IconSelection = {
   source: 'auto' | 'library' | 'upload'
   key?: string
@@ -9,6 +13,22 @@ export type IconOption = {
   label: string
   category: string
   image: string
+}
+
+export function useResourceIconCatalog(enabled: boolean) {
+  const { organization, user } = useOrganization()
+  return useQuery({
+    queryKey: [
+      'organization',
+      organization.tenant_id,
+      user.id,
+      'skills',
+      'icon-catalog',
+    ],
+    queryFn: () => api<IconOption[]>('/skills/icon-catalog'),
+    staleTime: Infinity,
+    enabled,
+  })
 }
 
 export function selectedIcon(

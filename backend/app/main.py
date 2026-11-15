@@ -33,6 +33,8 @@ from app.modules.desktop_mcp.router import router as desktop_mcp_router
 from app.modules.desktop_skills.router import router as desktop_skills_router
 from app.modules.experts.desktop import router as desktop_experts_router
 from app.modules.experts.router import router as experts_router
+from app.modules.integrations.router import public as application_api_router
+from app.modules.integrations.router import router as integrations_router
 from app.modules.knowledge.integration import router as knowledge_integration_router
 from app.modules.knowledge.reader import normalize_parent
 from app.modules.knowledge.reader import router as knowledge_reader_router
@@ -139,7 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title="Actvero Platform API",
         version="0.1.0",
         description=(
-            "Actvero 已实现接口。Web 管理 API 与桌面 API"
+            "Actvero 已实现接口。组织应用、Web 管理 API 与桌面 API"
             " 使用不同认证方式。"
             "文档出现某个模块不代表已接通 DSH。"
             "桌面顺序：metadata → login/start → 系统"
@@ -148,6 +150,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "秘密字段示例仅为占位，不能当作真实凭据。"
         ),
         openapi_tags=[
+            {
+                "name": "application-api",
+                "description": (
+                    "应用服务端接入。使用 avi_ 应用 Key 测试连接、读取开关与查询调用回执。"
+                ),
+            },
+            {
+                "name": "application-knowledge",
+                "description": "应用自建库管理、组织共享知识库检索及原文阅读。",
+            },
+            {
+                "name": "application-mcp",
+                "description": "应用 MCP 服务目录。工具、提示词和资源走返回的协议端点。",
+            },
+            {
+                "name": "application-skills",
+                "description": "同步发布的 Skill，检查精确版本与摘要后下载 ZIP。",
+            },
+            {
+                "name": "application-experts",
+                "description": "同步发布的专家清单，检查 Skills 和 MCP 的精确依赖。",
+            },
+            {
+                "name": "llm-gateway",
+                "description": "模型与参数发现、调用。应用使用 avi_ Key，并开启模型能力。",
+            },
+            {
+                "name": "application-integrations",
+                "description": "组织管理员管理应用、能力开关及密钥。使用 Web 会话和 CSRF。",
+            },
             {
                 "name": "desktop",
                 "description": (
@@ -183,7 +215,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             {
                 "name": "mcp-gateway",
                 "description": (
-                    "标准 MCP 协议入口；使用单服务资源令牌或指定服务范围的个人访问密钥。"
+                    "标准 MCP 协议入口。接受应用 Key、单服务资源令牌和获准的个人访问密钥。"
                 ),
             },
             {
@@ -202,6 +234,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
         openapi_url="/api/openapi.json",
         docs_url="/api/docs",
+        swagger_ui_parameters={"docExpansion": "none", "filter": True},
         redoc_url=None,
     )
     application.add_middleware(SkillUploadLimit)
@@ -233,6 +266,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         devices_router,
         account_router,
         access_keys_router,
+        integrations_router,
+        application_api_router,
         setup_router,
         organization_settings_router,
         departments_router,

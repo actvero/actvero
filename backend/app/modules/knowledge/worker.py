@@ -9,6 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.service import now
+from app.modules.integrations import service as integrations
 from app.modules.knowledge import mineru
 from app.modules.knowledge.inference import invoke
 from app.modules.knowledge.models import (
@@ -16,10 +17,18 @@ from app.modules.knowledge.models import (
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeGeneration,
+    KnowledgeParentChunk,
 )
-from app.modules.knowledge.parsing import REMOTE_TYPES, local_parse, mineru_parse, split_blocks
+from app.modules.knowledge.parsing import (
+    REMOTE_TYPES,
+    chunk_limit,
+    local_parse,
+    mineru_parse,
+    split_blocks,
+    split_parent_child,
+)
 from app.modules.knowledge.schemas import Chunking
-from app.modules.knowledge.service import visible
+from app.modules.knowledge.service import KnowledgeActor, can_manage, visible
 from app.modules.llm.inference_schemas import EmbeddingInput, EmbeddingOutput
 from app.modules.members.models import Membership
 from app.modules.members.service import BusinessActor, membership_state, with_departments
@@ -35,19 +44,25 @@ async def phase(request: Request, db: AsyncSession, job: KnowledgeGeneration) ->
     if not doc or not base or base.archived or doc.deleted_at or doc.latest_generation_id != job.id:
         job.status = "cancelled"
         return
-    member = await db.get(Membership, job.actor_member_id)
-    tenant = await db.get(Tenant, base.tenant_id)
-    if (
-        not member
-        or member.tenant_id != base.tenant_id
-        or member.role != "administrator"
-        or membership_state(tenant, member, job.created_at)
-    ):
-        raise HTTPException(403, "任务发起人的组织权限已失效，请管理员重新处理")
-    user = await db.get(User, member.user_id)
-    assert user is not None and tenant is not None
-    actor = await with_departments(db, BusinessActor(user, member, tenant))
-    if not visible(base, actor):
+    actor: KnowledgeActor
+    if job.actor_integration_key_id:
+        actor = await integrations.bound(
+            request, db, job.actor_integration_key_id, "knowledge", admitted_job=True
+        )
+    else:
+        member = await db.get(Membership, job.actor_member_id) if job.actor_member_id else None
+        tenant = await db.get(Tenant, base.tenant_id)
+        if (
+            not member
+            or member.tenant_id != base.tenant_id
+            or member.role != "administrator"
+            or membership_state(tenant, member, job.created_at)
+        ):
+            raise HTTPException(403, "任务发起人的组织权限已失效，请管理员重新处理")
+        user = await db.get(User, member.user_id)
+        assert user is not None and tenant is not None
+        actor = await with_departments(db, BusinessActor(user, member, tenant))
+    if not visible(base, actor) or not can_manage(base, actor):
         raise HTTPException(403, "知识库访问权限已失效")
     if job.inference_pending:
         raise mineru.SubmissionUnknown()
@@ -71,24 +86,45 @@ async def phase(request: Request, db: AsyncSession, job: KnowledgeGeneration) ->
         .where(KnowledgeChunk.generation_id == job.id)
     )
     if not count:
-        hard_limit = min(
-            10000,
-            job.embedding_profile.get("max_input_characters", 10000),
-            job.embedding_profile.get("context_window") or 10000,
-        )
-        chunks = split_blocks(
-            job.blocks, Chunking.model_validate(job.chunking), hard_limit=hard_limit
-        )
-        db.add_all(
-            KnowledgeChunk(generation_id=job.id, sequence=i + 1, content=text, sources=sources)
-            for i, (text, sources) in enumerate(chunks)
-        )
+        hard_limit = chunk_limit(job.embedding_profile)
+        config = Chunking.model_validate(job.chunking)
+        job.character_count = sum(len(block["text"]) for block in job.blocks)
+        chunks: list[KnowledgeChunk] = []
+        if config.structure == "parent_child":
+            for text, children in split_parent_child(job.blocks, config, hard_limit=hard_limit):
+                parent = KnowledgeParentChunk(id=uuid4(), generation_id=job.id, content=text)
+                db.add(parent)
+                for content, sources in children:
+                    chunks.append(
+                        KnowledgeChunk(
+                            generation_id=job.id,
+                            sequence=len(chunks) + 1,
+                            parent_id=parent.id,
+                            content=content,
+                            sources=sources,
+                        )
+                    )
+            await db.flush()
+        else:
+            chunks = [
+                KnowledgeChunk(generation_id=job.id, sequence=i + 1, content=text, sources=sources)
+                for i, (text, sources) in enumerate(
+                    split_blocks(job.blocks, config, hard_limit=hard_limit)
+                )
+            ]
+        db.add_all(chunks)
         job.status = "indexing"
         return
     if not job.embedding_profile:
-        job.status, job.error = "unconfigured", "尚未配置默认向量模型，当前可使用关键词检索"
-        doc.active_generation_id = job.id
-        job.finished_at = now()
+        await db.refresh(doc)
+        if doc.latest_generation_id != job.id or doc.deleted_at:
+            job.status = "cancelled"
+            return
+        if base.retrieval is None:
+            job.status, job.error = "unconfigured", "尚未配置默认向量模型，当前可使用关键词检索"
+        else:
+            job.status, job.error = "ready", ""
+        doc.active_generation_id, job.finished_at = job.id, now()
         return
     chunk = await db.scalar(
         select(KnowledgeChunk)
@@ -104,13 +140,14 @@ async def phase(request: Request, db: AsyncSession, job: KnowledgeGeneration) ->
             request,
             db,
             base,
-            member.id,
+            job.actor_member_id,
             UUID(profile["model_id"]),
             EmbeddingInput(
                 model=profile["slug"], input=chunk.content, dimensions=profile["dimensions"]
             ),
             purpose="index",
             created_at=job.created_at,
+            application_key_id=job.actor_integration_key_id,
         )
         if (
             not isinstance(output, EmbeddingOutput)
@@ -161,25 +198,23 @@ async def tick(app: FastAPI) -> bool:
             job.next_run_at = now() + timedelta(seconds=exc.seconds)
         except mineru.SubmissionUnknown:
             job.status, job.error = (
-                "uncertain",
-                "外部任务结果尚不确定，已停止自动重试；请核对服务任务或模型调用记录后重新处理",
+                "failed",
+                "未取得外部服务处理结果，请重试处理",
             )
         except (HTTPException, ValueError) as exc:
-            job.status = "uncertain" if job.inference_pending else "failed"
+            job.status = "failed"
             # Runtime and upstream errors may contain private provider details.
             job.error = (
                 "文件内容或解析结构无效，请检查格式后重试"
                 if isinstance(exc, ValueError)
-                else "处理未完成，请检查解析凭据、模型配置、额度及调用记录后重试"
+                else "处理失败，请检查解析凭据、模型配置或服务状态后重试"
             )
         except Exception:
             await db.rollback()
             job = await db.get(KnowledgeGeneration, ident)
             assert job is not None
-            job.status = (
-                "uncertain" if job.inference_pending or job.submission_pending else "failed"
-            )
-            job.error = "处理暂未完成，请核对任务后重试"
+            job.status = "failed"
+            job.error = "处理意外中断，请重试处理"
         # Every phase is bounded below the lease duration.
         if job.lease_token == token:
             job.lease_token, job.lease_until = None, None

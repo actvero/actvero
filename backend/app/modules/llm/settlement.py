@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AcceptedRequestConflict
 from app.modules.auth.service import now
 from app.modules.desktop.errors import fail
+from app.modules.integrations.service import ApplicationActor
 from app.modules.llm.audio_schemas import SpeechInput, TranscriptionInput
 from app.modules.llm.catalog_schemas import RATE_FIELDS, CatalogInput, TokenPrice
 from app.modules.llm.chat_schemas import ChatInput
@@ -190,14 +191,14 @@ async def snapshot(
             (
                 points(e.amount, e.ratio)
                 for e in in_window
-                if e.status == "settled" and e.amount is not None
+                if e.status == "settled" and e.amount is not None and e.ratio is not None
             ),
             Decimal(0),
         )
         held = exact_sum(
             points(e.reserved_amount, e.ratio)
             for e in in_window
-            if e.status in ("reserved", "review")
+            if e.status in ("reserved", "review") and e.ratio is not None
         )
         cap = Decimal(rule["points"])
         windows.append(
@@ -226,7 +227,10 @@ async def snapshot(
 
 
 async def check_request(
-    db: AsyncSession, actor: BusinessActor, idempotency_key: str | None, fingerprint: str | None
+    db: AsyncSession,
+    actor: BusinessActor | ApplicationActor,
+    idempotency_key: str | None,
+    fingerprint: str | None,
 ) -> None:
     """Call under the tenant lock after current model and operation authorization."""
     if idempotency_key is None:
@@ -236,7 +240,11 @@ async def check_request(
     existing = await db.scalar(
         select(UsageSettlement).where(
             UsageSettlement.tenant_id == actor.tenant.id,
-            UsageSettlement.member_id == actor.member.id,
+            (
+                UsageSettlement.application_id == actor.application.id
+                if isinstance(actor, ApplicationActor)
+                else UsageSettlement.member_id == actor.member.id
+            ),
             UsageSettlement.idempotency_key == idempotency_key,
         )
     )
@@ -254,7 +262,7 @@ async def check_request(
         "idempotency_conflict" if conflict else "duplicate_request",
         "此幂等标识已用于不同请求，不能重复发送"
         if conflict
-        else "此请求已经受理，请按调用标识查询本人用量记录",
+        else "此请求已经受理，请按调用标识查询回执",
         call_id=str(existing.id),
         call_status=log.status if log else "unknown",
         settlement_status=existing.status,
@@ -323,6 +331,39 @@ async def reserve(
             usage={},
             status="reserved",
             reason="",
+            created_at=admitted_at,
+        )
+    )
+
+
+async def record_organization_call(
+    db: AsyncSession,
+    log: ModelCall,
+    config: CatalogInput,
+    *,
+    idempotency_key: str | None = None,
+    request_fingerprint: str | None = None,
+) -> None:
+    if config.gateway:
+        price: dict[str, Any] = {"engine": "newapi", "currency": "USD"}
+    elif config.budget_price is not None:
+        price = config.budget_price.model_dump(mode="json")
+    else:
+        fail(409, "pricing_required", "请先为组织调用配置模型用量单价")
+    admitted_at = now()
+    log.created_at = admitted_at
+    await db.flush()
+    db.add(
+        UsageSettlement(
+            id=log.id,
+            tenant_id=log.tenant_id,
+            application_id=log.application_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            currency=price["currency"],
+            reserved_amount=Decimal(0),
+            price=price,
+            policy_snapshot={},
             created_at=admitted_at,
         )
     )

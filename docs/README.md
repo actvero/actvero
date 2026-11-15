@@ -5,6 +5,7 @@
 ## 使用与维护
 
 - [个人访问密钥](ACCESS-KEYS.md)
+- [应用集成](APPLICATION-INTEGRATIONS.md)
 - [系统架构](ARCHITECTURE.md)
 - [项目标识与来源](BRANDING.md)
 - [管理 CLI 接入](CLI.md)
@@ -46,6 +47,7 @@
 - [服务器部署与维护](SERVER-DEPLOYMENT.md)
 - [Skills 管理](SKILLS-WORKBENCH.md)
 - [界面开发规范](UI-DEVELOPMENT.md)
+- [设计语言](../design.md)
 - [统一品牌配置](UNIFIED-BRANDING.md)
 
 ## 机器契约与来源

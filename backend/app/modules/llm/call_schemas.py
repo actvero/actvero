@@ -29,6 +29,8 @@ class LogicalCallView(BaseModel):
     duration_ms: int | None
     terminal_reason: str | None
     points: str | None
+    amount: str | None = None
+    currency: str | None = None
     # Historical admission reservation, not this call's current held balance.
     reserved_points: str | None
 
@@ -101,10 +103,10 @@ class CallSettlementView(BaseModel):
     status: SettlementStatus
     version: int
     currency: str
-    ratio: str
-    reserved_amount: str
+    ratio: str | None
+    reserved_amount: str | None
     amount: str | None
-    reserved_points: str
+    reserved_points: str | None
     points: str | None
     created_at: datetime
     settled_at: datetime | None
@@ -181,7 +183,9 @@ class HeldScope(BaseModel):
     member_id: UUID | None
     model_id: UUID | None
     operation: str | None
-    source: Literal["member", "desktop", "access_key", "knowledge_index", "knowledge_search"]
+    source: Literal[
+        "member", "desktop", "access_key", "application", "knowledge_index", "knowledge_search"
+    ]
 
 
 class CurrentHeld(BaseModel):

@@ -5,6 +5,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
 import {
   Table,
   TableBody,
@@ -25,7 +26,9 @@ export function ServerTable<T>({
   onRowClick,
   renderItems,
   getRowId,
+  fixed = false,
 }: {
+  fixed?: boolean
   items: T[]
   columns: ColumnDef<T>[]
   total: number
@@ -56,82 +59,86 @@ export function ServerTable<T>({
     },
   })
   return (
-    <div className='flex min-w-0 flex-col gap-4'>
-      {renderItems ? (
-        renderItems(items)
-      ) : (
-        <div className='overflow-hidden rounded-md border'>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((group) => (
-                <TableRow key={group.id}>
-                  {group.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className={header.column.columnDef.meta?.className}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    interactive={!!onRowClick}
-                    onClick={
-                      onRowClick
-                        ? (event) => {
-                            if (
-                              event.defaultPrevented ||
-                              event.metaKey ||
-                              event.ctrlKey ||
-                              event.shiftKey ||
-                              event.altKey ||
-                              window.getSelection()?.toString() ||
-                              (event.target as Element).closest(
-                                'a, button, input, select, textarea, [role="button"], [role="checkbox"]'
-                              )
-                            )
-                              return
-                            onRowClick(row.original)
-                          }
-                        : undefined
-                    }
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className={cell.column.columnDef.meta?.className}
+    <div
+      className={cn('flex min-w-0 flex-col gap-4', fixed && 'min-h-0 flex-1')}
+    >
+      <div className={cn(fixed && 'min-h-0 flex-1 overflow-auto')}>
+        {renderItems ? (
+          renderItems(items)
+        ) : (
+          <div className='overflow-hidden rounded-md border'>
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((group) => (
+                  <TableRow key={group.id}>
+                    {group.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className={header.column.columnDef.meta?.className}
                       >
                         {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
+                          header.column.columnDef.header,
+                          header.getContext()
                         )}
-                      </TableCell>
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className='h-32 text-center'
-                  >
-                    {empty}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      interactive={!!onRowClick}
+                      onClick={
+                        onRowClick
+                          ? (event) => {
+                              if (
+                                event.defaultPrevented ||
+                                event.metaKey ||
+                                event.ctrlKey ||
+                                event.shiftKey ||
+                                event.altKey ||
+                                window.getSelection()?.toString() ||
+                                (event.target as Element).closest(
+                                  'a, button, input, select, textarea, [role="button"], [role="checkbox"]'
+                                )
+                              )
+                                return
+                              onRowClick(row.original)
+                            }
+                          : undefined
+                      }
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className={cell.column.columnDef.meta?.className}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className='h-32 text-center'
+                    >
+                      {empty}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
       <DataTablePagination table={table} />
     </div>
   )

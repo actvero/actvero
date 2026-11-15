@@ -36,6 +36,7 @@
     "cli/skills/actvero-management/references/recovery.md": "错误恢复与停止条件",
     "cli/skills/actvero-management/references/skills.md": "Skills：包、资料、版本与分类",
     "docs/ACCESS-KEYS.md": "个人访问密钥",
+    "docs/APPLICATION-INTEGRATIONS.md": "应用集成",
     "docs/ARCHITECTURE.md": "系统架构",
     "docs/BRANDING.md": "项目标识与来源",
     "docs/CLI.md": "管理 CLI 接入",
@@ -94,7 +95,8 @@
     "integrations/newapi/README.md": "New API integration",
     "docs/KNOWLEDGE.md": "知识库",
     "backend/app/modules/knowledge/licenses/LICENSE.txt": "知识库结构合并算法 LGPL v3 与 GPL v3 许可全文",
-    "backend/app/modules/knowledge/licenses/engi-rag-NOTICE.txt": "知识库结构合并算法来源与适配说明"
+    "backend/app/modules/knowledge/licenses/engi-rag-NOTICE.txt": "知识库结构合并算法来源与适配说明",
+    "design.md": "Actvero 设计语言"
   },
   "restricted_identifier_sha256": [
     "0686ae9f1c93b431e26b7d4771af47bb2fe213af1e138bf0972edf1d56541daf",

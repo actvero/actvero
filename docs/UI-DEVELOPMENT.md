@@ -1,6 +1,16 @@
 # 界面开发规范
 
+本文面向前端开发者，用于接入共享组件并验证页面变更。视觉层级、页面模式和交互约定以[设计语言](../design.md)为准。
+
 界面优先复用 `frontend/src/components/ui/` 的共享控件、布局和表格组件。业务表单沿用 React Hook Form 与 Zod，路由与整页业务实现分离。
+
+列表复用 `ListToolbar`、`ListSearch`、`ListPagination`；资源详情通过 `PageShell` 的 `titleBefore` 放置 `PageBack`。需要底部分页的表格使用 `PageShell fixedContent` 和 `ServerTable fixed`。主题数值只在 `theme.css` 维护，New API 与宿主的按钮、标签外观通过共享样式函数对齐，底层交互 API 保持各自协议。
+
+## 开发示例与验证
+
+本地运行 `pnpm --dir frontend dev`，访问 `/design.html` 查看合成数据组件示例。示例不读取会话或业务接口，默认生产构建只包含应用入口。修改共享组件时一起检查示例与实际样板页，不将示例正常当作完整业务验收。
+
+运行 `make check`；按影响范围运行 `pnpm --dir frontend test` 中的相关浏览器测试。涉及布局时检查常规、窄屏、浅色和深色；分页、菜单、表单焦点等行为变化需要验证交互。只改外观时不为颜色或类名添加镜像测试。
 
 ## 主题与交互
 
