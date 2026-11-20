@@ -177,8 +177,8 @@ def candidates(
 class AccessWatch:
     """Known revocation stops delivery; edits use the admitted snapshot.
 
-    Checks use independent sessions and never hold up chunks. A database outage
-    cannot revoke an already-admitted request; admission itself remains fail-closed.
+    Background checks do not block stream chunks. Buffered results require a
+    successful live check before release.
     """
 
     def __init__(
@@ -196,30 +196,34 @@ class AccessWatch:
         self.error: HTTPException | None = None
         self.task = asyncio.create_task(self.run())
 
-    async def check(self) -> None:
+    async def check(self, *, require_confirmation: bool = False) -> None:
         from app.modules.llm.runtime import check_live
 
-        if self.channel is None:
-            return
-        try:
-            async with asyncio.timeout(0.25):
-                async with self.request.app.state.database.sessions() as db:
-                    await check_live(
-                        self.request,
-                        db,
-                        self.model_id,
-                        self.version,
-                        *self.channel,
-                        self.test,
-                        self.kind,
-                        binding_id=self.binding_id,
-                    )
-        except HTTPException as exc:
-            self.error = exc
-        except Exception:
-            # No authorization result was obtained. Keep the admission snapshot;
-            # retry in the background, without coupling output to DB availability.
-            pass
+        channel = self.channel
+        if channel is not None:
+            try:
+                async with asyncio.timeout(2 if require_confirmation else 0.25):
+                    async with self.request.app.state.database.sessions() as db:
+                        await check_live(
+                            self.request,
+                            db,
+                            self.model_id,
+                            self.version,
+                            *channel,
+                            self.test,
+                            self.kind,
+                            binding_id=self.binding_id,
+                        )
+            except HTTPException as exc:
+                self.error = exc
+                return
+            except Exception:
+                pass
+            else:
+                return
+        if require_confirmation:
+            self.enforce()
+            fail(503, "access_check_unavailable", "暂时无法确认模型访问权限")
 
     async def run(self) -> None:
         while True:
@@ -451,7 +455,7 @@ async def execute(
                 "usage": usage,
             }
         result_ready = True
-        await watch.check()
+        await watch.check(require_confirmation=stream is None)
         watch.enforce()
         attempt.trace.mark_output()
     except BaseException as exc:
