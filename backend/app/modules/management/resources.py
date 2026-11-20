@@ -24,10 +24,19 @@ async def read_resource[T](
     db: AsyncSession,
     org_id: UUID,
     operation: Callable[..., Awaitable[T]],
+    *,
+    allow_platform_elevation: bool = True,
     **kwargs: Any,
 ) -> ResourceResult[T]:
     who = await service.actor(request, db)
-    actor, organization = await service.organization(request, db, who, org_id, require_admin=True)
+    actor, organization = await service.organization(
+        request,
+        db,
+        who,
+        org_id,
+        require_admin=True,
+        allow_platform_elevation=allow_platform_elevation,
+    )
     result = await operation(actor=actor, request=request, db=db, **kwargs)
     await db.commit()
     return ResourceResult(organization=organization, result=result)
@@ -40,21 +49,32 @@ async def mutate_resource[T](
     request_id: UUID,
     operation: Callable[..., Awaitable[T]],
     retain_result: bool = True,
+    *,
+    allow_platform_elevation: bool = True,
+    request_body: bytes | None = None,
     **kwargs: Any,
 ) -> ResourceResult[T]:
     who = await service.actor(request, db)
     actor, organization = await service.organization(
-        request, db, who, org_id, require_admin=True, write=True
+        request,
+        db,
+        who,
+        org_id,
+        require_admin=True,
+        write=True,
+        allow_platform_elevation=allow_platform_elevation,
     )
     key = provider(request).settings.session_encryption_key
     if key is None:
         fail(503, "management_unavailable", "管理写入尚未配置")
     identity = request.method + " " + request.url.path + "?" + request.url.query
-    fingerprint = hmac.new(
+    hasher = hmac.new(
         key.get_secret_value().encode(),
-        identity.encode() + b"\0" + await request.body(),
+        identity.encode() + b"\0",
         hashlib.sha256,
-    ).hexdigest()
+    )
+    hasher.update(request_body if request_body is not None else await request.body())
+    fingerprint = hasher.hexdigest()
     command_key = (org_id, actor.user.id, request_id)
     previous = await db.get(ManagementCommand, command_key, populate_existing=True)
     if previous:
@@ -87,7 +107,13 @@ async def mutate_resource[T](
         # Revalidate after the commit released locks. Membership changes share this tenant lock.
         who = await service.actor(request, db)
         actor, organization = await service.organization(
-            request, db, who, org_id, require_admin=True, write=True
+            request,
+            db,
+            who,
+            org_id,
+            require_admin=True,
+            write=True,
+            allow_platform_elevation=allow_platform_elevation,
         )
         result = await operation(actor=actor, request=request, db=db, **kwargs)
         response: ResourceResult[T] = ResourceResult(

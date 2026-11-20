@@ -228,7 +228,7 @@ export function CliConsentForm({
               <span>
                 只读查询
                 <span className='block text-muted-foreground'>
-                  查看渠道、Skills、MCP 与专家。
+                  查看渠道、Skills、MCP、专家和工作台。
                 </span>
               </span>
             </label>
@@ -243,7 +243,7 @@ export function CliConsentForm({
               <span>
                 管理资源
                 <span className='block text-muted-foreground'>
-                  包括新建、修改、发布、删除 Skills、MCP 与专家，以及执行 MCP
+                  新建、修改、发布或删除 Skills、MCP、专家和工作台，也可执行 MCP
                   测试。
                 </span>
               </span>

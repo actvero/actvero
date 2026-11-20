@@ -313,7 +313,7 @@ async def test_fallback_uses_selected_binding_parameters_without_previous_dialec
 
 
 @pytest.mark.parametrize("stream", [False, True])
-async def test_live_permission_database_outage_keeps_admitted_delivery(env, monkeypatch, stream):
+async def test_live_permission_database_outage_guards_result_delivery(env, monkeypatch, stream):
     from app.modules.llm import runtime
 
     admin = await env.client()
@@ -325,9 +325,26 @@ async def test_live_permission_database_outage_keeps_admitted_delivery(env, monk
         response = await admin.api.post(
             BASE + model["id"] + "/test/chat", json=payload(model, stream=stream)
         )
-        assert response.status_code == 200 and '"error"' not in response.text, response.text
-        assert "[DONE]" in response.text if stream else response.json()["choices"]
+        if stream:
+            assert response.status_code == 200 and '"error"' not in response.text, response.text
+            assert "[DONE]" in response.text
+        else:
+            assert response.status_code == 503, response.text
+            assert response.json()["error"]["code"] == "access_check_unavailable"
+            assert "choices" not in response.json()
         assert check.await_count >= 2 and len(state["calls"]) == 1
+        async with asyncio.timeout(6):
+            while True:
+                logs = (await admin.api.get(BASE + model["id"] + "/calls")).json()
+                if logs and logs[0]["usage"].get("input_tokens") is not None:
+                    break
+                await asyncio.sleep(0.1)
+        usage = logs[0]["usage"]
+        meter = state["usage"]
+        cached = meter["prompt_tokens_details"]["cached_tokens"]
+        assert usage["cache_read_tokens"] == cached
+        assert usage["input_tokens"] + cached == meter["prompt_tokens"]
+        assert usage["output_tokens"] == meter["completion_tokens"]
 
 
 async def test_outbox_tightens_existing_volume_directory_permissions(tmp_path):

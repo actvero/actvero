@@ -32,6 +32,7 @@ from app.modules.management.maintenance_router import router as maintenance_rout
 from app.modules.management.models import ManagementCommand
 from app.modules.management.resources import mutate_resource, read_resource
 from app.modules.management.schemas import CommandStatus, ResourceResult
+from app.modules.management.workbench_router import router as workbench_router
 from app.modules.mcp import operations as mcp_ops
 from app.modules.mcp.schemas import (
     McpCapabilities,
@@ -64,6 +65,7 @@ from app.modules.skills.schemas import (
 
 router = APIRouter(prefix="/api/v1/management/organizations", tags=["management-resources"])
 router.include_router(maintenance_router)
+router.include_router(workbench_router)
 
 
 @router.get("/{org_id}/skills/icon-catalog", response_model=ResourceResult[list[SkillIconOption]])
@@ -612,6 +614,10 @@ async def command_status(
         request, db, who, org_id, require_admin=True
     )
     receipt = await db.get(ManagementCommand, (org_id, actor.user.id, request_id))
+    if receipt is not None and organization.authority == "platform":
+        resource_path = receipt.operation.partition(router.prefix + "/")[2]
+        if resource_path.split("/", 2)[1:2] == ["workbenches"]:
+            receipt = None
     if receipt is None:
         fail(404, "command_not_found", "未找到本人在此组织的请求")
     result = CommandStatus(

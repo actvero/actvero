@@ -110,6 +110,8 @@ class Metadata(BaseModel):
             "mcp.write",
             "experts.read",
             "experts.write",
+            "workbenches.read",
+            "workbenches.write",
             "commands.show",
             "skills.categories",
             "skills.download",

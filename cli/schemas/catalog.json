@@ -1,7 +1,7 @@
 {
   "resource_contract_version": 1,
   "minimum_migration": "115j_cli_consent",
-  "source_sha256": "8ff9006410190d3ffc508ce454b5fa0408128f37d4f5c96a2224840455c7489a",
+  "source_sha256": "fe0b6dbbba366b947ed7f69136020028464869da9c1c75178f19e44a5d6de624",
   "roots": [
     "ArtifactCreate",
     "ArtifactView",
@@ -60,7 +60,14 @@
     "SkillView",
     "StorageSave",
     "StorageView",
-    "UploadView"
+    "UploadView",
+    "WorkbenchConfigUpdate",
+    "WorkbenchMetadata",
+    "WorkbenchPage",
+    "WorkbenchPublish",
+    "WorkbenchRevision",
+    "WorkbenchScope",
+    "WorkbenchView"
   ],
   "definitions": {
     "ArtifactCreate": {
@@ -4542,6 +4549,563 @@
         "email"
       ],
       "title": "UserView",
+      "type": "object"
+    },
+    "WorkbenchConfigField": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Default"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 240,
+          "title": "Description",
+          "type": "string"
+        },
+        "key": {
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "default": "text",
+          "enum": [
+            "text",
+            "url"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "label"
+      ],
+      "title": "WorkbenchConfigField",
+      "type": "object"
+    },
+    "WorkbenchConfigUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "values": {
+          "maxProperties": 32,
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]{0,63}$": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          "title": "Values",
+          "type": "object"
+        },
+        "version_id": {
+          "format": "uuid",
+          "title": "Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "version_id",
+        "values"
+      ],
+      "title": "WorkbenchConfigUpdate",
+      "type": "object"
+    },
+    "WorkbenchMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "office",
+            "engineering",
+            "design",
+            "content",
+            "data",
+            "education",
+            "lifestyle",
+            "general",
+            "uncategorized"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "display_name",
+        "description",
+        "category"
+      ],
+      "title": "WorkbenchMetadata",
+      "type": "object"
+    },
+    "WorkbenchPage": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/WorkbenchSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "total"
+      ],
+      "title": "WorkbenchPage",
+      "type": "object"
+    },
+    "WorkbenchPublish": {
+      "additionalProperties": false,
+      "properties": {
+        "release_notes": {
+          "default": "",
+          "maxLength": 4000,
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision"
+      ],
+      "title": "WorkbenchPublish",
+      "type": "object"
+    },
+    "WorkbenchRevision": {
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision"
+      ],
+      "title": "WorkbenchRevision",
+      "type": "object"
+    },
+    "WorkbenchScope": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "department_grants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DepartmentGrant"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Department Grants"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "revision",
+        "audience"
+      ],
+      "title": "WorkbenchScope",
+      "type": "object"
+    },
+    "WorkbenchSummary": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "office",
+            "engineering",
+            "design",
+            "content",
+            "data",
+            "education",
+            "lifestyle",
+            "general",
+            "uncategorized"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "current_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Version"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "has_draft": {
+          "title": "Has Draft",
+          "type": "boolean"
+        },
+        "icon_data_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Icon Data Url"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "package_name": {
+          "title": "Package Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "published",
+            "withdrawn"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "package_name",
+        "display_name",
+        "description",
+        "category",
+        "audience",
+        "status",
+        "current_version",
+        "has_draft",
+        "updated_at"
+      ],
+      "title": "WorkbenchSummary",
+      "type": "object"
+    },
+    "WorkbenchVersionView": {
+      "properties": {
+        "config_fields": {
+          "items": {
+            "$ref": "#/$defs/WorkbenchConfigField"
+          },
+          "title": "Config Fields",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dsh_requirement": {
+          "title": "Dsh Requirement",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Published At"
+        },
+        "release_notes": {
+          "title": "Release Notes",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size": {
+          "title": "Size",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "published",
+            "superseded",
+            "withdrawn"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uploader_name": {
+          "title": "Uploader Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "status",
+        "dsh_requirement",
+        "size",
+        "sha256",
+        "release_notes",
+        "uploader_name",
+        "created_at",
+        "published_at",
+        "config_fields"
+      ],
+      "title": "WorkbenchVersionView",
+      "type": "object"
+    },
+    "WorkbenchView": {
+      "properties": {
+        "audience": {
+          "enum": [
+            "administrators",
+            "selected",
+            "organization"
+          ],
+          "title": "Audience",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "office",
+            "engineering",
+            "design",
+            "content",
+            "data",
+            "education",
+            "lifestyle",
+            "general",
+            "uncategorized"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "config_values": {
+          "patternProperties": {
+            "^[A-Z][A-Z0-9_]{0,63}$": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          "title": "Config Values",
+          "type": "object"
+        },
+        "current_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Version"
+        },
+        "department_grants": {
+          "items": {
+            "$ref": "#/$defs/DepartmentGrant"
+          },
+          "title": "Department Grants",
+          "type": "array"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "has_draft": {
+          "title": "Has Draft",
+          "type": "boolean"
+        },
+        "icon_data_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Icon Data Url"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "package_name": {
+          "title": "Package Name",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "published",
+            "withdrawn"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "versions": {
+          "items": {
+            "$ref": "#/$defs/WorkbenchVersionView"
+          },
+          "title": "Versions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "package_name",
+        "display_name",
+        "description",
+        "category",
+        "audience",
+        "status",
+        "current_version",
+        "has_draft",
+        "updated_at",
+        "revision",
+        "member_ids",
+        "versions",
+        "config_values"
+      ],
+      "title": "WorkbenchView",
       "type": "object"
     }
   }

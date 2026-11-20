@@ -119,7 +119,7 @@ pnpm --dir frontend test
 
 后端集成测试使用独立测试 schema；运行测试前需要可用的开发 PostgreSQL。前端和身份主题共享构建来源。详细开发说明见 [贡献指南](CONTRIBUTING.md)。
 
-管理 CLI 通过 npm 独立安装，支持登录、组织发现、渠道只读查询，以及 Skills、MCP 和专家维护。平台须启用管理接口；兼容性检查和写权限授权见 [CLI 接入说明](docs/CLI.md)。
+管理 CLI 通过 npm 独立安装，支持登录、组织发现、渠道只读查询，以及 Skills、MCP、专家和组织工作台维护。平台须启用管理接口；兼容性检查和写权限授权见 [CLI 接入说明](docs/CLI.md)。
 
 ## 文档
 

@@ -92,7 +92,11 @@ async def test_diagnostic_upgrade_preserves_calls_and_requires_explicit_identity
             )
             before = await connection.scalar(text("SELECT to_jsonb(c) FROM llm_calls c"))
             await connection.run_sync(upgrade, "head")
-            assert await connection.scalar(text("SELECT to_jsonb(c) FROM llm_calls c")) == before
+            assert await connection.scalar(text("SELECT to_jsonb(c) FROM llm_calls c")) == {
+                **before,
+                "application_id": None,
+                "integration_key_id": None,
+            }
             assert "sent" not in before["attempts"][0]
 
             await connection.execute(

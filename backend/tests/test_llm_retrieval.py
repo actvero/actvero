@@ -15,12 +15,14 @@ from test_llm_channels import create as create_channel
 from test_mcp import listening
 
 from app.modules.desktop.oidc import NativeIdentity
+from app.modules.llm import runtime
 from app.modules.llm.body_limit import InferenceRoute
 from app.modules.llm.catalog_schemas import CatalogInput, RetrievalOptions, TokenPrice
 from app.modules.llm.inference_schemas import EmbeddingInput
 from app.modules.llm.models import ModelCall
 from app.modules.llm.providers.retrieval import normalize
 from app.modules.llm.runtime import valuation
+from app.modules.llm.sdk_execution import AccessWatch
 
 env = identity_env
 pytestmark = pytest.mark.asyncio
@@ -250,10 +252,34 @@ async def test_native_tokens_scopes_member_revoke_and_space_lock(env, monkeypatc
             assert (await api.get(GATEWAY + "/models", headers=bearer(catalog))).status_code == 401
 
 
-async def test_inflight_revoke_keeps_usage_but_discards_result(env):
+@pytest.mark.parametrize(
+    ("recheck", "status", "error_code"),
+    [
+        ("live", 403, "channel_disabled"),
+        ("slow", 403, "channel_disabled"),
+        ("unavailable", 503, "access_check_unavailable"),
+    ],
+)
+async def test_inflight_revoke_keeps_usage_but_discards_result(
+    env, monkeypatch, recheck, status, error_code
+):
     admin = await env.client()
     arrived, release = asyncio.Event(), asyncio.Event()
     app = FastAPI()
+
+    if recheck != "live":
+        # Exercise the delivery check independently of the background poll.
+        monkeypatch.setattr(AccessWatch, "run", AsyncMock())
+        live_check = runtime.check_live
+
+        async def check(*args, **kwargs):
+            if release.is_set():
+                if recheck == "unavailable":
+                    raise TimeoutError
+                await asyncio.sleep(0.3)
+            return await live_check(*args, **kwargs)
+
+        monkeypatch.setattr(runtime, "check_live", check)
 
     @app.post("/v1/embeddings")
     async def call():
@@ -269,15 +295,27 @@ async def test_inflight_revoke_keeps_usage_but_discards_result(env):
                 json={"model": model["slug"], "input": "private"},
             )
         )
-        await asyncio.wait_for(arrived.wait(), 5)
-        changed = await admin.api.put(
-            "/api/v1/llm/channels/" + channel["id"] + "/archive",
-            json={"version": channel["version"], "archived": True},
-        )
-        assert changed.status_code == 200
-        release.set()
-        assert (await pending).status_code == 403
-        logs = (await admin.api.get(BASE + model["id"] + "/calls")).json()
+        try:
+            await asyncio.wait_for(arrived.wait(), 5)
+            if recheck != "unavailable":
+                changed = await admin.api.put(
+                    "/api/v1/llm/channels/" + channel["id"] + "/archive",
+                    json={"version": channel["version"], "archived": True},
+                )
+                assert changed.status_code == 200, changed.text
+        finally:
+            release.set()
+        response = await pending
+        assert response.status_code == status, response.text
+        assert response.json()["error"]["code"] == error_code
+        assert "data" not in response.json()
+
+        async with asyncio.timeout(6):
+            while True:
+                logs = (await admin.api.get(BASE + model["id"] + "/calls")).json()
+                if logs and logs[0]["usage"].get("input_tokens") is not None:
+                    break
+                await asyncio.sleep(0.1)
         assert logs[0]["usage"]["input_tokens"] == 2
 
 

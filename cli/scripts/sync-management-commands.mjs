@@ -70,7 +70,9 @@ function commandFor(resource, entry) {
 
   const body = operation.requestBody;
   const schemaRef = body?.content?.['application/json']?.schema?.$ref;
-  if (body && (!write || !body.required || !schemaRef?.startsWith('#/components/schemas/')))
+  const binaryBody = body?.content?.['application/octet-stream']?.schema;
+  const binary = binaryBody?.type === 'string' && binaryBody?.format === 'binary';
+  if (body && (!write || !body.required || (!binary && !schemaRef?.startsWith('#/components/schemas/'))))
     throw new Error(`请求体需要专门的命令适配：${entry.operationId}`);
 
   return {
@@ -83,6 +85,7 @@ function commandFor(resource, entry) {
       .filter((parameter) => parameter.in === 'query')
       .map((parameter) => queryOption(parameter, entry.sendDefaults ?? [])),
     body: schemaRef?.split('/').at(-1) ?? null,
+    ...(binary ? { binary: true } : {}),
   };
 }
 

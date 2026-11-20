@@ -370,8 +370,12 @@ async def organizations(
                 "mcp.read",
                 "experts.read",
             ]
+            if not platform:
+                permissions.append("workbenches.read")
             if "management:write" in who.session.scope.split():
                 permissions += ["skills.write", "mcp.write", "experts.write"]
+                if not platform:
+                    permissions.append("workbenches.write")
         items.append(
             s.Organization(
                 org_id=tenant.id,
