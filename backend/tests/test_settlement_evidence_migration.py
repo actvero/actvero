@@ -242,15 +242,15 @@ async def test_96q_settlements_upgrade_twice_and_refuse_downgrade(monkeypatch):
                 head
             )
             after = await snapshots()
-            for key, saved in after["llm_settlements"].items():
-                assert saved["request_fingerprint"] is None
-                assert saved["evidence"] == {}
-                assert {
-                    field: value
-                    for field, value in saved.items()
-                    if field not in {"request_fingerprint", "evidence"}
-                } == before["llm_settlements"][key]
-            for table in ("llm_calls", "llm_point_conversions", "llm_quota_clocks"):
+            assert after["llm_settlements"] == {
+                key: {**saved, "request_fingerprint": None, "evidence": {}, "application_id": None}
+                for key, saved in before["llm_settlements"].items()
+            }
+            assert after["llm_calls"] == {
+                key: {**saved, "application_id": None, "integration_key_id": None}
+                for key, saved in before["llm_calls"].items()
+            }
+            for table in ("llm_point_conversions", "llm_quota_clocks"):
                 assert after[table] == before[table]
 
             # A second head upgrade is a no-op, including the nullable legacy identity.

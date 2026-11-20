@@ -44,9 +44,10 @@ async def test_gateway_and_distribution_histories_merge_without_losing_data(star
             before = await db.scalar(
                 text("SELECT to_jsonb(r) FROM client_releases r WHERE id=:id"), {"id": ident}
             )
-            await db.run_sync(migrate, "head")
-            assert await db.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "121p_gateway_distribution"
+            merge_revision = "121p_gateway_distribution"
+            await db.run_sync(migrate, merge_revision)
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version")) == merge_revision
             )
             assert (
                 await db.scalar(

@@ -1,5 +1,6 @@
 """Gateway boundaries and native contracts using isolated PostgreSQL schemas."""
 
+import asyncio
 import json
 from copy import deepcopy
 from unittest.mock import AsyncMock
@@ -33,6 +34,18 @@ def bind(env, admin):
             management_token=SecretStr("secret-management"),
         )
     ]
+
+
+async def entries_after_accounting(admin):
+    from test_llm_execution import entries
+
+    rows = await entries(admin)
+    for _ in range(25):
+        if rows and rows[0]["status"] != "reserved":
+            break
+        await asyncio.sleep(0.2)
+        rows = await entries(admin)
+    return rows
 
 
 def channel(**updates):
@@ -345,7 +358,7 @@ async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evide
     from fastapi import Request
     from llm_billing_helpers import billing as setup_billing
     from test_desktop import bearer, native_client
-    from test_llm_execution import GATEWAY, credentials, entries, upstream
+    from test_llm_execution import GATEWAY, credentials, upstream
     from test_mcp import listening
 
     from app.modules.model_gateway import billing
@@ -453,8 +466,9 @@ async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evide
         assert response.status_code == 200 and '"error"' not in response.text, response.text
         assert len(state["calls"]) == 1 and state["calls"][0][0] == "v1"
         assert state["calls"][0][1]["model"] == "public"
-        rows = await entries(admin)
-        assert rows[0]["status"] == ("settled" if confirmed else "review")
+        rows = await entries_after_accounting(admin)
+        assert len(rows) == 1
+        assert rows[0]["status"] == ("settled" if confirmed else "review"), rows[0]
         assert (
             Decimal(rows[0]["points"]) == Decimal("0.25")
             if confirmed
@@ -501,7 +515,6 @@ async def test_foreign_or_incomplete_native_bill_is_not_free(change):
 @pytest.mark.parametrize("usage_present", [True, False])
 async def test_native_gateway_relay_and_ledger_contract(env, monkeypatch, usage_present):
     """Opt-in pinned New API relay; the supplier is a disposable local HTTP fixture."""
-    import asyncio
     import json
     import os
     import threading
@@ -510,7 +523,7 @@ async def test_native_gateway_relay_and_ledger_contract(env, monkeypatch, usage_
     from fastapi import Request
     from llm_billing_helpers import billing as setup_billing
     from test_desktop import bearer, native_client
-    from test_llm_execution import GATEWAY, credentials, entries
+    from test_llm_execution import GATEWAY, credentials
 
     token = os.getenv("ACTVERO_TEST_NEWAPI_TOKEN")
     base = os.getenv("ACTVERO_TEST_NEWAPI_URL")
@@ -659,11 +672,8 @@ async def test_native_gateway_relay_and_ledger_contract(env, monkeypatch, usage_
         }
         if usage_present:
             assert received[0]["reasoning_effort"] == "max"
-        for _ in range(25):
-            rows = await entries(admin)
-            if rows[0]["status"] != "reserved":
-                break
-            await asyncio.sleep(0.2)
+        rows = await entries_after_accounting(admin)
+        assert len(rows) == 1
         if usage_present:
             assert rows[0]["status"] == "settled", rows[0]
             assert rows[0]["points"] == "0.024", rows[0]

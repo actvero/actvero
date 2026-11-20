@@ -204,6 +204,7 @@ def test_withheld_success_is_interrupted_and_sparse_legacy_remains_unknown():
         model_id=None,
         kind="chat",
         source="channel_diagnostic",
+        application_id=None,
         status="pending",
         error_code=None,
         termination_code=None,

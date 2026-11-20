@@ -175,6 +175,8 @@ async def test_expired_pending_login_cannot_authenticate_anonymous_session(env):
         await db.commit()
     env.provider.exchange = AsyncMock()
     response = await user.api.get("/api/v1/auth/callback", params={"state": state, "code": "test"})
-    assert response.headers["location"].startswith("/login?error=callback")
+    assert response.headers["location"] == "https://identity.test/login"
+    assert env.provider.authorization.call_count == 2
+    assert env.provider.authorization.call_args.args[0] != state
     env.provider.exchange.assert_not_called()
     assert not (await user.api.get("/api/v1/auth/session")).json()["authenticated"]
