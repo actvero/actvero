@@ -216,8 +216,15 @@ async def authorize(
     return actor
 
 
-async def resolve_model(request: Request, db: AsyncSession, slug: str) -> UUID:
-    actor = await authorize(request, db)
+async def resolve_model(
+    request: Request,
+    db: AsyncSession,
+    slug: str,
+    *,
+    actor: BusinessActor | ApplicationActor | None = None,
+) -> UUID:
+    if actor is None:
+        actor = await authorize(request, db)
     if isinstance(actor, (keys.KeyActor, ApplicationActor)):
         row = await db.scalar(
             select(CatalogModel).where(

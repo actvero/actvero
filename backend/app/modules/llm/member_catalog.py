@@ -19,7 +19,6 @@ from app.modules.llm.catalog_schemas import (
     OperationKind,
     effective_reasoning_format,
 )
-from app.modules.llm.chat_media import IMAGE_INPUT
 from app.modules.llm.inference_schemas import (
     PublicChatRoute,
     PublicModel,
@@ -183,9 +182,6 @@ async def available_models(
             price_statuses[operation.kind] = point_price_view.status
             operations.append(
                 PublicOperation(
-                    image_input=IMAGE_INPUT
-                    if operation.kind == "chat" and operation.capabilities.vision == "supported"
-                    else None,
                     capability_source=operation.gateway.capability_source
                     if operation.gateway
                     else None,

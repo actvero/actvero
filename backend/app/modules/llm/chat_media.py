@@ -1,39 +1,33 @@
-"""Shared inline-image transport limits for catalog discovery and chat admission."""
+"""Chat image transport metadata and validation of inline data URLs."""
 
 import base64
-import binascii
+import re
 
 from pydantic import BaseModel, Field
 
 
 class ChatImageInput(BaseModel):
-    """Platform transport bounds, independent of supplier model capacities."""
+    """An explicit image policy advertised by a route, if available."""
 
-    max_image_bytes: int = Field(default=1024 * 1024, ge=1)
-    max_total_bytes: int = Field(default=8 * 1024 * 1024, ge=1)
-    max_images: int = Field(default=32, ge=1)
-    target_pixels: int = Field(default=2048 * 2048, ge=1)
-
-
-IMAGE_INPUT = ChatImageInput()
-IMAGE_URL_MAX_LENGTH = 1_500_000
+    max_image_bytes: int = Field(ge=1)
+    max_total_bytes: int = Field(ge=1)
+    max_images: int = Field(ge=1)
+    target_pixels: int = Field(ge=1)
 
 
-def inline_image_bytes(url: str) -> int:
-    """Validate bounded inline base64; HTTPS content remains supplier-resolved."""
+_BASE64 = re.compile(r"[A-Za-z0-9+/]+={0,2}")
+
+
+def validate_image_url(url: str) -> None:
     if url.startswith("https://"):
-        return 0
-    header, separator, encoded = url.partition(",")
-    if not separator or not header.startswith("data:image/") or not header.endswith(";base64"):
+        return
+    comma = url.find(",")
+    if comma < 0 or not url.startswith("data:image/") or not url.endswith(";base64", 0, comma):
         raise ValueError("图片须为 HTTPS 地址或 base64 image data URL")
-    if len(encoded) > 4 * ((IMAGE_INPUT.max_image_bytes + 2) // 3):
-        raise ValueError("单张请求图片不能超过 1 MiB，请压缩后重试")
-    try:
-        data = base64.b64decode(encoded, validate=True)
-    except (ValueError, binascii.Error) as error:
-        raise ValueError("图片 base64 编码无效") from error
-    if not data or base64.b64encode(data).decode("ascii") != encoded:
-        raise ValueError("图片须为非空、规范的 base64 编码")
-    if len(data) > IMAGE_INPUT.max_image_bytes:
-        raise ValueError("单张请求图片不能超过 1 MiB，请压缩后重试")
-    return len(data)
+    start = comma + 1
+    if (len(url) - start) % 4 or not _BASE64.fullmatch(url, start):
+        raise ValueError("图片 base64 编码无效")
+    # Only the final quartet can contain padding bits. Validate them without copying the image.
+    final = url[-4:]
+    if base64.b64encode(base64.b64decode(final, validate=True)).decode("ascii") != final:
+        raise ValueError("图片须为规范的 base64 编码")

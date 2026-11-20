@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import json
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -14,7 +15,8 @@ from fastapi import HTTPException
 from openai import AsyncOpenAI
 
 from app.core.config import Settings
-from app.core.outbound import PinnedTransport, resolve
+from app.core.outbound import PinnedTransport, ResponseBodyTooLarge, resolve
+from app.modules.llm.body_limit import InferenceRoute
 from app.modules.llm.providers import chat
 from app.modules.llm.providers.connection import OperationTarget
 from app.modules.llm.providers.retrieval import UpstreamFailure
@@ -35,7 +37,7 @@ def selected_usage(meter: Meter) -> dict[str, Any]:
 
 async def prepare_images(payload: dict[str, Any], settings: Settings) -> None:
     """Native SDK converters must never fetch user URLs via an unvalidated client."""
-    downloaded = 0
+    remaining: int | None = None
     for message in payload["messages"]:
         content = message.get("content")
         if not isinstance(content, list):
@@ -46,10 +48,17 @@ async def prepare_images(payload: dict[str, Any], settings: Settings) -> None:
             url = part["image_url"]["url"]
             if url.startswith("data:"):
                 continue
+            # Charge URL expansion against the same JSON budget as an inline request.
+            if remaining is None:
+                encoder = json.JSONEncoder(ensure_ascii=False, separators=(",", ":"))
+                remaining = InferenceRoute.max_bytes - sum(
+                    len(part.encode("utf-8")) for part in encoder.iterencode(payload)
+                )
+            remaining += len(json.dumps(url, ensure_ascii=False).encode("utf-8")) - 2
             transport = PinnedTransport(
                 url,
                 lambda target: resolve(target, [], dns=settings.llm_public_dns),
-                max_bytes=min(5_000_000, 8_000_000 - downloaded),
+                max_bytes=max(0, remaining // 4 * 3),
             )
             try:
                 async with httpx2.AsyncClient(
@@ -69,9 +78,19 @@ async def prepare_images(payload: dict[str, Any], settings: Settings) -> None:
                         ):
                             raise ValueError("Invalid image response")
                         content_bytes = await response.aread()
-                        downloaded += len(content_bytes)
-                encoded = base64.b64encode(content_bytes).decode("ascii")
-                part["image_url"]["url"] = f"data:{mime};base64,{encoded}"
+                prefix = f"data:{mime};base64,"
+                size = len(prefix) + 4 * ((len(content_bytes) + 2) // 3)
+                if size > remaining:
+                    raise ResponseBodyTooLarge()
+                part["image_url"]["url"] = prefix + base64.b64encode(content_bytes).decode("ascii")
+                remaining -= size
+            except ResponseBodyTooLarge:
+                raise UpstreamFailure(
+                    413,
+                    "request_body_too_large",
+                    "转发图片后超过模型请求的整体容量",
+                    health_failure=False,
+                ) from None
             except Exception:
                 raise UpstreamFailure(
                     422,

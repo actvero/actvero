@@ -5004,33 +5004,35 @@
         "type": "object"
       },
       "ChatImageInput": {
-        "description": "Platform transport bounds, independent of supplier model capacities.",
+        "description": "An explicit image policy advertised by a route, if available.",
         "properties": {
           "max_image_bytes": {
-            "default": 1048576,
             "minimum": 1.0,
             "title": "Max Image Bytes",
             "type": "integer"
           },
           "max_images": {
-            "default": 32,
             "minimum": 1.0,
             "title": "Max Images",
             "type": "integer"
           },
           "max_total_bytes": {
-            "default": 8388608,
             "minimum": 1.0,
             "title": "Max Total Bytes",
             "type": "integer"
           },
           "target_pixels": {
-            "default": 4194304,
             "minimum": 1.0,
             "title": "Target Pixels",
             "type": "integer"
           }
         },
+        "required": [
+          "max_image_bytes",
+          "max_total_bytes",
+          "max_images",
+          "target_pixels"
+        ],
         "title": "ChatImageInput",
         "type": "object"
       },
@@ -12957,7 +12959,6 @@
             "type": "string"
           },
           "url": {
-            "maxLength": 1500000,
             "minLength": 1,
             "title": "Url",
             "type": "string"
@@ -32353,7 +32354,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {
@@ -32551,7 +32552,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {
@@ -32687,7 +32688,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {
@@ -32823,7 +32824,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {
@@ -32962,7 +32963,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {
@@ -33098,7 +33099,7 @@
                 }
               }
             },
-            "description": "请求体超过 128 MiB。"
+            "description": "请求体超过平台入口（128 MiB）或模型网关的上限。"
           },
           "415": {
             "content": {

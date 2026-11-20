@@ -11,11 +11,13 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from app.modules.auth.router import Mutation
 from app.modules.auth.service import DB
 from app.modules.desktop.errors import fail
+from app.modules.integrations.service import ApplicationActor
 from app.modules.llm import runtime
 from app.modules.llm.chat_schemas import ChatInput
 from app.modules.llm.inference_router import admin_router, router
 from app.modules.llm.inference_schemas import EmbeddingOutput, RerankOutput
 from app.modules.llm.providers.retrieval import UpstreamFailure
+from app.modules.members.service import BusinessActor
 
 
 @dataclass
@@ -95,13 +97,21 @@ async def response(
     )
 
 
+async def chat_actor(request: Request, db: DB) -> BusinessActor | ApplicationActor:
+    return await runtime.authorize(request, db)
+
+
 @router.post(
     "/chat/completions", response_model=None, summary="OpenAI 兼容对话、工具与 SSE 流式输出"
 )
 async def completions(
-    request: Request, db: DB, body: ChatInput, lifetime: ExecutionLife
+    request: Request,
+    db: DB,
+    actor: Annotated[BusinessActor | ApplicationActor, Depends(chat_actor)],
+    body: ChatInput,
+    lifetime: ExecutionLife,
 ) -> JSONResponse | StreamingResponse:
-    model_id = await runtime.resolve_model(request, db, body.model)
+    model_id = await runtime.resolve_model(request, db, body.model, actor=actor)
     return await response(request, db, model_id, body, lifetime)
 
 

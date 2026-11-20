@@ -347,11 +347,58 @@ async def test_native_newapi_management_round_trip(env):
             assert response.status_code == 200, response.text
 
 
-@pytest.mark.parametrize("stream", [False, True])
-@pytest.mark.parametrize("confirmed", [False, True])
-async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evidence(
-    env, monkeypatch, stream, confirmed
+@pytest.mark.parametrize(
+    ("status", "expected_status", "code"),
+    [(413, 413, "request_body_too_large"), (422, 409, "quota_estimate_unavailable")],
+)
+async def test_preflight_distinguishes_transport_limit_from_missing_estimate(
+    monkeypatch, status, expected_status, code
 ):
+    import httpx2
+    from fastapi import Request
+
+    from app.modules.desktop.errors import DesktopError
+    from app.modules.llm.catalog_schemas import CatalogInput
+    from app.modules.llm.inference_schemas import EmbeddingInput
+    from app.modules.model_gateway import admission
+
+    tenant = uuid4()
+    connection = NewApiConnection(
+        tenant_id=tenant,
+        base_url="https://gateway.example",
+        management_token=SecretStr("fixture"),
+        relay_token_id=1,
+    )
+    monkeypatch.setattr(client, "relay_connection", AsyncMock(return_value=connection))
+    send = AsyncMock(return_value=httpx2.Response(status, text="private upstream diagnostic"))
+    monkeypatch.setattr(client, "send", send)
+    with pytest.raises(DesktopError) as error:
+        await admission.estimate(
+            Request({"type": "http"}),
+            tenant,
+            CatalogInput.model_construct(slug="embed"),
+            EmbeddingInput(model="embed", input="hello"),
+        )
+    assert (error.value.status_code, error.value.code) == (expected_status, code)
+    assert "private upstream diagnostic" not in error.value.detail
+    assert send.await_count == 1
+
+
+@pytest.mark.parametrize(
+    ("stream", "confirmed", "image_history"),
+    [
+        (False, False, False),
+        (True, False, False),
+        (False, True, False),
+        (True, True, False),
+        (False, True, True),
+    ],
+)
+async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evidence(
+    env, monkeypatch, stream, confirmed, image_history
+):
+    import base64
+    import io
     import json
     from decimal import Decimal
 
@@ -367,6 +414,17 @@ async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evide
     bind(env, admin)
     await setup_billing(admin)
     app, state = upstream()
+    content = "hi"
+    if image_history:
+        from PIL import Image
+
+        def png_url(edge):
+            data = io.BytesIO()
+            Image.new("L", (edge, edge)).save(data, "PNG", compress_level=0)
+            return "data:image/png;base64," + base64.b64encode(data.getvalue()).decode()
+
+        urls = [png_url(1100)] * 7 + [png_url(1)] * 26
+        content = [{"type": "image_url", "image_url": {"url": url}} for url in urls]
     request_id = uuid4().hex
 
     @app.middleware("http")
@@ -395,6 +453,12 @@ async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evide
             if path == "/api/option/model_pricing/preflight":
                 import time
 
+                if image_history:
+                    parts = kwargs["payload"]["chat"]["messages"][0]["content"]
+                    assert len(parts) == len(urls)
+                    assert all(
+                        p["image_url"]["url"] == url for p, url in zip(parts, urls, strict=True)
+                    )
                 return {
                     "schema_version": 1,
                     "model": kwargs["payload"]["model"],
@@ -453,19 +517,28 @@ async def test_publication_invokes_one_gateway_hop_and_settles_only_native_evide
         request = Request({"type": "http", "app": env.app})
         env.app.state.llm_outbox.reconcile = lambda record: billing.reconcile(request, record)
         async with native_client(env) as api:
+            if image_history:
+                rejected = await api.post(GATEWAY, json={"model": "public", "messages": []})
+                assert rejected.status_code == 401
+                assert not state["calls"]
             _, token = await credentials(env, monkeypatch, api, admin, published)
             response = await api.post(
                 GATEWAY,
                 headers=bearer(token),
                 json={
                     "model": "public",
-                    "messages": [{"role": "user", "content": "hi"}],
+                    "messages": [{"role": "user", "content": content}],
                     "stream": stream,
                 },
             )
         assert response.status_code == 200 and '"error"' not in response.text, response.text
         assert len(state["calls"]) == 1 and state["calls"][0][0] == "v1"
         assert state["calls"][0][1]["model"] == "public"
+        if image_history:
+            forwarded = state["calls"][0][1]["messages"][0]["content"]
+            assert len(forwarded) == len(urls)
+            assert all(p["image_url"]["url"] == url for p, url in zip(forwarded, urls, strict=True))
+
         rows = await entries_after_accounting(admin)
         assert len(rows) == 1
         assert rows[0]["status"] == ("settled" if confirmed else "review"), rows[0]

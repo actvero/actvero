@@ -13,8 +13,16 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	actveroPricingPreflight       = "/api/option/model_pricing/preflight"
+	actveroManagementPayloadBytes = 2_000_000
+	// Method, path, relay identity and reservation limits accompany the inference JSON.
+	actveroBridgeEnvelopeBytes = 8 * 1024
 )
 
 type actveroBridgeRequest struct {
@@ -60,12 +68,32 @@ func ActveroOrganizationBridge(c *gin.Context) {
 		c.JSON(400, gin.H{"success": false})
 		return
 	}
+	maxMB := constant.MaxRequestBodyMB
+	if maxMB <= 0 {
+		maxMB = 128 // New API's default in common.GetRequestBody.
+	}
+	relayLimit := (int64(maxMB) << 20) + actveroBridgeEnvelopeBytes
+	readLimit := max(relayLimit, actveroManagementPayloadBytes+actveroBridgeEnvelopeBytes)
+	body := io.LimitedReader{R: c.Request.Body, N: readLimit + 1}
 	var input actveroBridgeRequest
-	if err := c.ShouldBindJSON(&input); err != nil || len(input.Path) > 200 || len(input.Params) > 1000 {
+	err := json.NewDecoder(&body).Decode(&input)
+	if body.N == 0 || c.Request.ContentLength > readLimit {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"success": false, "message": "Request body exceeds the gateway limit"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Invalid bridge request"})
+		return
+	}
+	if len(input.Path) > 200 || len(input.Params) > 1000 {
 		c.JSON(400, gin.H{"success": false, "message": "Invalid bridge request"})
 		return
 	}
 	path := "/" + strings.Trim(input.Path, "/")
+	if path == actveroPricingPreflight && readLimit+1-body.N > relayLimit {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"success": false, "message": "Request body exceeds the gateway limit"})
+		return
+	}
 	if !strings.HasPrefix(path, "/api/") || strings.Contains(path, "..") {
 		c.JSON(404, gin.H{"success": false})
 		return
@@ -123,7 +151,7 @@ func ActveroOrganizationBridge(c *gin.Context) {
 		return
 	}
 	payload, err := json.Marshal(input.Payload)
-	if err != nil || len(payload) > 2000000 {
+	if err != nil || (path != actveroPricingPreflight && len(payload) > actveroManagementPayloadBytes) {
 		c.JSON(400, gin.H{"success": false})
 		return
 	}
@@ -393,7 +421,7 @@ func actveroBridgeHandler(c *gin.Context, prefix string, input *actveroBridgeReq
 	case path == "/api/option/model_pricing/convert" && method == "POST":
 		actveroQualifyFields(prefix, body)
 		return PreviewModelPricingConversion, nil
-	case path == "/api/option/model_pricing/preflight" && method == "POST":
+	case path == actveroPricingPreflight && method == "POST":
 		token, err := model.ActveroConnect(c.GetString("actvero_owner"))
 		if err != nil {
 			return nil, err

@@ -67,6 +67,8 @@ async def estimate(
             },
         )
     except HTTPException as exc:
+        if exc.status_code == 413:
+            fail(413, "request_body_too_large", "模型请求超过网关的请求体上限")
         fail(
             409,
             "quota_estimate_unavailable",

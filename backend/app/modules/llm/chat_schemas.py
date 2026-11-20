@@ -5,7 +5,7 @@ from typing import Any, Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from app.modules.llm.catalog_schemas import Effort
-from app.modules.llm.chat_media import IMAGE_INPUT, IMAGE_URL_MAX_LENGTH, inline_image_bytes
+from app.modules.llm.chat_media import validate_image_url
 from app.modules.llm.inference_schemas import InferenceInput
 
 
@@ -32,13 +32,12 @@ class ToolCall(SDKFields):
 
 
 class ImageURL(Strict):
-    url: str = Field(min_length=1, max_length=IMAGE_URL_MAX_LENGTH)
+    url: str = Field(min_length=1)
     detail: Literal["auto", "low", "high"] = "auto"
-    _inline_bytes: int = PrivateAttr(default=0)
 
     @model_validator(mode="after")
     def valid(self) -> Self:
-        self._inline_bytes = inline_image_bytes(self.url)
+        validate_image_url(self.url)
         return self
 
 
@@ -146,17 +145,6 @@ class ChatInput(InferenceInput):
 
     @model_validator(mode="after")
     def valid(self) -> Self:
-        images = [
-            part.image_url
-            for message in self.messages
-            if isinstance(message.content, list)
-            for part in message.content
-            if part.image_url is not None
-        ]
-        if len(images) > IMAGE_INPUT.max_images:
-            raise ValueError("单次请求图片不能超过 32 张，请减少图片后重试")
-        if sum(image._inline_bytes for image in images) > IMAGE_INPUT.max_total_bytes:
-            raise ValueError("单次请求的内嵌图片合计不能超过 8 MiB，请压缩或减少图片")
         if self.max_tokens is not None and self.max_completion_tokens is not None:
             raise ValueError("仅填写一种输出上限")
         if self.stream_options and not self.stream:

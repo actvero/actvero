@@ -322,6 +322,42 @@ async def test_native_tool_conversion(adapter, stream):
         assert converted["choices"][0]["message"]["tool_calls"][0]["function"]["name"] == "lookup"
 
 
+async def test_https_images_share_the_forwarded_json_budget(monkeypatch):
+    import httpx2
+
+    from app.modules.llm.body_limit import InferenceRoute
+
+    blob = b"x" * (5 * 1024 * 1024 + 1)
+    url = "https://images.example/picture"
+
+    async def respond(transport, request):
+        assert "authorization" not in request.headers
+        return httpx2.Response(200, content=blob, headers={"content-type": "image/png"})
+
+    monkeypatch.setattr(sdk_runtime, "resolve", AsyncMock(return_value="93.184.216.34"))
+    monkeypatch.setattr(httpx2.AsyncHTTPTransport, "handle_async_request", respond)
+
+    def payload():
+        return {
+            "messages": [
+                {"content": [{"type": "image_url", "image_url": {"url": url}} for _ in range(2)]}
+            ]
+        }
+
+    data = payload()
+    settings = Settings(_env_file=None)
+    await sdk_runtime.prepare_images(data, settings)
+    total = len(json.dumps(data, separators=(",", ":")).encode())
+    for part in data["messages"][0]["content"]:
+        assert part["image_url"]["url"].startswith("data:image/png;base64,")
+    monkeypatch.setattr(InferenceRoute, "max_bytes", total)
+    await sdk_runtime.prepare_images(payload(), settings)
+    monkeypatch.setattr(InferenceRoute, "max_bytes", total - 1)
+    with pytest.raises(UpstreamFailure) as failure:
+        await sdk_runtime.prepare_images(payload(), settings)
+    assert (failure.value.status_code, failure.value.code) == (413, "request_body_too_large")
+
+
 async def test_sdk_never_fetches_private_images_or_sends_channel_secret_to_them():
     upstream, calls = fixture_provider("gemini")
     async with listening(upstream) as base:

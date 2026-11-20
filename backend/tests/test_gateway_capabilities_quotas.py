@@ -202,13 +202,7 @@ async def test_legacy_automatic_model_alias_updates_refresh_catalog(env, monkeyp
     assert page.status_code == 200, page.text
     assert page.json()["items"][0]["operations"][0]["capabilities"]["vision"] == "supported"
     assert page.json()["items"][0]["operations"][0]["input_modalities"] == ["text", "image"]
-    image_input = page.json()["items"][0]["operations"][0]["image_input"]
-    assert image_input == {
-        "max_image_bytes": 1024 * 1024,
-        "max_total_bytes": 8 * 1024 * 1024,
-        "max_images": 32,
-        "target_pixels": 2048 * 2048,
-    }
+    assert page.json()["items"][0]["operations"][0]["image_input"] is None
     route["model_mapping"] = {"team": "deepseek-v4-pro"}
     changed = (await admin.api.get("/api/v1/account/llm/models")).json()["items"][0]["operations"][
         0

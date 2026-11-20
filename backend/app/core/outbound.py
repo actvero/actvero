@@ -134,6 +134,11 @@ async def resolve(
     return addresses[0]
 
 
+class ResponseBodyTooLarge(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(502, "上游响应超过大小限制")
+
+
 class LimitedStream(httpx2.AsyncByteStream):
     def __init__(self, stream: httpx2.AsyncByteStream, max_bytes: int = 4_000_000) -> None:
         self.stream = stream
@@ -144,7 +149,7 @@ class LimitedStream(httpx2.AsyncByteStream):
         async for chunk in self.stream:
             total += len(chunk)
             if total > self.max_bytes:
-                raise HTTPException(502, "上游响应超过大小限制")
+                raise ResponseBodyTooLarge()
             yield chunk
 
     async def aclose(self) -> None:

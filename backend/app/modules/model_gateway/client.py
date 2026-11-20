@@ -206,6 +206,8 @@ async def call(
     params: Mapping[str, str | int | Sequence[str]] | None = None,
 ) -> Any:
     response = await send(request, tenant_id, method, path, payload=payload, params=params)
+    if response.status_code == 413 and path == "/api/option/model_pricing/preflight":
+        raise HTTPException(413, "模型请求超过网关的请求体上限")
     try:
         data = response.json()
     except (ValueError, UnicodeDecodeError) as exc:

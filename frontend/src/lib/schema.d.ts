@@ -9455,28 +9455,16 @@ export interface components {
         };
         /**
          * ChatImageInput
-         * @description Platform transport bounds, independent of supplier model capacities.
+         * @description An explicit image policy advertised by a route, if available.
          */
         ChatImageInput: {
-            /**
-             * Max Image Bytes
-             * @default 1048576
-             */
+            /** Max Image Bytes */
             max_image_bytes: number;
-            /**
-             * Max Images
-             * @default 32
-             */
+            /** Max Images */
             max_images: number;
-            /**
-             * Max Total Bytes
-             * @default 8388608
-             */
+            /** Max Total Bytes */
             max_total_bytes: number;
-            /**
-             * Target Pixels
-             * @default 4194304
-             */
+            /** Target Pixels */
             target_pixels: number;
         };
         /** ChatInput */
@@ -20526,7 +20514,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20677,7 +20665,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20791,7 +20779,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -20905,7 +20893,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -21017,7 +21005,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -21131,7 +21119,7 @@ export interface operations {
                     "application/json": components["schemas"]["InferenceConflictResponse"];
                 };
             };
-            /** @description 请求体超过 128 MiB。 */
+            /** @description 请求体超过平台入口（128 MiB）或模型网关的上限。 */
             413: {
                 headers: {
                     [name: string]: unknown;

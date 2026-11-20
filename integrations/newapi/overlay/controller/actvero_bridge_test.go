@@ -2,9 +2,12 @@ package controller
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"gorm.io/gorm"
+	"image"
+	"image/png"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/gin-gonic/gin"
@@ -150,6 +154,29 @@ func TestActveroOrganizationBridgeIsolation(t *testing.T) {
 		require.Equal(t, price, entry["configured"].(map[string]any)["ModelPrice"])
 		require.NotContains(t, string(mustActveroJSON(snapshot)), "avt_")
 	}
+	t.Run("preflight prices inline image history larger than a management write", func(t *testing.T) {
+		var encoded bytes.Buffer
+		encoder := png.Encoder{CompressionLevel: png.NoCompression}
+		require.NoError(t, encoder.Encode(&encoded, image.NewGray(image.Rect(0, 0, 900, 900))))
+		part := map[string]any{"type": "image_url", "image_url": map[string]any{
+			"url": "data:image/png;base64," + base64.StdEncoding.EncodeToString(encoded.Bytes()),
+		}}
+		payload := map[string]any{
+			"model": "same-model", "token_id": a.Id, "input_limit": 1000000, "output_limit": 1024,
+			"chat": map[string]any{"model": "same-model", "messages": []any{
+				map[string]any{"role": "user", "content": []any{part, part, part}},
+			}},
+		}
+		require.Greater(t, len(mustActveroJSON(payload)), actveroManagementPayloadBytes)
+		reply := actveroTestBridge(t, actveroOrgA, "POST", actveroPricingPreflight, payload, nil)
+		require.Equal(t, true, reply["success"], reply)
+		reservation := reply["data"].(map[string]any)
+		require.Equal(t, "same-model", reservation["model"])
+		require.Equal(t, "default", reservation["group"])
+		require.NotEmpty(t, reservation["quota"])
+		payload["token_id"] = b.Id
+		require.Equal(t, false, actveroTestBridge(t, actveroOrgA, "POST", actveroPricingPreflight, payload, nil)["success"])
+	})
 	prefix, _ := common.ActveroNamespace(actveroOrgA)
 	other, _ := common.ActveroNamespace(actveroOrgB)
 	for _, rule := range []int{model.NameRuleExact, model.NameRulePrefix, model.NameRuleContains, model.NameRuleSuffix} {
@@ -160,6 +187,23 @@ func TestActveroOrganizationBridgeIsolation(t *testing.T) {
 	}
 	require.Equal(t, false, actveroTestBridge(t, actveroOrgA, "POST", "/api/option/model_pricing/preflight", map[string]any{"token_id": b.Id, "model": "same-model"}, nil)["success"])
 }
+func TestActveroPreflightRejectsOversizeChunkedRequest(t *testing.T) {
+	previous := constant.MaxRequestBodyMB
+	constant.MaxRequestBodyMB = 1
+	t.Cleanup(func() { constant.MaxRequestBodyMB = previous })
+	raw := mustActveroJSON(map[string]any{
+		"method": "POST", "path": actveroPricingPreflight,
+		"payload": map[string]any{"chat": strings.Repeat("x", 1<<20+16384)},
+	})
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Params = gin.Params{{Key: "organization", Value: actveroOrgA}}
+	ctx.Request = httptest.NewRequest("POST", "/bridge", bytes.NewReader(raw))
+	ctx.Request.ContentLength = -1
+	ActveroOrganizationBridge(ctx)
+	require.Equal(t, http.StatusRequestEntityTooLarge, recorder.Code)
+}
+
 func mustActveroJSON(value any) []byte { raw, _ := json.Marshal(value); return raw }
 
 func TestActveroAdoptionPreservesHistoricalBilling(t *testing.T) {
