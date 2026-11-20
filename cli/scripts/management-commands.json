@@ -2,15 +2,80 @@
   "experts": {
     "list": {
       "operationId": "experts_listing_api_v1_management_organizations__org_id__experts_get",
-      "sendDefaults": ["page"]
+      "sendDefaults": [
+        "page"
+      ]
     },
     "show": {
       "operationId": "experts_detail_api_v1_management_organizations__org_id__experts__expert_id__get",
-      "arguments": { "expert_id": "id" }
+      "arguments": {
+        "expert_id": "id"
+      }
     },
     "update": {
       "operationId": "experts_update_api_v1_management_organizations__org_id__experts__expert_id__put",
-      "arguments": { "expert_id": "id" }
+      "arguments": {
+        "expert_id": "id"
+      }
+    }
+  },
+  "workbenches": {
+    "list": {
+      "operationId": "list_workbenches_api_v1_management_organizations__org_id__workbenches_get"
+    },
+    "show": {
+      "operationId": "show_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__get",
+      "arguments": {
+        "workbench_id": "id"
+      }
+    },
+    "create": {
+      "operationId": "create_workbench_api_v1_management_organizations__org_id__workbenches_post"
+    },
+    "upload": {
+      "operationId": "upload_workbench_version_api_v1_management_organizations__org_id__workbenches__workbench_id__versions_post",
+      "arguments": {
+        "workbench_id": "id"
+      }
+    },
+    "update": {
+      "operationId": "update_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__put",
+      "arguments": {
+        "workbench_id": "id"
+      }
+    },
+    "scope": {
+      "operationId": "update_workbench_scope_api_v1_management_organizations__org_id__workbenches__workbench_id__scope_put",
+      "arguments": {
+        "workbench_id": "id"
+      }
+    },
+    "configure": {
+      "operationId": "configure_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__runtime_config_put",
+      "arguments": {
+        "workbench_id": "id"
+      }
+    },
+    "publish": {
+      "operationId": "publish_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__publish_post",
+      "arguments": {
+        "workbench_id": "id",
+        "version_id": "version-id"
+      }
+    },
+    "withdraw": {
+      "operationId": "withdraw_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__withdraw_post",
+      "arguments": {
+        "workbench_id": "id",
+        "version_id": "version-id"
+      }
+    },
+    "delete-draft": {
+      "operationId": "delete_workbench_draft_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__delete",
+      "arguments": {
+        "workbench_id": "id",
+        "version_id": "version-id"
+      }
     }
   }
 }

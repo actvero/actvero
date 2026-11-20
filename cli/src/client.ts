@@ -194,6 +194,7 @@ export class Client {
     path: string,
     body?: unknown,
     requestId?: string,
+    contentType?: string,
   ): Promise<Record<string, unknown>> {
     return this.store.locked(async () => {
       let tokens = await this.tokens();
@@ -206,6 +207,7 @@ export class Client {
         this.publicRequest(method, path, body, {
           Authorization: 'Bearer ' + tokens.access_token,
           ...(requestId ? { 'X-Management-Request-ID': requestId } : {}),
+          ...(contentType ? { 'Content-Type': contentType } : {}),
         });
       try {
         return await send();

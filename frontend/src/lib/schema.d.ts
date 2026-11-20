@@ -4683,6 +4683,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/management/organizations/{org_id}/workbenches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询组织工作台 */
+        get: operations["list_workbenches_api_v1_management_organizations__org_id__workbenches_get"];
+        put?: never;
+        /** 上传安装包并创建工作台草稿 */
+        post: operations["create_workbench_api_v1_management_organizations__org_id__workbenches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查看工作台详情和版本历史 */
+        get: operations["show_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__get"];
+        /** 更新工作台展示资料 */
+        put: operations["update_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/runtime-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 保存工作台运行配置 */
+        put: operations["configure_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__runtime_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 设置工作台使用范围 */
+        put: operations["update_workbench_scope_api_v1_management_organizations__org_id__workbenches__workbench_id__scope_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 上传同一工作台的新版本草稿 */
+        post: operations["upload_workbench_version_api_v1_management_organizations__org_id__workbenches__workbench_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除未发布的工作台版本草稿 */
+        delete: operations["delete_workbench_draft_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 发布工作台版本 */
+        post: operations["publish_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 下架当前工作台版本 */
+        post: operations["withdraw_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/management/platform/client-distribution/artifacts/{ident}": {
         parameters: {
             query?: never;
@@ -17391,6 +17529,20 @@ export interface components {
             /** Request Id */
             request_id?: string | null;
             result: components["schemas"]["SkillView"];
+        };
+        /** ResourceResult[WorkbenchPage] */
+        ResourceResult_WorkbenchPage_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["WorkbenchPage"];
+        };
+        /** ResourceResult[WorkbenchView] */
+        ResourceResult_WorkbenchView_: {
+            organization: components["schemas"]["Organization"];
+            /** Request Id */
+            request_id?: string | null;
+            result: components["schemas"]["WorkbenchView"];
         };
         /** ResourceResult[list[ManagedExpertCategory]] */
         ResourceResult_list_ManagedExpertCategory__: {
@@ -32765,6 +32917,386 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResourceResult_SkillOverview_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_workbenches_api_v1_management_organizations__org_id__workbenches_get: {
+        parameters: {
+            query?: {
+                /** @description 按工作台分类筛选 */
+                category?: ("office" | "engineering" | "design" | "content" | "data" | "education" | "lifestyle" | "general" | "uncategorized") | null;
+                /** @description draft、published 或 withdrawn */
+                status?: ("draft" | "published" | "withdrawn") | null;
+                /** @description 搜索展示名称或包名 */
+                q?: string;
+                /** @description 页码 */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchPage_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_workbench_api_v1_management_organizations__org_id__workbenches_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    show_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchMetadata"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configure_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__runtime_config_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchConfigUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workbench_scope_api_v1_management_organizations__org_id__workbenches__workbench_id__scope_put: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchScope"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_workbench_version_api_v1_management_organizations__org_id__workbenches__workbench_id__versions_post: {
+        parameters: {
+            query: {
+                /** @description 工作台当前修订号 */
+                revision: number;
+            };
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_workbench_draft_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__delete: {
+        parameters: {
+            query: {
+                /** @description 工作台当前修订号 */
+                revision: number;
+            };
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_Message_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__publish_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchPublish"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__withdraw_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Management-Request-ID": string;
+            };
+            path: {
+                org_id: string;
+                workbench_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbenchRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceResult_WorkbenchView_"];
                 };
             };
             /** @description Validation Error */

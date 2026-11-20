@@ -57,6 +57,23 @@ async function zipFile(path: string): Promise<Buffer> {
     throw new CliError('invalid_package', '无法读取技能 ZIP，文件不得超过 20 MB');
   }
 }
+async function workbenchPackage(path: string): Promise<Buffer> {
+  const limit = 8 * 1024 * 1024;
+  try {
+    const file = await openFile(path, 'r');
+    try {
+      const info = await file.stat();
+      if (!info.isFile() || info.size === 0 || info.size > limit) throw new Error();
+      const { buffer, bytesRead } = await file.read({ buffer: Buffer.alloc(info.size + 1) });
+      if (bytesRead !== info.size) throw new Error();
+      return buffer.subarray(0, bytesRead);
+    } finally {
+      await file.close();
+    }
+  } catch {
+    throw new CliError('invalid_package', '请提供可读取且不超过 8 MiB 的工作台 .tgz 安装包');
+  }
+}
 function query(options: Options, keys: string[]): string {
   const params = new URLSearchParams();
   for (const key of keys)
@@ -177,12 +194,13 @@ export function buildProgram(runtime: Runtime = {}): Command {
     method: string,
     path: string,
     body?: unknown,
+    contentType?: string,
   ) => {
     await ctx.client.requireCapability(kind + '.write');
     const id = typeof ctx.options.requestId === 'string' ? ctx.options.requestId : randomUUID();
     await journal(ctx.client.server, String(ctx.options.org), id, method + ' ' + path);
     errorOutput('请求编号：' + id + '\n');
-    return ctx.client.request(method, path, body, id);
+    return ctx.client.request(method, path, body, id, contentType);
   };
   const mutate = (
     ctx: Context,
@@ -432,7 +450,7 @@ export function buildProgram(runtime: Runtime = {}): Command {
 
   const registerManagedCommands = (parent: Command, resource: keyof typeof managementCommands) => {
     for (const [name, operation] of Object.entries(managementCommands[resource])) {
-      const positionals = operation.arguments.map(({ alias }) => ` <${alias}>`).join('');
+      const positionals = operation.arguments.map(({ alias }: { alias: string }) => ` <${alias}>`).join('');
       const command = scoped(parent, name + positionals, operation.description);
       for (const option of operation.query) {
         const flags = `--${option.name} <${option.positiveInteger ? 'number' : 'text'}>`;
@@ -443,10 +461,16 @@ export function buildProgram(runtime: Runtime = {}): Command {
         if (option.positiveInteger) addOption(flags, option.description, positive, value);
         else addOption(flags, option.description, value);
       }
+      const binary = 'binary' in operation && operation.binary;
+      if (binary) command.requiredOption('--package <tgz>', '工作台 .tgz 安装包');
       if (operation.body) command.requiredOption('--file <json>', `${operation.body} JSON 文件`);
       if (operation.write) writeOptions(command);
       run(command, async (ctx, args) => {
         const path = managementPath(operation, ctx.options, args);
+        if (binary) {
+          const archive = await workbenchPackage(String(ctx.options.package));
+          return sendWrite(ctx, resource, operation.method, path, archive, 'application/octet-stream');
+        }
         if (operation.write) {
           const body = operation.body ? await fromFile(ctx) : undefined;
           return sendWrite(ctx, resource, operation.method, path, body);
@@ -455,6 +479,9 @@ export function buildProgram(runtime: Runtime = {}): Command {
       });
     }
   };
+
+  const workbenches = program.command('workbenches').description('组织工作台安装包、版本与发布');
+  registerManagedCommands(workbenches, 'workbenches');
 
   const experts = program.command('experts').description('专家草稿、精确依赖与发布');
   registerManagedCommands(experts, 'experts');

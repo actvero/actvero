@@ -81,6 +81,26 @@ SkillImport 的 metadata 仅负责 display_name/description/audience/member_ids/
 | skills/experts categories move <ID> | --direction up或down --revision N |
 | skills/experts categories delete <ID> | --target ID --count N --revision N |
 
+## 组织工作台
+
+使用组织管理员的 CLI 授权。先通过 `platform info` 和 `org permissions` 核对 `workbenches.read`、`workbenches.write`。命令须带 `--org` 和 `--server`。
+
+| 命令 | 输入和用途 |
+| --- | --- |
+| `workbenches list` / `show <ID>` | 列表可按 `--q`、`--category`、`--status` 和 `--page` 筛选。详情返回当前修订号、历史版本和配置 |
+| `workbenches create` | `--package <包.tgz>` 创建首个草稿 |
+| `workbenches upload <ID>` | `--package <包.tgz> --revision N` 创建更新草稿 |
+| `workbenches update <ID>` | `--file` 传入 `WorkbenchMetadata`，修改展示资料 |
+| `workbenches scope <ID>` | `--file` 传入 `WorkbenchScope`，维护成员或部门授权 |
+| `workbenches configure <ID>` | `--file` 传入 `WorkbenchConfigUpdate`，填写目标版本声明的运行配置 |
+| `workbenches publish <ID> <版本ID>` | `--file` 传入 `WorkbenchPublish`，包含最新 `revision` 与可选 `release_notes` |
+| `workbenches withdraw <ID> <版本ID>` | `--file` 传入 `WorkbenchRevision`，下架当前发布版本 |
+| `workbenches delete-draft <ID> <版本ID>` | `--revision N`，仅删除未发布草稿 |
+
+安装包最大 8 MiB。以上游包内 `package.json` 的包名和版本为准。上传新版本后原发布仍可用，明确执行 `publish` 才切换当前版本。保留已有工作台的使用范围，除非用户要求变更。新工作台默认仅管理员可用。正式发布前，按草稿的 `config_fields` 补齐必填配置；新版本沿用同名字段。写入后使用返回的新修订号，避免覆盖其他管理员的修改。
+
+发布后重读 `show`，核对 `current_version` 与预期版本一致。网络超时用原 `request_id` 执行 `commands show`，再核对工作台和版本。请求内容或包发生变化时使用新的请求编号。
+
 ## Schema 的边界和维护
 
 `schema show` 是从平台 OpenAPI 提取的本地契约快照，可查询嵌套模型。数字范围、长度、枚举、必填/可选、additionalProperties 均以快照为准；服务端额外验证组织权限、成员范围、图片、URL、哈希、依赖状态等。

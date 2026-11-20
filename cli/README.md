@@ -1,19 +1,19 @@
 # Actvero CLI
 
-用于管理 Actvero 平台的独立命令行客户端。支持多组织下的 **Skills、MCP 服务、专家**，适合终端操作和 Agent 调用。平台继续负责权限、版本、审计与发布校验。
+用于管理 Actvero 平台的独立命令行客户端。支持多组织下的 **Skills、MCP 服务、专家、工作台**，适合终端操作和 Agent 调用。平台继续负责权限、版本、审计与发布校验。
 
-当前为 `0.2.0-dev.3` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `115j_cli_consent` 迁移的浏览器授权与资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
+当前为 `0.2.0-dev.4` 开发预览版，使用 npm 的 `next` 标签。配套平台须部署包含 `115j_cli_consent` 迁移的浏览器授权与资源管理 API；仅安装 CLI 不会升级服务器。原 Python CLI 的只读命令仍兼容。
 
 ## 安装与 Agent Skill
 
 需要 Node.js 24 或更高版本，以及可用的系统凭据库：macOS Keychain、Windows Credential Manager 或 Linux Secret Service。
 
 ```sh
-npm install --global @actvero/cli@0.2.0-dev.3
+npm install --global @actvero/cli@0.2.0-dev.4
 actvero --version
 actvero --help
 # 无需全局安装的固定版本调用
-npx --yes --package=@actvero/cli@0.2.0-dev.3 actvero --help
+npx --yes --package=@actvero/cli@0.2.0-dev.4 actvero --help
 # 安装配套 Codex Skill；--to 是 skills 父目录，已有同名目录不会覆盖
 actvero agent-skill install --to "$HOME/.codex/skills"
 ```
@@ -54,6 +54,20 @@ actvero auth login --server https://actvero.example.com
 每条资源命令都必须显式填写 `--org`。命令响应包含服务端确认的组织信息；同一用户可访问多个获授权组织，平台运营身份不会自动取得组织资源权限。资源管理要求该组织的管理员资格。
 
 登录令牌、续期恢复记录只保存在系统凭据库。凭据库不可用时停止，不回退到明文文件。默认平台和不含请求正文的写操作编号保存在 `~/.config/actvero-cli/`；可用 `ACTVERO_CLI_HOME` 改变这个非机密配置目录。
+
+## 组织工作台
+
+组织管理员发布或更新「能力管理 → 工作台」中的 `.tgz` 包时，先用 `platform info` 检查平台是否提供 `workbenches.read` 和 `workbenches.write`。写入需要组织管理授权。
+
+```sh
+actvero workbenches list --org <组织UUID>
+actvero workbenches show <工作台UUID> --org <组织UUID>
+actvero workbenches create --package ./workbench.tgz --org <组织UUID>
+actvero workbenches upload <工作台UUID> --package ./workbench-update.tgz --revision <修订号> --org <组织UUID>
+actvero workbenches publish <工作台UUID> <版本UUID> --file ./publish.json --org <组织UUID>
+```
+
+首次上传使用 `create`，后续新版本使用 `upload`。两者保存草稿。发布文件使用 `WorkbenchPublish` 格式，包含最新的 `revision` 和可选的 `release_notes`。发布前可调整展示资料、使用范围和运行配置。完整字段与下架命令见 [工作台命令](skills/actvero-management/references/commands.md#组织工作台)。
 
 ## Skills
 

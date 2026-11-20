@@ -185,6 +185,7 @@ async def organization(
     *,
     require_admin: bool = False,
     write: bool = False,
+    allow_platform_elevation: bool = True,
 ) -> tuple[BusinessActor, Organization]:
     if who.session.scope == "platform:read":
         fail(403, "credential_type_mismatch", "平台发布凭据不能访问组织资源")
@@ -210,7 +211,12 @@ async def organization(
     )
     # Platform access is explicit, live and restricted to assigned platform memberships.
     operator = None
-    if settings.platform_edition == "saas" and member and member.source == "platform":
+    if (
+        allow_platform_elevation
+        and settings.platform_edition == "saas"
+        and member
+        and member.source == "platform"
+    ):
         operator = await db.scalar(
             select(PlatformOperator).where(
                 PlatformOperator.user_id == who.user.id, PlatformOperator.status == "active"
@@ -239,8 +245,12 @@ async def organization(
     if member.role == "administrator":
         permissions += ["channels.list", "channels.show"]
         permissions += [f"{kind}.read" for kind in ("skills", "mcp", "experts")]
+        if member.source != "platform":
+            permissions.append("workbenches.read")
         if "management:write" in who.session.scope.split():
             permissions += [f"{kind}.write" for kind in ("skills", "mcp", "experts")]
+            if member.source != "platform":
+                permissions.append("workbenches.write")
     result = Organization(
         org_id=tenant.id,
         name=tenant.name,

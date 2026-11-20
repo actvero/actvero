@@ -25572,6 +25572,62 @@
         "title": "ResourceResult[SkillView]",
         "type": "object"
       },
+      "ResourceResult_WorkbenchPage_": {
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/Organization"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "result": {
+            "$ref": "#/components/schemas/WorkbenchPage"
+          }
+        },
+        "required": [
+          "organization",
+          "result"
+        ],
+        "title": "ResourceResult[WorkbenchPage]",
+        "type": "object"
+      },
+      "ResourceResult_WorkbenchView_": {
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/Organization"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "result": {
+            "$ref": "#/components/schemas/WorkbenchView"
+          }
+        },
+        "required": [
+          "organization",
+          "result"
+        ],
+        "title": "ResourceResult[WorkbenchView]",
+        "type": "object"
+      },
       "ResourceResult_list_ManagedExpertCategory__": {
         "properties": {
           "organization": {
@@ -52143,6 +52199,847 @@
           }
         },
         "summary": "Skills Overview",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches": {
+      "get": {
+        "operationId": "list_workbenches_api_v1_management_organizations__org_id__workbenches_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "按工作台分类筛选",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "office",
+                    "engineering",
+                    "design",
+                    "content",
+                    "data",
+                    "education",
+                    "lifestyle",
+                    "general",
+                    "uncategorized"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "按工作台分类筛选",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "draft、published 或 withdrawn",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "published",
+                    "withdrawn"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "draft、published 或 withdrawn",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "搜索展示名称或包名",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "搜索展示名称或包名",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "页码",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "页码",
+              "maximum": 100000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchPage_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "查询组织工作台",
+        "tags": [
+          "management-resources"
+        ]
+      },
+      "post": {
+        "operationId": "create_workbench_api_v1_management_organizations__org_id__workbenches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "上传安装包并创建工作台草稿",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}": {
+      "get": {
+        "operationId": "show_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "查看工作台详情和版本历史",
+        "tags": [
+          "management-resources"
+        ]
+      },
+      "put": {
+        "operationId": "update_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchMetadata"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "更新工作台展示资料",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/runtime-config": {
+      "put": {
+        "operationId": "configure_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__runtime_config_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchConfigUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "保存工作台运行配置",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/scope": {
+      "put": {
+        "operationId": "update_workbench_scope_api_v1_management_organizations__org_id__workbenches__workbench_id__scope_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchScope"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "设置工作台使用范围",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions": {
+      "post": {
+        "operationId": "upload_workbench_version_api_v1_management_organizations__org_id__workbenches__workbench_id__versions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "工作台当前修订号",
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "description": "工作台当前修订号",
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "上传同一工作台的新版本草稿",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}": {
+      "delete": {
+        "operationId": "delete_workbench_draft_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "工作台当前修订号",
+            "in": "query",
+            "name": "revision",
+            "required": true,
+            "schema": {
+              "description": "工作台当前修订号",
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_Message_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "删除未发布的工作台版本草稿",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}/publish": {
+      "post": {
+        "operationId": "publish_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchPublish"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "发布工作台版本",
+        "tags": [
+          "management-resources"
+        ]
+      }
+    },
+    "/api/v1/management/organizations/{org_id}/workbenches/{workbench_id}/versions/{version_id}/withdraw": {
+      "post": {
+        "operationId": "withdraw_workbench_api_v1_management_organizations__org_id__workbenches__workbench_id__versions__version_id__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workbench_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workbench Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Management-Request-ID",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "X-Management-Request-Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbenchRevision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult_WorkbenchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "ManagementAccess": []
+          }
+        ],
+        "summary": "下架当前工作台版本",
         "tags": [
           "management-resources"
         ]

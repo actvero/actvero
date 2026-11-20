@@ -25,6 +25,8 @@ function harness() {
           'mcp.write',
           'experts.read',
           'experts.write',
+          'workbenches.read',
+          'workbenches.write',
           'commands.show',
         ],
       });
@@ -48,6 +50,7 @@ test('resource commands require explicit organization before any network call', 
     ['skills', 'list'],
     ['mcp', 'list'],
     ['experts', 'show', id],
+    ['workbenches', 'list'],
     ['commands', 'show', id],
   ]) {
     const h = harness();
@@ -190,4 +193,28 @@ test('server normalization rejects credential-bearing URLs and insecure remote h
     'ftp://example.com',
   ])
     assert.throws(() => normalizeServer(value), { code: 'invalid_server' });
+});
+
+test('workbench upload sends the original archive with revision and write receipt', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'actvero-workbench-upload-'));
+  try {
+    const packagePath = join(directory, 'workbench.tgz');
+    const archive = Buffer.from([0x1f, 0x8b, 0x00, 0xff]);
+    await writeFile(packagePath, archive);
+    const h = harness();
+    await h.run([
+      'workbenches', 'upload', id, '--org', org, '--revision', '4',
+      '--package', packagePath, '--request-id', id,
+    ]);
+    const sent = h.sent.at(-1)!;
+    const path = `/organizations/${org}/workbenches/${id}/versions?revision=4`;
+    assert.ok(sent.url.endsWith(path));
+    assert.equal(sent.init?.method, 'POST');
+    assert.equal(new Headers(sent.init?.headers).get('content-type'), 'application/octet-stream');
+    assert.equal(new Headers(sent.init?.headers).get('X-Management-Request-ID'), id);
+    assert.deepEqual(sent.init?.body, archive);
+    assert.deepEqual(h.journal, [['https://example.com', org, id, 'POST ' + path]]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
