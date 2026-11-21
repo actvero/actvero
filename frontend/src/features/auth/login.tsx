@@ -10,22 +10,27 @@ import { loginUrl, useSession } from './session'
 export function LoginPage() {
   const brand = useBranding()
   const query = useSession()
-  const { data } = query
+  const { data, dataUpdatedAt, fetchStatus, isSuccess } = query
   const { error, next } = useSearch({ from: '/login' })
   const started = useRef(false)
   const ready = data && (data.setup_complete || data.setup_account_created)
+  // A fast focus check can update only dataUpdatedAt before React renders.
   useEffect(() => {
     if (
       ready &&
       data.registration_mode === 'invite' &&
       !data.authenticated &&
+      !data.sessionEnded &&
       !error &&
+      isSuccess &&
+      fetchStatus === 'idle' &&
+      document.visibilityState === 'visible' &&
       !started.current
     ) {
       started.current = true
       window.location.replace(loginUrl(next))
     }
-  }, [ready, data, error, next])
+  }, [ready, data, dataUpdatedAt, error, next, isSuccess, fetchStatus])
   if (query.isError)
     return (
       <RequestError error={query.error} retry={() => void query.refetch()} />
@@ -34,10 +39,23 @@ export function LoginPage() {
   if (!ready) return <Navigate to='/setup' replace />
   // A revisited/duplicate callback can show an old error after login has
   // succeeded. Only the validated session API can authorize this recovery.
-  if (data.authenticated && error === 'callback' && query.isFetching)
+  const ended = error === 'session_ended'
+  if (
+    data.authenticated &&
+    (error === 'callback' || ended) &&
+    fetchStatus !== 'idle'
+  )
     return <LoadingState />
-  if (data.authenticated && (!error || error === 'callback'))
+  if (data.authenticated && (!error || error === 'callback' || ended))
     return <Navigate to={next} href={next} replace />
+  if (ended || (!error && data.sessionEnded))
+    return (
+      <AuthLayout title='登录已结束' description='重新登录后会返回刚才的页面。'>
+        <Button asChild>
+          <a href={loginUrl(next)}>重新登录</a>
+        </Button>
+      </AuthLayout>
+    )
   if (!error && data.registration_mode !== 'invite')
     return (
       <AuthLayout title={`登录 ${data.platform_name}`} description=''>

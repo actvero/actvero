@@ -7,6 +7,16 @@ import { AuthLayout } from './auth-layout'
 import { loginReturnTo } from './return-to'
 import { useSession, loginUrl } from './session'
 
+function SignInRedirect({ next, ended }: { next: string; ended: boolean }) {
+  return (
+    <Navigate
+      to='/login'
+      search={{ next, error: ended ? 'session_ended' : undefined }}
+      replace
+    />
+  )
+}
+
 export function SessionBoundary({ children }: { children: ReactNode }) {
   const isPublicHome = useLocation({
     select: (location) =>
@@ -57,7 +67,7 @@ export function AccessGate({
     return location.pathname === '/login' ? (
       <LoadingState />
     ) : (
-      <Navigate to='/login' search={{ next }} replace />
+      <SignInRedirect next={next} ended={data.sessionEnded} />
     )
   const organization = data.organization
   if (!organization && data.platform_operator)
@@ -92,8 +102,12 @@ export function AccessGate({
 
 export function PlatformAccessGate({ children }: { children: ReactNode }) {
   const { data } = useSession()
+  const href = useLocation({ select: (location) => location.href })
   if (!data?.setup_complete) return <Navigate to='/setup' replace />
-  if (!data.authenticated) return <Navigate to='/login' replace />
+  if (!data.authenticated)
+    return (
+      <SignInRedirect next={loginReturnTo(href)} ended={data.sessionEnded} />
+    )
   if (!data.platform_operator) return <Navigate to='/' replace />
   return children
 }
@@ -110,7 +124,7 @@ export function HomeRedirect() {
   const { data } = useSession()
   if (!data?.setup_complete) return <Navigate to='/setup' replace />
   if (!data.authenticated)
-    return <Navigate to='/login' search={{ next: '/console' }} replace />
+    return <SignInRedirect next='/console' ended={data.sessionEnded} />
   if (
     !data.organization &&
     !data.platform_operator &&

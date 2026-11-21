@@ -2,22 +2,31 @@ import { queryOptions, useQuery } from '@tanstack/react-query'
 import { api, ApiError, type Schema } from '@/lib/api'
 import { loginReturnTo } from './return-to'
 
+type BrowserSession = Schema['SessionView'] & { sessionEnded: boolean }
+
 export const sessionOptions = queryOptions({
   queryKey: ['session'],
-  queryFn: async ({ client }) => {
-    const previous = client.getQueryState(['session'])?.error
+  queryFn: async ({ client }): Promise<BrowserSession> => {
+    const previous = client.getQueryState<BrowserSession>(['session'])
+    const error = previous?.error
     if (
-      previous instanceof ApiError &&
-      previous.retryAfterUntil &&
-      previous.retryAfterUntil > Date.now()
+      error instanceof ApiError &&
+      error.retryAfterUntil &&
+      error.retryAfterUntil > Date.now()
     )
-      throw previous
-    try {
-      return await api<Schema['SessionView']>('/auth/session')
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401)
-        return api<Schema['SessionView']>('/auth/session')
       throw error
+    let session: Schema['SessionView']
+    try {
+      session = await api<Schema['SessionView']>('/auth/session')
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) throw error
+      session = await api<Schema['SessionView']>('/auth/session')
+    }
+    return {
+      ...session,
+      sessionEnded:
+        !session.authenticated &&
+        Boolean(previous?.data?.authenticated || previous?.data?.sessionEnded),
     }
   },
   staleTime: 0,

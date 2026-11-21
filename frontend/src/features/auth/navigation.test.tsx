@@ -9,7 +9,7 @@ import {
   RouterProvider,
   useSearch,
 } from '@tanstack/react-router'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, expect, it, onTestFinished, vi } from 'vitest'
 import { cleanup, render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import {
@@ -152,6 +152,21 @@ function respond(body: unknown) {
     headers: { 'Content-Type': 'application/json' },
   })
 }
+function captureLoginRequests() {
+  const attempts: string[] = []
+  const intercept = (event: NavigateEvent) => {
+    const url = new URL(event.destination.url)
+    if (url.pathname === '/api/v1/auth/login') {
+      event.preventDefault()
+      attempts.push(url.pathname + url.search)
+    }
+  }
+  window.navigation.addEventListener('navigate', intercept)
+  onTestFinished(() =>
+    window.navigation.removeEventListener('navigate', intercept)
+  )
+  return attempts
+}
 it('未选组织的平台账号打开组织页面时只跳转一次', async () => {
   vi.stubGlobal(
     'fetch',
@@ -244,6 +259,27 @@ it('定时会话检查失效时保留当前路径、筛选和锚点供登录返�
   expect(router.state.location.pathname).toBe('/login')
   expect(router.state.location.search.next).toBe(target)
 })
+it('管理页面开着直到会话到期，等用户回来点登录才发起新的认证', async () => {
+  let authenticated = true
+  vi.stubGlobal('fetch', async () =>
+    respond({ ...session, authenticated, registration_mode: 'invite' })
+  )
+  const attempts = captureLoginRequests()
+  const target = '/model-channels?page=2#results'
+  const { client } = await show(target)
+  await expect
+    .element(page.getByRole('heading', { name: '渠道管理' }))
+    .toBeVisible()
+  authenticated = false
+  await client.invalidateQueries({ queryKey: ['session'] })
+  await expect
+    .element(page.getByRole('link', { name: '重新登录' }))
+    .toBeVisible()
+  await client.invalidateQueries({ queryKey: ['session'] })
+  expect(attempts).toEqual([])
+  await page.getByRole('link', { name: '重新登录' }).click()
+  expect(attempts).toEqual([loginUrl(target)])
+})
 it('已登录进入登录页时返回原页面而不是成员管理', async () => {
   vi.stubGlobal(
     'fetch',
@@ -256,6 +292,62 @@ it('已登录进入登录页时返回原页面而不是成员管理', async () =
     .toBeVisible()
   expect(router.state.location.href).toBe(target)
 })
+it.each([true, false])(
+  '后台标签页等待回到前台后的会话检查，再按登录状态 %s 继续',
+  async (signedInElsewhere) => {
+    const target = '/model-channels?page=2#results'
+    const anonymous = {
+      ...session,
+      authenticated: false,
+      registration_mode: 'invite',
+    }
+    const visibility = vi
+      .spyOn(document, 'visibilityState', 'get')
+      .mockReturnValue('hidden')
+    onTestFinished(() => visibility.mockRestore())
+    const attempts = captureLoginRequests()
+    let finishRefresh!: (response: Response) => void
+    const refresh = new Promise<Response>((resolve) => {
+      finishRefresh = resolve
+    })
+    const readSession = vi.fn(async () => respond(anonymous))
+    vi.stubGlobal('fetch', (url: string) =>
+      url.endsWith('/auth/session')
+        ? readSession()
+        : Promise.resolve(respond({}))
+    )
+    const { client, router } = await show(
+      '/login?next=' + encodeURIComponent(target)
+    )
+    await vi.waitFor(() =>
+      expect(client.getQueryState(['session'])?.status).toBe('success')
+    )
+    await expect
+      .element(page.getByRole('status', { name: '正在加载' }))
+      .toBeVisible()
+    expect(attempts).toEqual([])
+
+    readSession.mockImplementationOnce(() => refresh)
+    visibility.mockReturnValue('visible')
+    window.dispatchEvent(new Event('visibilitychange'))
+    await vi.waitFor(() =>
+      expect(client.isFetching({ queryKey: ['session'] })).toBe(1)
+    )
+    expect(attempts).toEqual([])
+    const current = signedInElsewhere ? session : anonymous
+    readSession.mockImplementation(async () => respond(current))
+    finishRefresh(respond(current))
+    if (signedInElsewhere) {
+      await expect
+        .element(page.getByRole('heading', { name: '渠道管理' }))
+        .toBeVisible()
+      expect(router.state.location.href).toBe(target)
+      expect(attempts).toEqual([])
+    } else {
+      await vi.waitFor(() => expect(attempts).toEqual([loginUrl(target)]))
+    }
+  }
+)
 it('登录失败后的重试按钮继续携带原目标', async () => {
   vi.stubGlobal(
     'fetch',
